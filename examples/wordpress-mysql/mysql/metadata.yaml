@@ -1,0 +1,13 @@
+ensemble: formula
+name: mysql
+revision: 1
+summary: "Its a bird, an airplane, no.. its a pseudo relational database."
+description: |
+    MySQL is the defacto opensource standard relation database. For years
+    it marketed its features in advance of implementing them, to the gain
+    of numerous users. Finally today it provides a relatively overcomplicated,
+    widely used, database implementation that strives to provide bewildering 
+    non standard compliance behavior by default with great speed.
+provides:
+  db:
+    interface: mysql
