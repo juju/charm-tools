@@ -1,0 +1,9 @@
+ensemble: formula
+name: mysql
+revision: 1
+summary: "Its a bird, an airplane, no.. its a Blog."
+description: |
+    Wordpress is the defacto opensource standard application for Blogs.
+requires:
+  db:
+    interface: mysql
