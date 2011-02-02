@@ -1,8 +1,12 @@
 #!/bin/bash
 
-PASSWORD="FOOBAR"
 
-sudo apt-get install -qqy debconf-utils
+
+sudo apt-get install -qqy debconf-utils python-mysqldb uuid
+
+PASSWORD=`uuid`
+
+echo $PASSWORD >> /var/lib/ensemble/mysql.passwd
 
 echo mysql-server-5.1 mysql-server/root_password password $PASSWORD | debconf-set-selections
 echo mysql-server-5.1 mysql-server/root_password_again password $PASSWORD | debconf-set-selections

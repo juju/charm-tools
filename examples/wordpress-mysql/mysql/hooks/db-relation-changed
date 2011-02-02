@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import os
+import random
+import string
+import subprocess
+
+import MySQLdb
+
+change_type = os.environ.get("ENSEMBLE_CHANGE")
+
+def on_join():
+
+    # Connect to mysql
+    passwd = open("/var/lib/ensemble/mysql.passwd").read()
+    connection = MySQLdb.connect(user="root", host="localhost", passwd=passwd)
+
+    cursor = connection.cursor()
+
+    # Find existing databases
+    cursor.execute("show databases")
+    databases = [i[0] for i in cursor.fetchall()]
+
+    # Determine if we need to create a new database
+    change_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
+    service, _ = change_unit.split("/")
+
+    if service in databases:
+        return
+
+    # Create new database
+    cursor.execute(
+        "create database %s character set utf8" % service_name)
+
+    # Create database user and grant access
+    service_password = "".join(random.sample(string.letters, 10))
+    cursor.execute(
+        "grant all on %s.* to %s identified by '%s'" % (
+            service,
+            service,
+            service_password))
+
+    # Store new values in relation settings.
+    p = subprocess.Popen(
+        ["relation-set",
+         "database=%s" % service,
+         "password=%s" % service_password],
+        close_fds = True)
+
+    os.waitpid(p.pid, 0)
+
+if change_type == "joined":
+    on_join()
