@@ -40,9 +40,18 @@ def on_join():
             service,
             service_password))
 
+    cursor.execute("flush privileges")
+
+    cursor.close()
+    connection.close()
+
+    hostname = urllib.urlopen(
+        "http://169.254.169.254/latest/meta-data/local-hostname").read()
+
     # Store new values in relation settings.
     p = subprocess.Popen(
         ["relation-set",
+         "host=%s" % hostname,
          "database=%s" % service,
          "password=%s" % service_password],
         close_fds = True)

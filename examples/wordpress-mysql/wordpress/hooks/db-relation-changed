@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+import os
+import urllib
+import subprocess
+
+change_type = os.environ.get("ENSEMBLE_CHANGE_TYPE")
+
+upload_path = "/var/www/wp-uploads"
+config_file_path_template = "/etc/wordpress/%s-config.php"
+hostname_url = "http://169.254.169.254/latest/meta-data/public-hostname"
+
+def do(*args):
+    subprocess.Popen(args, close_fds=True)
+    os.wait(p.pid, 0)
+
+
+def get(unit, setting):
+    p = subprocess.Popen(
+        ["relation-get", unit, setting],
+        stdout=subprocess.PIPE, close_fds=True)
+    value = p.stdout.read.strip()
+    return value
+
+wordpress_template = """\
+<?php
+define('DB_NAME', '%(database)s');
+define('DB_USER', '%(database_user)s');
+define('DB_PASSWORD', '%(database_password)s');
+define('DB_HOST', '%(database_host)s');
+define('SECRET_KEY', '%(secret_key)s');
+
+#This will disable the update notification.
+define('WP_CORE_UPDATE', false);
+
+$table_prefix  = 'wp_';
+$server = '%(database_host)s';
+$loginsql = '%(database_user)s';
+$passsql = '%(database_password)s';
+$base = '%(database)s';
+$upload_path = '/var/www/wp-uploads/%(hostname)s';
+$upload_url_path = 'http://%(hostname)s/wp-uploads';
+?>
+"""
+
+apache_template = """\
+<VirtualHost *:80>
+  ServerName %(hostname)s
+  DocumentRoot /var/www/%(hostname)s
+  Options All
+  ErrorLog /var/log/apache2/wp-error.log
+  TransferLog /var/log/apache2/wp-access.log
+  # Store uploads in /var/www/wp-uploads/$0
+  RewriteEngine On
+  RewriteRule ^/wp-uploads/(.*)$ /var/www/wp-uploads/%{HTTP_HOST}/$1
+</VirtualHost>
+"""
+
+
+def setup_wordpress():
+
+    hostname = urllib.urlopen("curl %s" % hostname_url)
+    remote_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
+
+    # Check we haven't already been setup.
+    if os.path.exists(config_file_path_template % hostname):
+        print "Already Configured, Exiting"
+        return
+
+    # Get the database settings
+    database = get(remote_unit, "database")
+    password = get(remote_unit, "password")
+    host = get(remote_unit, "host")
+
+    # Ensure the remote unit has self configured.
+    if not database:
+        print "Database not ready yet."
+        return
+
+    config = {
+        "database_host": host,
+        "database": database,
+        "database_password": host,
+        "database_user": database}
+
+
+    # Setup appropriate upload paths and directories
+    do("ln", "-s" "/usr/share/wordpress",  "/var/www/%s" % hostname)
+
+    do("mkdir", "-p", upload_path)
+    do("mkdir", "-p", os.path.join(upload_path, hostname))
+    do("chown" "-R",  "root:www-data", upload_path)
+
+    os.chmod(upload_path, 0744)
+    os.chmod(os.path.join(upload_path, hostname), 0770)
+
+    do("chown", "-R", "root:www-data" "/var/www/%s/wp-content" % hostname)
+
+    # Write the wordpress config
+    fh = open(config_file_path_template % hostname, "w")
+    fh.write(wordpress_template % config)
+
+    # Write the apache config
+    fh = open("/etc/apache/sites-available/%s" % hostname, "w")
+    fh.write(apache_template % config )
+
+    # Configure apache.
+    do("a2enmod", "rewrite")
+    do("a2enmod", "vhost_alias")
+
+    # Restart apache
+    do("/etc/init.d/apache", "reload")
+
+if change_type == "changed":
+    setup_wordpress()
