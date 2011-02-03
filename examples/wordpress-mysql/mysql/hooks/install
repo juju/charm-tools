@@ -1,7 +1,6 @@
 #!/bin/bash
 
 
-
 sudo apt-get install -qqy debconf-utils python-mysqldb uuid
 
 PASSWORD=`uuid`
