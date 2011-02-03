@@ -3,25 +3,19 @@
 import os
 import urllib
 import subprocess
+import json
+import time
 
 change_type = os.environ.get("ENSEMBLE_CHANGE")
 
 upload_path = "/var/www/wp-uploads"
-config_file_path_template = "/etc/wordpress/%s-config.php"
+config_file_path_template = "/etc/wordpress/config-%s.php"
 hostname_url = "http://169.254.169.254/latest/meta-data/public-hostname"
 
 def do(*args):
+    print "do", args
     p = subprocess.Popen(args, close_fds=True)
-    os.wait(p.pid, 0)
-
-
-def get(unit, setting):
-    print "get unit setting", unit, setting
-    p = subprocess.Popen(
-        ["relation-get", unit, setting],
-        stdout=subprocess.PIPE, close_fds=True)
-    value = p.stdout.read().strip()
-    return value
+    os.waitpid(p.pid, 0)
 
 wordpress_template = """\
 <?php
@@ -53,7 +47,7 @@ apache_template = """\
   TransferLog /var/log/apache2/wp-access.log
   # Store uploads in /var/www/wp-uploads/$0
   RewriteEngine On
-  RewriteRule ^/wp-uploads/(.*)$ /var/www/wp-uploads/%{HTTP_HOST}/$1
+  RewriteRule ^/wp-uploads/(.*)$ /var/www/wp-uploads/%%{HTTP_HOST}/$1
 </VirtualHost>
 """
 
@@ -70,52 +64,77 @@ def setup_wordpress():
         print "Already Configured, Exiting"
         return
 
-    # Get the database settings
-    database = get(remote_unit, "database")
-    password = get(remote_unit, "password")
-    host = get(remote_unit, "host")
+    p = subprocess.Popen(["relation-get", "--format", "json", remote_unit],
+                         stdout=subprocess.PIPE, close_fds=True)
+    settings = json.loads(p.stdout.read().strip())
 
-    print "Got Values", database, password, host
+    print "Settings"
+    import pprint
+    pprint.pprint(settings)
+
+    # Get the database settings
+    database = settings.get("database")
+    password = settings.get("password")
+    user = settings.get("user")
+    host = settings.get("host")
 
     # Ensure the remote unit has self configured.
-    if not database:
-        print "Database not ready yet."
-        return
-
     config = {
         "database_host": host,
         "database": database,
-        "database_password": host,
-        "database_user": database}
+        "database_password": password,
+        "database_user": user,
+        "hostname": hostname,
+        "secret_key": "wp"}
+
+    # Verify we have all of our database settings.
+    broken = False
+    for k, v in config.items():
+        if not v:
+            print "Do not have for %r: %r" % (k, v)
+            broken = True
+
+    if broken:
+        print "Could not fetch database settings, exiting."
+        return
 
     # Setup appropriate upload paths and directories
-    do("ln", "-s" "/usr/share/wordpress",  "/var/www/%s" % hostname)
+    do("ln", "-s", "/usr/share/wordpress", "/var/www/%s" % hostname)
+
 
     do("mkdir", "-p", upload_path)
     do("mkdir", "-p", os.path.join(upload_path, hostname))
-    do("chown" "-R",  "root:www-data", upload_path)
+    do("chown", "-R", "root:www-data", upload_path)
 
     os.chmod(upload_path, 0744)
     os.chmod(os.path.join(upload_path, hostname), 0770)
 
-    do("chown", "-R", "root:www-data" "/var/www/%s/wp-content" % hostname)
+    do("chown", "-R", "root:www-data", "/var/www/%s/wp-content" % hostname)
+    do("chmod", "0644", "/etc/apache2/sites-available/%s" % hostname)
 
     # Write the wordpress config
     fh = open(config_file_path_template % hostname, "w")
     fh.write(wordpress_template % config)
+    do("chmod", "0644", config_file_path_template % hostname)
 
     # Write the apache config
-    fh = open("/etc/apache/sites-available/%s" % hostname, "w")
+    fh = open("/etc/apache2/sites-available/%s" % hostname, "w")
     fh.write(apache_template % config )
+    do("chmod", "0644", "/etc/apache2/sites-available/%s" % hostname)
 
     # Configure apache.
     do("a2enmod", "rewrite")
     do("a2enmod", "vhost_alias")
+    do("a2ensite", hostname)
+
+    # why ask why?
+    time.sleep(5)
 
     # Restart apache
-    do("/etc/init.d/apache", "reload")
+    do("/etc/init.d/apache2", "restart")
 
 print change_type
+
 
 if change_type == "modified":
     setup_wordpress()

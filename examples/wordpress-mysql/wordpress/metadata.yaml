@@ -1,6 +1,6 @@
 ensemble: formula
 name: wordpress
-revision: 6
+revision: 25
 summary: "Its a bird, an airplane, no.. its a Blog."
 description: |
     Wordpress is the defacto opensource standard application for Blogs.

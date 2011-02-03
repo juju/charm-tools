@@ -11,3 +11,7 @@ echo mysql-server-5.1 mysql-server/root_password password $PASSWORD | debconf-se
 echo mysql-server-5.1 mysql-server/root_password_again password $PASSWORD | debconf-set-selections
 
 DEBIAN_FRONTEND=noninteractive apt-get -y install -qq mysql-server
+
+python -c "data = open('/etc/mysql/my.cnf').read().replace('127.0.0.1', '0.0.0.0'); open('/etc/mysql/my.cnf', 'w').write(data)"
+
+service mysql restart

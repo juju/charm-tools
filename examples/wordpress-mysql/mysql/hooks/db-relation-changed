@@ -27,18 +27,21 @@ def on_join():
     change_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
     service, _ = change_unit.split("/")
 
-    if service in databases:
+    database_name = "%s_%s" % (
+        service, "".join(random.sample(string.letters, 5)))
+
+    if database_name in databases:
         return
 
     # Create new database
     cursor.execute(
-        "create database %s character set utf8" % service)
+        "create database %s character set utf8" % database_name)
 
     # Create database user and grant access
     service_password = "".join(random.sample(string.letters, 10))
     cursor.execute(
         "grant all on %s.* to %s identified by '%s'" % (
-            service,
+            database_name,
             service,
             service_password))
 
@@ -50,12 +53,20 @@ def on_join():
     hostname = urllib.urlopen(
         "http://169.254.169.254/latest/meta-data/local-hostname").read()
 
+    print "setting values"
+    print "host", hostname
+    print "database", database_name
+    print "user", service
+    print "password", service_password
+
     # Store new values in relation settings.
     p = subprocess.Popen(
         ["relation-set",
-         "host=%s" % hostname,
-         "database=%s" % service,
-         "password=%s" % service_password],
+         "mysql/0",
+         "database=%s" % database_name,
+         "user=%s" % service,
+         "password=%s" % service_password,
+         'host=%s' % hostname,],
         close_fds = True)
 
     os.waitpid(p.pid, 0)
