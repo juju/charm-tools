@@ -1,5 +1,5 @@
 ensemble: formula
-name: mysql
+name: wordpress
 revision: 1
 summary: "Its a bird, an airplane, no.. its a Blog."
 description: |
