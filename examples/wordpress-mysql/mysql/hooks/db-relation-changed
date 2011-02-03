@@ -4,6 +4,7 @@ import os
 import random
 import string
 import subprocess
+import urllib
 
 import MySQLdb
 
@@ -12,7 +13,8 @@ change_type = os.environ.get("ENSEMBLE_CHANGE")
 def on_join():
 
     # Connect to mysql
-    passwd = open("/var/lib/ensemble/mysql.passwd").read()
+    passwd = open("/var/lib/ensemble/mysql.passwd").read().strip()
+    print passwd
     connection = MySQLdb.connect(user="root", host="localhost", passwd=passwd)
 
     cursor = connection.cursor()
@@ -30,7 +32,7 @@ def on_join():
 
     # Create new database
     cursor.execute(
-        "create database %s character set utf8" % service_name)
+        "create database %s character set utf8" % service)
 
     # Create database user and grant access
     service_password = "".join(random.sample(string.letters, 10))

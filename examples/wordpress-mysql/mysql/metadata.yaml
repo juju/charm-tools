@@ -1,6 +1,6 @@
 ensemble: formula
 name: mysql
-revision: 1
+revision: 3
 summary: "Its a bird, an airplane, no.. its a pseudo relational database."
 description: |
     MySQL is the defacto opensource standard relation database. For years
