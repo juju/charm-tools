@@ -116,19 +116,18 @@ def setup_wordpress():
     fh = open(config_file_path_template % hostname, "w")
     fh.write(wordpress_template % config)
     do("chmod", "0644", config_file_path_template % hostname)
+    fh.close()
 
     # Write the apache config
     fh = open("/etc/apache2/sites-available/%s" % hostname, "w")
     fh.write(apache_template % config )
+    fh.close()
     do("chmod", "0644", "/etc/apache2/sites-available/%s" % hostname)
 
     # Configure apache.
     do("a2enmod", "rewrite")
     do("a2enmod", "vhost_alias")
     do("a2ensite", hostname)
-
-    # why ask why?
-    time.sleep(5)
 
     # Restart apache
     do("/etc/init.d/apache2", "restart")
