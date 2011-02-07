@@ -101,7 +101,6 @@ def setup_wordpress():
     # Setup appropriate upload paths and directories
     do("ln", "-s", "/usr/share/wordpress", "/var/www/%s" % hostname)
 
-
     do("mkdir", "-p", upload_path)
     do("mkdir", "-p", os.path.join(upload_path, hostname))
     do("chown", "-R", "root:www-data", upload_path)

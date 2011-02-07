@@ -23,13 +23,13 @@ def on_join():
     cursor.execute("show databases")
     databases = [i[0] for i in cursor.fetchall()]
 
-    # Determine if we need to create a new database
     change_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
     service, _ = change_unit.split("/")
 
-    database_name = "%s_%s" % (
-        service, "".join(random.sample(string.letters, 5)))
+    # We'll name the database the same as the service.
+    database_name = service
 
+    # Determine if we need to create a new database
     if database_name in databases:
         return
 
