@@ -1,0 +1,206 @@
+#!/usr/bin/env python
+
+import os
+import urllib
+import subprocess
+import json
+import time
+
+change_type = os.environ.get("ENSEMBLE_CHANGE")
+
+upload_path = "/var/www/wp-uploads"
+config_file_path_template = "/etc/mediawiki/config-%s.php"
+hostname_url = "http://169.254.169.254/latest/meta-data/public-hostname"
+
+def do(*args):
+    print "do", args
+    p = subprocess.Popen(args, close_fds=True)
+    os.waitpid(p.pid, 0)
+
+mediawiki_template = """\
+$path = array( $IP, "$IP/includes", "$IP/languages" );
+set_include_path( implode( PATH_SEPARATOR, $path ) . PATH_SEPARATOR . get_include_path() );
+
+require_once( "$IP/includes/DefaultSettings.php" );
+
+# If PHP's memory limit is very low, some operations may fail.
+# ini_set( 'memory_limit', '20M' );
+
+if ( $wgCommandLineMode ) {
+	if ( isset( $_SERVER ) && array_key_exists( 'REQUEST_METHOD', $_SERVER ) ) {
+		die( "This script must be run from the command line\n" );
+	}
+}
+## Uncomment this to disable output compression
+# $wgDisableOutputCompression = true;
+
+$wgSitename         = "Ensemblized Wiki";
+
+## The URL base path to the directory containing the wiki;
+## defaults for all runtime URL paths are based off of this.
+## For more information on customizing the URLs please see:
+## http://www.mediawiki.org/wiki/Manual:Short_URL
+$wgScriptPath       = "/mediawiki";
+$wgScriptExtension  = ".php";
+
+## UPO means: this is also a user preference option
+
+$wgEnableEmail      = true;
+$wgEnableUserEmail  = true; # UPO
+
+$wgEmergencyContact = "webmaster@localhost";
+$wgPasswordSender = "webmaster@localhost";
+
+$wgEnotifUserTalk = true; # UPO
+$wgEnotifWatchlist = true; # UPO
+$wgEmailAuthentication = true;
+
+## Database settings
+$wgDBtype           = "mysql";
+$wgDBserver         = "%s(database_host)";
+$wgDBname           = "%s(database)";
+$wgDBuser           = "%s(database_user)";
+$wgDBpassword       = "%s(database_password)";
+
+# MySQL specific settings
+$wgDBprefix         = "";
+
+# MySQL table options to use during installation or update
+$wgDBTableOptions   = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
+
+# Experimental charset support for MySQL 4.1/5.0.
+$wgDBmysql5 = true;
+
+## Shared memory settings
+$wgMainCacheType = CACHE_NONE;
+$wgMemCachedServers = array();
+
+## To enable image uploads, make sure the 'images' directory
+## is writable, then set this to true:
+$wgEnableUploads       = false;
+$wgUseImageMagick = true;
+$wgImageMagickConvertCommand = "/usr/bin/convert";
+
+## If you use ImageMagick (or any other shell command) on a
+## Linux server, this will need to be set to the name of an
+## available UTF-8 locale
+$wgShellLocale = "en_US.utf8";
+
+## If you want to use image uploads under safe mode,
+## create the directories images/archive, images/thumb and
+## images/temp, and make them all writable. Then uncomment
+## this, if it's not already uncommented:
+# $wgHashedUploadDirectory = false;
+
+## If you have the appropriate support software installed
+## you can enable inline LaTeX equations:
+$wgUseTeX           = false;
+
+$wgLocalInterwiki   = strtolower( $wgSitename );
+
+$wgLanguageCode = "en";
+
+$wgSecretKey = "%s(secret_key)";
+
+## Default skin: you can change the default skin. Use the internal symbolic
+## names, ie 'standard', 'nostalgia', 'cologneblue', 'monobook':
+$wgDefaultSkin = 'monobook';
+
+## For attaching licensing metadata to pages, and displaying an
+## appropriate copyright notice / icon. GNU Free Documentation
+## License and Creative Commons licenses are supported so far.
+# $wgEnableCreativeCommonsRdf = true;
+$wgRightsPage = ""; # Set to the title of a wiki page that describes your license/copyright
+$wgRightsUrl = "";
+$wgRightsText = "";
+$wgRightsIcon = "";
+# $wgRightsCode = ""; # Not yet used
+
+$wgDiff3 = "/usr/bin/diff3";
+
+# debian specific include:
+if (is_file("/etc/mediawiki-extensions/extensions.php")) {
+        include( "/etc/mediawiki-extensions/extensions.php" );
+}
+
+# When you make changes to this configuration file, this will make
+# sure that cached pages are cleared.
+$wgCacheEpoch = max( $wgCacheEpoch, gmdate( 'YmdHis', @filemtime( __FILE__ ) ) );
+"""
+
+adminsettings_template = """
+<?php
+$wgDBadminuser = '%s(database_admin_user)';
+$wgDBadminpassword = '%s(database_admin_password)';
+$wgEnableProfileInfo = false;
+"""
+
+def setup_mediawiki():
+
+    hostname = urllib.urlopen(hostname_url).read().strip()
+    remote_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
+
+    print "remote unit", remote_unit
+
+    # Check we haven't already been setup.
+    if os.path.exists(config_file_path_template % hostname):
+        print "Already Configured, Exiting"
+        return
+
+    p = subprocess.Popen(["relation-get", "--format", "json", remote_unit],
+                         stdout=subprocess.PIPE, close_fds=True)
+    settings = json.loads(p.stdout.read().strip())
+
+    print "Settings"
+    import pprint
+    pprint.pprint(settings)
+
+    # Get the database settings
+    database = settings.get("database")
+    password = settings.get("password")
+    user = settings.get("user")
+    host = settings.get("host")
+
+    # Ensure the remote unit has self configured.
+    config = {
+        "database_host": host,
+        "database": database,
+        "database_password": password,
+        "database_user": user,
+        "hostname": hostname,
+        "secret_key": "wp"}
+
+    # Verify we have all of our database settings.
+    broken = False
+    for k, v in config.items():
+        if not v:
+            print "Do not have for %r: %r" % (k, v)
+            broken = True
+
+    if broken:
+        print "Could not fetch database settings, exiting."
+        return
+
+    # Write the adminsettings
+    fh = open('/etc/mediawiki/AdminSettings.php', "w")
+    do("chmod", "0644", '/etc/mediawiki/AdminSettings.php')
+    fh.write(adminsettings_template % config)
+    fh.close()
+
+    # Write the mediawiki config
+    fh = open('/etc/mediawiki/LocalSettings.php', "w")
+    do("chmod", "0644", '/etc/mediawiki/LocalSettings.php')
+    fh.write(mediawiki_template % config)
+    fh.close()
+
+    # Enable the Alias in the apache config
+    do("sed", "-ie","'s,^#Alias /mediawiki,Alias /mediawiki,' /etc/mediawiki/apache.conf")
+
+    # Restart apache
+    do("/etc/init.d/apache2", "reload")
+
+print change_type
+
+
+if change_type == "modified":
+    setup_mediawiki()
