@@ -191,12 +191,44 @@ def setup_mediawiki(change_type):
         print "Could not fetch database settings, exiting."
         return
 
+    # Enable the Alias in the apache config
+    do("sed", "-ie","s,^#Alias /mediawiki,Alias /mediawiki,","/etc/mediawiki/apache.conf")
+
+    # Restart apache
+    do("/etc/init.d/apache2", "reload")
+
     # Write the adminsettings
     if change_type == 'modified':
-      fh = open('/etc/mediawiki/AdminSettings.php', "w")
-      do("chmod", "0644", '/etc/mediawiki/AdminSettings.php')
-      fh.write(adminsettings_template % config)
-      fh.close()
+      # First time setup, we have to POST to the db and capture the LocalSettings.php
+      postargs = {'Sitename':'Ensemblized Wiki',
+        'EmergencyContact':'webmaster@localhost',
+        'LanguageCode':'en',
+        'License':'none',
+        'SysopName':'WikiSysop',
+        'SysopPass':'change-me',
+        'SysopPass2':'change-me',
+        'Shm':'none',
+        'Email':'email_enabled',
+        'Emailuser':'emailuser_enabled',
+        'Enotif':'enotif_disabled',
+        'Eauthent':'eauthent_enabled',
+        'DBtype':'mysql',
+        'DBserver':host,
+        'DBname':database,
+        'DBuser':user,
+        'DBpassword':password,
+        'DBpassword2':password,
+      }
+      try:
+        install = urllib.urlopen('http://localhost/mediawiki/config/index.php', urllib.urlencode(postargs))
+        print "install URL returned ",install.getcode()
+      except Exception as e:
+        print "WARNING: could not post to installer!"
+        print e
+      # Sadly, we really have to discard this LocalSettings.php and re-build
+      # it using the template, so that joins can just generate it without
+      # trying to create the whole DB.
+      #do("mv","/var/lib/mediawiki/config/LocalSettings.php","/etc/mediawiki/LocalSettings.php.generated")
 
     # Write the mediawiki config
     fh = open('/etc/mediawiki/LocalSettings.php', "w")
@@ -204,15 +236,14 @@ def setup_mediawiki(change_type):
     fh.write(mediawiki_template % config)
     fh.close()
 
-    # Run the setup of the db
-    if change_type == 'modified':
-      do("php","/var/lib/mediawiki/maintenance/update.php")
+    # Write the AdminSettings config for updates
+    fh = open('/etc/mediawiki/AdminSettings.php', "w")
+    do("chmod", "0644", '/etc/mediawiki/AdminSettings.php')
+    fh.write(adminsettings_template % config)
+    fh.close()
 
-    # Enable the Alias in the apache config
-    do("sed", "-ie","s,^#Alias /mediawiki,Alias /mediawiki,","/etc/mediawiki/apache.conf")
+    # Run this to update the db in case its old
+    do("php","/var/lib/mediawiki/maintenance/update.php")
 
-    # Restart apache
-    do("/etc/init.d/apache2", "reload")
-
-print "change_type ",change_type
+print "change_type",change_type
 setup_mediawiki(change_type)
