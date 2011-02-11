@@ -18,6 +18,7 @@ def do(*args):
     os.waitpid(p.pid, 0)
 
 mediawiki_template = """\
+<?php
 $path = array( $IP, "$IP/includes", "$IP/languages" );
 set_include_path( implode( PATH_SEPARATOR, $path ) . PATH_SEPARATOR . get_include_path() );
 
@@ -57,10 +58,10 @@ $wgEmailAuthentication = true;
 
 ## Database settings
 $wgDBtype           = "mysql";
-$wgDBserver         = "%s(database_host)";
-$wgDBname           = "%s(database)";
-$wgDBuser           = "%s(database_user)";
-$wgDBpassword       = "%s(database_password)";
+$wgDBserver         = "%(database_host)s";
+$wgDBname           = "%(database)s";
+$wgDBuser           = "%(database_user)s";
+$wgDBpassword       = "%(database_password)s";
 
 # MySQL specific settings
 $wgDBprefix         = "";
@@ -100,7 +101,7 @@ $wgLocalInterwiki   = strtolower( $wgSitename );
 
 $wgLanguageCode = "en";
 
-$wgSecretKey = "%s(secret_key)";
+$wgSecretKey = "%(secret_key)s";
 
 ## Default skin: you can change the default skin. Use the internal symbolic
 ## names, ie 'standard', 'nostalgia', 'cologneblue', 'monobook':
@@ -130,14 +131,17 @@ $wgCacheEpoch = max( $wgCacheEpoch, gmdate( 'YmdHis', @filemtime( __FILE__ ) ) )
 
 adminsettings_template = """
 <?php
-$wgDBadminuser = '%s(database_admin_user)';
-$wgDBadminpassword = '%s(database_admin_password)';
+$wgDBadminuser = '%(database_user)s';
+$wgDBadminpassword = '%(database_password)s';
 $wgEnableProfileInfo = false;
 """
 
-def setup_mediawiki():
+def setup_mediawiki(change_type):
 
-    hostname = urllib.urlopen(hostname_url).read().strip()
+    try:
+        hostname = urllib.urlopen(hostname_url).read().strip()
+    except:
+        hostname = 'localhost'
     remote_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
 
     print "remote unit", remote_unit
@@ -161,6 +165,9 @@ def setup_mediawiki():
     user = settings.get("user")
     host = settings.get("host")
 
+    # Generate this the same way the installer does
+    secret_key = open("/dev/urandom","r").read(32).encode('hex')
+
     # Ensure the remote unit has self configured.
     config = {
         "database_host": host,
@@ -168,7 +175,10 @@ def setup_mediawiki():
         "database_password": password,
         "database_user": user,
         "hostname": hostname,
-        "secret_key": "wp"}
+        "secret_key": secret_key}
+
+    print "Config"
+    pprint.pprint(config)
 
     # Verify we have all of our database settings.
     broken = False
@@ -182,10 +192,11 @@ def setup_mediawiki():
         return
 
     # Write the adminsettings
-    fh = open('/etc/mediawiki/AdminSettings.php', "w")
-    do("chmod", "0644", '/etc/mediawiki/AdminSettings.php')
-    fh.write(adminsettings_template % config)
-    fh.close()
+    if change_type == 'modified':
+      fh = open('/etc/mediawiki/AdminSettings.php', "w")
+      do("chmod", "0644", '/etc/mediawiki/AdminSettings.php')
+      fh.write(adminsettings_template % config)
+      fh.close()
 
     # Write the mediawiki config
     fh = open('/etc/mediawiki/LocalSettings.php', "w")
@@ -193,14 +204,15 @@ def setup_mediawiki():
     fh.write(mediawiki_template % config)
     fh.close()
 
+    # Run the setup of the db
+    if change_type == 'modified':
+      do("php","/var/lib/mediawiki/maintenance/update.php")
+
     # Enable the Alias in the apache config
-    do("sed", "-ie","'s,^#Alias /mediawiki,Alias /mediawiki,' /etc/mediawiki/apache.conf")
+    do("sed", "-ie","s,^#Alias /mediawiki,Alias /mediawiki,","/etc/mediawiki/apache.conf")
 
     # Restart apache
     do("/etc/init.d/apache2", "reload")
 
-print change_type
-
-
-if change_type == "modified":
-    setup_mediawiki()
+print "change_type ",change_type
+setup_mediawiki(change_type)

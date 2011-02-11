@@ -1,3 +1,3 @@
 #!/bin/bash
 
-apt-get -y install mediawiki
+apt-get --no-install-recommends -y install mediawiki php5-cli | tee /var/log/mediawiki.install.log
