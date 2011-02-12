@@ -75,6 +75,7 @@ $wgDBmysql5 = true;
 ## Shared memory settings
 $wgMainCacheType = CACHE_NONE;
 $wgMemCachedServers = array();
+include dirname(__FILE__).'/memcached_settings.php';
 
 ## To enable image uploads, make sure the 'images' directory
 ## is writable, then set this to true:
@@ -176,9 +177,6 @@ def setup_mediawiki(change_type):
         "database_user": user,
         "hostname": hostname,
         "secret_key": secret_key}
-
-    print "Config"
-    pprint.pprint(config)
 
     # Verify we have all of our database settings.
     broken = False

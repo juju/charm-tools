@@ -1,3 +1,7 @@
 #!/bin/bash
 
-apt-get --no-install-recommends -y install mediawiki php5-cli | tee /var/log/mediawiki.install.log
+DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y -q install mediawiki php5-cli postfix
+
+# a bit hacky -- makes sure its there even if memcached is never related
+touch /etc/mediawiki/memcached_settings.php
+chmod 0644 /etc/mediawiki/memcached_settings.php

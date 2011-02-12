@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e
+
+DEBIAN_FRONTEND=noninteractive apt-get -y install -qq memcached iptables
+
+if iptables -N memcached ; then
+  iptables -A memcached -s 127.0.0.1 -j ACCEPT
+  iptables -A memcached -p tcp -j REJECT --reject-with tcp-rst
+  iptables -I INPUT -m state --state NEW -p tcp --dport 11211 -j memcached
+  iptables -I INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+else
+  echo ERROR: unable to create iptables memcached chain.
+  exit 1
+fi
+
+cat > /etc/default/memcached <<EOF
+ENABLE_MEMCACHED=yes
+EOF
+cat > /etc/memcached.conf <<EOF
+-p 11211
+-u nobody
+-l 0.0.0.0
+-c 1024
+-d
+-m 1500
+EOF
+invoke-rc.d memcached stop || true
+invoke-rc.d memcached start || true
