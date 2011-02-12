@@ -1,25 +1,5 @@
 #!/bin/sh
 
-case $ENSEMBLE_CHANGE in
-modified)
-    ENSEMBLE_CHANGE=departed $0 $@
-    ENSEMBLE_CHANGE=joined $0 $@
-    ;;
-joined)
-    ENSEMBLE_CHANGE=departed $0 $@
-    arg="-I"
-    ;;
-departed)
-    arg="-D"
-    ;;
-*)
-    echo Invalid change type: $ENSEMBLE_CHANGE
-    exit 1
-esac
-
-remote_ip=`relation-get ip $ENSEMBLE_REMOTE_UNIT`
-iptables $arg memcache -s $remote_ip -p tcp -d 11211 -j ACCEPT
-
-IP=`ifconfig  | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'`
+IP=`ifconfig  | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'|head -n 1`
 
 relation-set ip=$IP

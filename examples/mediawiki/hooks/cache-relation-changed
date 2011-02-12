@@ -9,7 +9,10 @@ rl = subprocess.Popen("relation-list",stdout=subprocess.PIPE)
 for memcached_unit in rl.stdout:
     p = subprocess.Popen(["relation-get", memcached_unit, "ip"],
             stdout=subprocess.PIPE, close_fds=True)
-    memcached_ips.append("'"+p.stdout.read().strip()+"'")
+    ip=p.stdout.read().strip()
+    if len(ip):
+        memcached_ips.append("'"+ip+"'")
+
 rl.wait()
 
 pprint.pprint(memcached_ips)
@@ -22,7 +25,7 @@ $wgMemCachedServers = array(%s);
 
 with tempfile.NamedTemporaryFile(dir='/etc/mediawiki') as settings:
     if len(memcached_ips):
-        settings.write(memcache_template % ','.join(memcached_ips)
+        settings.write(memcache_template % ','.join(memcached_ips))
     else:
         settings.write("<?php\n#No Memcached Servers\n")
 
