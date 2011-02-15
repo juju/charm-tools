@@ -5,7 +5,7 @@ import tempfile
 import pprint
 
 ensemble_change = os.environ.get('ENSEMBLE_CHANGE')
-if ensemble_change == 'joined':
+if ensemble_change != 'departed':
     # Feed our hostname in
     p = subprocess.Popen("hostname",stdout=subprocess.PIPE,close_fds=True)
     subprocess.call(["relation-set","hostname="+p.stdout.read().strip()])
@@ -37,7 +37,7 @@ $wgMemCachedServers = array(%s);
 """
 
 with tempfile.NamedTemporaryFile(dir='/etc/mediawiki',delete=False) as settings:
-    subprocess.call("chmod 0644 "+settings.name)
+    subprocess.call(["chmod","0644",settings.name])
     if len(memcached_ips):
         settings.write(memcache_template % ','.join(memcached_ips))
     else:
