@@ -4,26 +4,40 @@ import os
 import tempfile
 import pprint
 
+ensemble_change = os.environ.get('ENSEMBLE_CHANGE')
+if ensemble_change == 'joined':
+    # Feed our hostname in
+    p = subprocess.Popen("hostname",stdout=subprocess.PIPE,close_fds=True)
+    subprocess.call(["relation-set","hostname="+p.stdout.read().strip()])
+    p.wait()
+
+# all changes mean we should regen the file
+
 memcached_ips = []
 rl = subprocess.Popen("relation-list",stdout=subprocess.PIPE)
 for memcached_unit in rl.stdout:
     p = subprocess.Popen(["relation-get", memcached_unit, "ip"],
             stdout=subprocess.PIPE, close_fds=True)
     ip=p.stdout.read().strip()
+    p.wait();
+    p = subprocess.Popen(["relation-get", memcached_unit, "port"],
+            stdout=subprocess.PIPE, close_fds=True)
+    port=p.stdout.read().strip()
+    p.wait();
     if len(ip):
-        memcached_ips.append("'"+ip+"'")
+        memcached_ips.append("'"+ip+":"+port+"'")
 
 rl.wait()
 
 pprint.pprint(memcached_ips)
 
-memcache_template = """
-<?php
+memcache_template = """<?php
 $wgMainCacheType = CACHE_MEMCACHED;
 $wgMemCachedServers = array(%s);
 """
 
-with tempfile.NamedTemporaryFile(dir='/etc/mediawiki') as settings:
+with tempfile.NamedTemporaryFile(dir='/etc/mediawiki',delete=False) as settings:
+    subprocess.call("chmod 0644 "+settings.name)
     if len(memcached_ips):
         settings.write(memcache_template % ','.join(memcached_ips))
     else:

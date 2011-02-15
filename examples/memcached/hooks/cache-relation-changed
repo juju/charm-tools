@@ -1,5 +1,14 @@
 #!/bin/sh
 
-IP=`ifconfig  | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'|head -n 1`
+echo ENSEMBLE_CHANGE=$ENSEMBLE_CHANGE
 
-relation-set ip=$IP
+if [ "$ENSEMBLE_CHANGE" = "joined" ] ; then
+
+  IP=`ifconfig  | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'|head -n 1`
+
+  echo setting ip to $IP
+
+  relation-set ip=$IP
+  relation-set port=11211
+
+fi
