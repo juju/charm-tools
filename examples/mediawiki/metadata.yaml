@@ -1,6 +1,6 @@
 ensemble: formula
 name: mediawiki
-revision: 19
+revision: 21
 summary: "website engine for collaborative work"
 description: |
  MediaWiki is a wiki engine (a program for creating a collaboratively
@@ -13,3 +13,5 @@ requires:
     interface: mysql
   cache:
     interface: memcache
+  reverseproxy:
+    interface: http

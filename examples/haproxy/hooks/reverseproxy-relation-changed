@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import subprocess
+import json
+import tempfile
+
+ensemble_change = os.environ.get("ENSEMBLE_CHANGE")
+remote_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
+
+service_name, _ = remote_unit.split("/")
+
+print ensemble_change
+
+# TODO: maybe load this from disk for easier customization
+template = """
+listen %(servicename) 0.0.0.0:80
+    option httpchk *
+    balance roundrobin
+%(servers)s
+
+"""
+
+units = []
+p = subprocess.Popen("relation-list", stdout=subprocess.PIPE)
+for unit in p.stdout:
+    units.append(unit.strip())
+
+print units
+
+servers = ''
+for unit in units:
+    p = subprocess.Popen(["relation-get", "--format", "json", unit],
+                         stdout=subprocess.PIPE, close_fds=True)
+    settings = json.loads(p.stdout.read().strip())
+    p.wait()
+    servers += ("    server %(hostname)s %(ip)s:%(port)s\n" % settings)
+
+print servers
+
+with tempfile.NamedTemporaryFile(dir="/etc/haproxy",prefix="haproxy.cfg", delete=False) as conf:
+    conf.write(template % {'servicename':service_name, 'servers':servers})
+    try:
+        sys.unlink("/etc/haproxy/haproxy.cfg.old")
+    except:
+        pass
+    try:
+        sys.rename("/etc/haproxy/haproxy.cfg","/etc/haproxy/haproxy.old")
+    except:
+        pass
+    sys.rename(conf.name, "/etc/haproxy/haproxy.cfg")
+
+# Just in case haproxy wouldn't start because of empty/bad configs before, start it now
+subprocess.call("service haproxy start")
+subprocess.call("service haproxy reload")
