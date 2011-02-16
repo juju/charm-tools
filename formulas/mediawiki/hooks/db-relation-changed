@@ -1,4 +1,26 @@
 #!/usr/bin/env python
+#
+#    db-relation-changed - hook to configure mediawiki when db changes
+#
+#    Copyright (C) 2011  Canonical Ltd.
+#    Author: Clint Byrum <clint.byrum@canonical.com>
+#
+#    Copied and modified version of wordpress db-relation-changed by
+#    Kapil Thangavelu, also Copyright 2011 Canonical
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 import os
 import urllib
