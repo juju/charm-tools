@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y -q install mediawiki php5-cli postfix
+DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y -q install mediawiki php5-cli postfix python-mysqldb
 
 # a bit hacky -- makes sure its there even if memcached is never related
 touch /etc/mediawiki/memcached_settings.php
