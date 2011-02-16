@@ -1,3 +1,22 @@
+Principia Ensemble
+==================
+
+This is a collection of Ensemble formulas for use as a reference and in
+deploying real services using ensemble. See Ensemble's home page for
+more information.
+
+https://launchpad.net/ensemble
+
+Directory structure:
+
 formulas/
   all formulas currently live under this root, to allow easy use of the 
   repository parameter.
+
+In order to use any of these formulas, once you have ensemble setup and
+working in your path:
+
+
+$ ensemble deploy --repository=formulas mysql
+
+Will deploy the mysql formula.
