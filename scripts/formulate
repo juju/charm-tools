@@ -1,0 +1,88 @@
+#!/usr/bin/python
+#
+#    formulate - generate formulas from templates
+#
+#    Copyright (C) 2011  Canonical Ltd.
+#    Author: Clint Byrum <clint.byrum@canonical.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys, os
+import os.path as path
+import time
+import shutil
+import tempfile
+import apt
+import textwrap
+from Cheetah.Template import Template
+from stat import ST_MODE
+
+try:
+    package=sys.argv[1]
+except:
+    print "usage: formulate package_name [ home_dir ]"
+    sys.exit(1)
+
+try:
+    home=sys.argv[2]
+except:
+    home = path.abspath(path.join(path.dirname(sys.argv[0]), '..'))
+
+template_dir = path.join(home, 'templates')
+output_dir = path.join(home, 'formulas', package)
+print "Generating template for " + package + " from templates in " + template_dir
+print "Formula will be stored in " + output_dir
+
+if path.exists(output_dir):
+  print output_dir + " exists. Please move it out of the way."
+  sys.exit(1)
+
+shutil.copytree(path.join(template_dir,'formula'), output_dir)
+
+
+v={'package': package}
+try:
+    c = apt.Cache()
+    c.open()
+    p = c[package]
+    v['summary'] = p.summary
+    v['description'] = textwrap.fill(p.description,width=72, subsequent_indent='  ')
+except:
+    print "failed to find " + package + " in apt cache."
+    v['summary'] = '<Fill in summary here>'
+    v['description'] = '<Multi-line description here>'
+
+for root, dirs, files in os.walk(output_dir):
+  for outfile in files:
+    full_outfile=path.join(root,outfile)
+    mode = os.stat(full_outfile)[ST_MODE]
+    try:
+      t = Template(file=full_outfile,searchList=(v))
+      o = tempfile.NamedTemporaryFile(dir=root,delete=False)
+      os.chmod(o.name, mode)
+      o.write(str(t))
+      o.close()
+      backupname = full_outfile + str(time.time())
+      os.rename(full_outfile, backupname)
+      try:
+        os.rename(o.name, full_outfile)
+        os.unlink(backupname)
+      except Exception, e:
+        print "WARNING: Could not enable templated file: " + str(e)
+        os.rename(backupname, full_outfile)
+        raise
+    except Exception, e:
+      print "WARNING: could not process template for " + full_outfile + ": " + str(e)
+      raise
+

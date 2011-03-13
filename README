@@ -13,10 +13,20 @@ formulas/
   all formulas currently live under this root, to allow easy use of the 
   repository parameter.
 
+templates/
+  templates for usage in building new formulas
+
 In order to use any of these formulas, once you have ensemble setup and
 working in your path:
-
 
 $ ensemble deploy --repository=formulas mysql
 
 Will deploy the mysql formula.
+
+formulate
+====
+To generate a new formula from a debian package available on your system
+
+$ scripts/formulate foo
+
+This should add a directory to formulas with the name foo, and some of the metadata.yml and hooks filled in

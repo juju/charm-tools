@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# This must be renamed to the name of the relation. The goal here is to
+# affect any change needed by relationships being formed, modified, or broken
+# This script should be idempotent.
+#raw
+case $ENSEMBLE_CHANGE in
+joined)
+    echo $ENSEMBLE_REMOTE_UNIT joined
+    ;;
+modified)
+    echo $ENSEMBLE_REMOTE_UNIT modified its settings
+    ;;
+departed)
+    echo $ENSEMBLE_REMOTE_UNIT departed the relationship
+    ;;
+esac
+
+echo Relation settings:
+relation-get
+echo Relation members:
+relation-list
+#end raw

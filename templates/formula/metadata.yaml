@@ -1,0 +1,15 @@
+ensemble: formula
+name: $package
+revision: 1
+summary: $summary
+description: |
+  $description
+provides:
+  relation-name:
+    interface: interface-name
+requires:
+  relation-name:
+    interface: interface-name
+peers:
+  relation-name:
+    interface: interface-name

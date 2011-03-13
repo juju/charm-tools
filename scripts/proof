@@ -1,0 +1,120 @@
+#!/usr/bin/python
+#
+#    proof - makes sure formulas follow principia conventions
+#
+#    Copyright (C) 2011  Canonical Ltd.
+#    Author: Clint Byrum <clint.byrum@canonical.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import os.path as path
+import os,sys
+from stat import *
+import yaml
+
+formula_name = sys.argv[1]
+formula_path = path.join('formulas',formula_name)
+yaml_path = path.join(formula_path, 'metadata.yaml')
+hooks_path = path.join(formula_path, 'hooks')
+
+exit_code = 0
+
+def check_hook(hook):
+  global hooks_path
+
+  hook_path = path.join(hooks_path,hook)
+  try:
+    mode = os.stat(hook_path)[ST_MODE]
+    if not mode & S_IXUSR:
+      warn(hook + " not executable")
+  except OSError as e:
+    err("missing hook "+hook)
+
+def check_relation_hooks(relations):
+  template_interfaces = ('interface-name')
+  template_relations = ('relation-name')
+
+  for r in relations:
+    if r in template_relations:
+      err("template relations should be renamed to fit formula: "+r)
+
+    check_hook(r+'-relation-changed')
+    try:
+      interface = relations[r]['interface']
+      if interface in template_interfaces:
+        err("template interface names should be changed: "+interface)
+    except KeyError:
+      err("relation missing interface")
+
+def warn(msg):
+  global exit_code
+  print "W: " + msg
+  if exit_code < 100:
+    exit_code = 100 
+
+def err(msg):
+  global exit_code
+  print "E: " + msg
+  if exit_code < 200:
+    exit_code = 200
+
+try:
+  yamlfile= open(yaml_path,'r')
+  formula = yaml.load(yamlfile)
+  yamlfile.close()
+
+  # summary should be short
+  if len(formula['summary']) > 72:
+    warn('summary sould be less than 72') 
+
+  # revision must be an integer
+  try:
+    x = int(formula['revision'])
+    if x < 0:
+      raise ValueError
+  except (TypeError, ValueError):
+    warn("revision should be a positive integer")
+
+  # Must have a hooks dir
+  if not path.exists(hooks_path):
+    err("no hooks directory")
+
+  # All formulas should provide at least one thing
+  try:
+    provides = formula['provides']  
+    check_relation_hooks(provides)
+  except KeyError:
+    warn("all formulas should provide at least one thing")
+
+  try:
+    requires = formula['requires']
+    check_relation_hooks(requires)
+  except KeyError:
+    pass
+
+  try:
+    peers = formula['peers']
+    check_relation_hooks(peers)
+  except KeyError:
+    pass
+
+  check_hook('install')
+  check_hook('start')
+  check_hook('stop')
+except IOError:
+  err("could not find metadata file for " + formula_name)
+  exit_code = -1
+
+sys.exit(exit_code)
