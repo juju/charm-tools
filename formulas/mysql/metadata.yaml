@@ -1,13 +1,12 @@
 ensemble: formula
 name: mysql
-revision: 15
-summary: "Its a bird, an airplane, no.. its a pseudo relational database."
+revision: 16
+summary: "MySQL is a fast, stable and true multi-user, multi-threaded SQL database"
 description: |
-    MySQL is the defacto opensource standard relation database. For years
-    it marketed its features in advance of implementing them, to the gain
-    of numerous users. Finally today it provides a relatively overcomplicated,
-    widely used, database implementation that strives to provide bewildering 
-    non standard compliance behavior by default with great speed.
+ MySQL is a fast, stable and true multi-user, multi-threaded SQL database
+ server. SQL (Structured Query Language) is the most popular database query
+ language in the world. The main goals of MySQL are speed, robustness and
+ ease of use.
 provides:
   db:
     interface: mysql
