@@ -70,9 +70,19 @@ def err(msg):
   if exit_code < 200:
     exit_code = 200
 
+def crit(msg):
+  """ Called when checking cannot continue """
+  global exit_code
+  err("FATAL: " + msg)
+  sys.exit(exit_code)
+
 try:
   yamlfile= open(yaml_path,'r')
-  formula = yaml.load(yamlfile)
+  try:
+    formula = yaml.load(yamlfile)
+  except Exception as e:
+    crit('cannot parse ' + yaml_path + ":" + str(e))
+
   yamlfile.close()
 
   # summary should be short
