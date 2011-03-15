@@ -34,6 +34,7 @@ pprint.pprint(memcached_ips)
 memcache_template = """<?php
 $wgMainCacheType = CACHE_MEMCACHED;
 $wgMemCachedServers = array(%s);
+$wgSessionsInMemcached = true;
 """
 
 with tempfile.NamedTemporaryFile(dir='/etc/mediawiki',delete=False) as settings:
