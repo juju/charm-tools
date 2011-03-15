@@ -276,8 +276,5 @@ def setup_mediawiki(change_type):
     fh.write(adminsettings_template % config)
     fh.close()
 
-    # Run this to update the db in case its old
-    do("php","/var/lib/mediawiki/maintenance/update.php")
-
 print "change_type",change_type
 setup_mediawiki(change_type)

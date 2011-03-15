@@ -1,6 +1,6 @@
 ensemble: formula
 name: haproxy
-revision: 5
+revision: 6
 summary: "fast and reliable load balancing reverse proxy"
 description: 
  HAProxy is a TCP/HTTP reverse proxy which is particularly suited for high
@@ -11,6 +11,5 @@ description:
 provides:
   reverseproxy:
     interface: http
-provides:
   website:
     interface: http

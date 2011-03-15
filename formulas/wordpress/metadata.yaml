@@ -1,9 +1,14 @@
 ensemble: formula
 name: wordpress
-revision: 25
-summary: "Its a bird, an airplane, no.. its a Blog."
+revision: 26
+summary: "WordPress is a full featured web blogging tool"
 description: |
-    Wordpress is the defacto opensource standard application for Blogs.
+     WordPress is a full featured web blogging tool:
+    * Instant publishing (no rebuilding)
+    * Comment pingback support with spam protection
+    * Non-crufty URLs
+    * Themable
+    * Plugin support
 requires:
   db:
     interface: mysql
