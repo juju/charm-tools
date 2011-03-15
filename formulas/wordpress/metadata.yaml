@@ -3,12 +3,12 @@ name: wordpress
 revision: 26
 summary: "WordPress is a full featured web blogging tool"
 description: |
-     WordPress is a full featured web blogging tool:
-    * Instant publishing (no rebuilding)
-    * Comment pingback support with spam protection
-    * Non-crufty URLs
-    * Themable
-    * Plugin support
+ WordPress is a full featured web blogging tool:
+ - Instant publishing (no rebuilding)
+ - Comment pingback support with spam protection
+ - Non-crufty URLs
+ - Themable
+ - Plugin support
 requires:
   db:
     interface: mysql
