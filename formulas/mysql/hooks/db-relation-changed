@@ -37,7 +37,7 @@ def on_join():
     if database_name not in databases:
       # Create new database
       cursor.execute(
-          "create database %s character set utf8" % database_name)
+          "create database `%s` character set utf8" % database_name)
 
     # Create database user and grant access
     service_password = "".join(random.sample(string.letters, 10))
@@ -81,7 +81,7 @@ def on_join():
 def on_depart():
     cursor = get_db_cursor()
     cursor.execute("revoke all privileges on `%s`.* from `%s`" % (database_name, user))
-    print "revoked privileges for %s on database %s" % (user, database_name)
+    print "revoked privileges for `%s` on database `%s`" % (user, database_name)
 
 if change_type == "joined":
     on_join()

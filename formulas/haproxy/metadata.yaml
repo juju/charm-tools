@@ -11,3 +11,6 @@ description:
 provides:
   reverseproxy:
     interface: http
+provides:
+  website:
+    interface: http

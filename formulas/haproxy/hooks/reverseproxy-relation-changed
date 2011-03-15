@@ -79,7 +79,9 @@ for unit in units:
                          stdout=subprocess.PIPE, close_fds=True)
     settings = json.loads(p.stdout.read().strip())
     p.wait()
-    servers += ("    server %(hostname)s %(ip)s:%(port)s\n" % settings)
+    # Add all configured units:
+    if 'hostname' in settings and 'ip' in settings and 'port' in settings:
+        servers += ("    server %(hostname)s %(ip)s:%(port)s\n" % settings)
 
 print servers
 
