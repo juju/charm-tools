@@ -1,6 +1,6 @@
 ensemble: formula
 name: mediawiki
-revision: 26
+revision: 27
 summary: "website engine for collaborative work"
 description: |
  MediaWiki is a wiki engine (a program for creating a collaboratively

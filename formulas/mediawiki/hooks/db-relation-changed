@@ -25,6 +25,7 @@
 import os
 import urllib
 import subprocess
+import tempfile
 import json
 import time
 import MySQLdb
