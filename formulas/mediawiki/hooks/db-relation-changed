@@ -217,6 +217,17 @@ def setup_mediawiki(change_type):
 
     # Restart apache
     do("/etc/init.d/apache2", "reload")
+
+    # Replace "It Works" with redirector to wiki
+    ofile=tempfile.NamedTemporaryFile(dir="/var/www",delete=False)
+    os.chmod(ofile.name, 0755)
+    ofile.write("<?php header('Location: /mediawiki/');\n")
+    ofile.close()
+    os.unlink("/var/www/index.php")
+    os.rename(ofile.name, "/var/www/index.php")
+
+    # This seems to take precedence
+    os.unlink("/var/www/index.html")
     
 
     # Write the adminsettings
