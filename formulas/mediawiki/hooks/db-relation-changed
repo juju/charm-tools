@@ -224,12 +224,19 @@ def setup_mediawiki(change_type):
     os.chmod(ofile.name, 0755)
     ofile.write("<?php header('Location: /mediawiki/');\n")
     ofile.close()
-    os.unlink("/var/www/index.php")
+    try:
+        os.unlink("/var/www/index.php")
+        print "index.php removed"
+    except OSError:
+        print "index.php not present"
     os.rename(ofile.name, "/var/www/index.php")
 
     # This seems to take precedence
-    os.unlink("/var/www/index.html")
-    
+    try:
+        os.unlink("/var/www/index.html")
+        print "index.html removed"
+    except OSError:
+        print "index.html not present"
 
     # Write the adminsettings
     if change_type == 'modified':

@@ -10,3 +10,6 @@ description: |
 provides:
   db:
     interface: mysql
+peers:
+  replication:
+    interface: mysql
