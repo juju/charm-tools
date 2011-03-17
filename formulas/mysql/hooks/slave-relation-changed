@@ -1,0 +1,44 @@
+#!/bin/sh -e
+
+ROOTARGS="-uroot -p`cat /var/lib/ensemble/mysql.passwd`"
+
+case "$ENSEMBLE_CHANGE" in
+joined)
+  local_ip=`ifconfig  | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'|head -n 1`
+  relation-set ip=$local_ip
+  ;;
+modified)
+  master=`relation-list | head -1`
+  if [ "$ENSEMBLE_REMOTE_UNIT" != "$master" ] ; then
+    exit 0;
+  fi
+  echo master=$master
+  relation-list
+  dumpurl=http://`relation-get ip`/`relation-get dumpurl`
+  curl $dumpurl | mysql $ROOTARGS
+  user=`relation-get user`
+  pass=`relation-get psasword`
+  remote_ip=`relation-get ip`
+  port=`relation-get port`
+  serverid=`augtool ls /files/etc/mysql/my.cnf/target[3]/server_id`
+  if [ $serverid -lt 100000 ] ; then
+    # add 100000 to server_id to avoid conflicts w/ masters
+    let serverid=$serverid+100000
+    echo -e "set /files/etc/mysql/my.cnf/target[3]/server_id $serverid\nsave" | augtool -b
+    service mysql stop
+    # clear binlogs
+    binlog=`augtool get /files/etc/mysql/my.cnf/target[3]/log_bin|cut -d' ' -f3`
+    backupdir=/var/backups/binlogs-`date +%Y%m%d%H%M%S`
+    mkdir -p $backupdir
+    mv $binlog* $backupdir
+    service mysql start
+  fi
+  mysql $ROOTARGS -e "CHANGE MASTER TO MASTER_HOST=\`$remote_ip\`, MASTER_USER=\`$user\`, MASTER_PASSWORD='$pass', MASTER_PORT=$port"
+  mysql $ROOTARGS -e "START SLAVE"
+  mysql $ROOTARGS -e "SHOW SLAVE STATUS"
+  ;;
+departed)
+  echo $ENSEMBLE_REMOTE_UNIT master departed, doing nothing.
+  # TODO re-init to another master automatically
+  ;;
+esac
