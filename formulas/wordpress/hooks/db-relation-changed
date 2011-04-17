@@ -6,8 +6,6 @@ import subprocess
 import json
 import time
 
-change_type = os.environ.get("ENSEMBLE_CHANGE")
-
 upload_path = "/var/www/wp-uploads"
 config_file_path_template = "/etc/wordpress/config-%s.php"
 hostname_url = "http://169.254.169.254/latest/meta-data/public-hostname"
@@ -131,8 +129,4 @@ def setup_wordpress():
     # Restart apache
     do("/etc/init.d/apache2", "restart")
 
-print change_type
-
-
-if change_type == "modified":
-    setup_wordpress()
+setup_wordpress()
