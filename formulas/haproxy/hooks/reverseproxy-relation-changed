@@ -25,12 +25,9 @@ import subprocess
 import json
 import tempfile
 
-ensemble_change = os.environ.get("ENSEMBLE_CHANGE")
 remote_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
 
 service_name, _ = remote_unit.split("/")
-
-print ensemble_change
 
 # TODO: maybe load this from disk for easier customization
 template = """
