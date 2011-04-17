@@ -4,15 +4,7 @@ import os
 import tempfile
 import pprint
 
-ensemble_change = os.environ.get('ENSEMBLE_CHANGE')
-if ensemble_change != 'departed':
-    # Feed our hostname in
-    p = subprocess.Popen("hostname",stdout=subprocess.PIPE,close_fds=True)
-    subprocess.call(["relation-set","hostname="+p.stdout.read().strip()])
-    p.wait()
-
 # all changes mean we should regen the file
-
 memcached_ips = []
 rl = subprocess.Popen("relation-list",stdout=subprocess.PIPE)
 for memcached_unit in rl.stdout:

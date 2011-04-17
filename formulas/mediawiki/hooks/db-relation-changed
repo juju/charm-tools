@@ -30,8 +30,6 @@ import json
 import time
 import MySQLdb
 
-change_type = os.environ.get("ENSEMBLE_CHANGE")
-
 upload_path = "/var/www/wp-uploads"
 config_file_path_template = "/etc/mediawiki/config-%s.php"
 hostname_url = "http://169.254.169.254/latest/meta-data/public-hostname"
@@ -161,7 +159,7 @@ $wgDBadminpassword = '%(database_password)s';
 $wgEnableProfileInfo = false;
 """
 
-def setup_mediawiki(change_type):
+def setup_mediawiki():
 
     try:
         hostname = urllib.urlopen(hostname_url).read().strip()
@@ -239,49 +237,48 @@ def setup_mediawiki(change_type):
         print "index.html not present"
 
     # Write the adminsettings
-    if change_type == 'modified':
-      connection = MySQLdb.connect(user=user, host=host, passwd=password, db=database)
-      cursor = connection.cursor()
-      do_install = None
+    connection = MySQLdb.connect(user=user, host=host, passwd=password, db=database)
+    cursor = connection.cursor()
+    do_install = None
+    try:
+      # Try to create the "mediawiki_ensemble_setup" table and if its already there, skip some things
+      cursor.execute("create table mediawiki_ensemble_setup (id int)")
+      do_install = True
+    except Exception as e:
+      # If we can't create that table, it has likely already been initialized
+      print 'Could not create mediawiki_ensemble_setup: ' + str(e)
+      do_install = False
+    if do_install:
+      # First time setup, we have to POST to the db and capture the LocalSettings.php
+      postargs = {'Sitename':'Ensemblized Wiki',
+        'EmergencyContact':'webmaster@localhost',
+        'LanguageCode':'en',
+        'License':'none',
+        'SysopName':'WikiSysop',
+        'SysopPass':'change-me',
+        'SysopPass2':'change-me',
+        'Shm':'none',
+        'Email':'email_enabled',
+        'Emailuser':'emailuser_enabled',
+        'Enotif':'enotif_disabled',
+        'Eauthent':'eauthent_enabled',
+        'DBtype':'mysql',
+        'DBserver':host,
+        'DBname':database,
+        'DBuser':user,
+        'DBpassword':password,
+        'DBpassword2':password,
+      }
       try:
-        # Try to create the "mediawiki_ensemble_setup" table and if its already there, skip some things
-        cursor.execute("create table mediawiki_ensemble_setup (id int)")
-        do_install = True
+        install = urllib.urlopen('http://localhost/mediawiki/config/index.php', urllib.urlencode(postargs))
+        print "install URL returned ",install.getcode()
       except Exception as e:
-        # If we can't create that table, it has likely already been initialized
-        print 'Could not create mediawiki_ensemble_setup: ' + str(e)
-        do_install = False
-      if do_install:
-        # First time setup, we have to POST to the db and capture the LocalSettings.php
-        postargs = {'Sitename':'Ensemblized Wiki',
-          'EmergencyContact':'webmaster@localhost',
-          'LanguageCode':'en',
-          'License':'none',
-          'SysopName':'WikiSysop',
-          'SysopPass':'change-me',
-          'SysopPass2':'change-me',
-          'Shm':'none',
-          'Email':'email_enabled',
-          'Emailuser':'emailuser_enabled',
-          'Enotif':'enotif_disabled',
-          'Eauthent':'eauthent_enabled',
-          'DBtype':'mysql',
-          'DBserver':host,
-          'DBname':database,
-          'DBuser':user,
-          'DBpassword':password,
-          'DBpassword2':password,
-        }
-        try:
-          install = urllib.urlopen('http://localhost/mediawiki/config/index.php', urllib.urlencode(postargs))
-          print "install URL returned ",install.getcode()
-        except Exception as e:
-          print "WARNING: could not post to installer!"
-          print e
-        # Sadly, we really have to discard this LocalSettings.php and re-build
-        # it using the template, so that joins can just generate it without
-        # trying to create the whole DB.
-        #do("mv","/var/lib/mediawiki/config/LocalSettings.php","/etc/mediawiki/LocalSettings.php.generated")
+        print "WARNING: could not post to installer!"
+        print e
+      # Sadly, we really have to discard this LocalSettings.php and re-build
+      # it using the template, so that joins can just generate it without
+      # trying to create the whole DB.
+      #do("mv","/var/lib/mediawiki/config/LocalSettings.php","/etc/mediawiki/LocalSettings.php.generated")
 
     # Write the mediawiki config
     fh = open('/etc/mediawiki/LocalSettings.php', "w")
@@ -295,5 +292,4 @@ def setup_mediawiki(change_type):
     fh.write(adminsettings_template % config)
     fh.close()
 
-print "change_type",change_type
-setup_mediawiki(change_type)
+setup_mediawiki()
