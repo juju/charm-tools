@@ -25,12 +25,9 @@ import subprocess
 import json
 import tempfile
 
-ensemble_change = os.environ.get("ENSEMBLE_CHANGE")
 remote_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
 
 service_name, _ = remote_unit.split("/")
-
-print ensemble_change
 
 # TODO: maybe load this from disk for easier customization
 template = """
@@ -75,7 +72,7 @@ print units
 
 servers = ''
 for unit in units:
-    p = subprocess.Popen(["relation-get", "--format", "json", unit],
+    p = subprocess.Popen(["relation-get", "--format", "json", "-", unit],
                          stdout=subprocess.PIPE, close_fds=True)
     settings = json.loads(p.stdout.read().strip())
     p.wait()

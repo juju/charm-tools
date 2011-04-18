@@ -31,7 +31,7 @@ hooks_path = path.join(formula_path, 'hooks')
 
 exit_code = 0
 
-def check_hook(hook):
+def check_hook(hook, required=True):
   global hooks_path
 
   hook_path = path.join(hooks_path,hook)
@@ -39,8 +39,11 @@ def check_hook(hook):
     mode = os.stat(hook_path)[ST_MODE]
     if not mode & S_IXUSR:
       warn(hook + " not executable")
+    return True
   except OSError as e:
-    err("missing hook "+hook)
+    if required:
+        err("missing hook "+hook)
+    return False
 
 def check_relation_hooks(relations):
   template_interfaces = ('interface-name')
@@ -50,7 +53,15 @@ def check_relation_hooks(relations):
     if r in template_relations:
       err("template relations should be renamed to fit formula: "+r)
 
-    check_hook(r+'-relation-changed')
+    has_one = False
+    has_one = has_one or check_hook(r+'-relation-changed', required=False)
+    has_one = has_one or check_hook(r+'-relation-departed', required=False)
+    has_one = has_one or check_hook(r+'-relation-joined', required=False)
+    has_one = has_one or check_hook(r+'-relation-broken', required=False)
+
+    if not has_one:
+        warn("relation "+r+" has no hooks")
+
     try:
       interface = relations[r]['interface']
       if interface in template_interfaces:
