@@ -72,7 +72,7 @@ print units
 
 servers = ''
 for unit in units:
-    p = subprocess.Popen(["relation-get", "--format", "json", unit],
+    p = subprocess.Popen(["relation-get", "--format", "json", "-", unit],
                          stdout=subprocess.PIPE, close_fds=True)
     settings = json.loads(p.stdout.read().strip())
     p.wait()

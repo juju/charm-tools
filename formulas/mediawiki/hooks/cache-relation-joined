@@ -7,7 +7,3 @@ import subprocess
 p = subprocess.Popen("hostname",stdout=subprocess.PIPE,close_fds=True)
 subprocess.call(["relation-set","hostname="+p.stdout.read().strip()])
 p.wait()
-
-# Just in case, regen config file
-mydir = os.path.dirname(__file__)
-os.execv(os.path.join(mydir,"cache-relation-changed"))

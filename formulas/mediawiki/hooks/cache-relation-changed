@@ -3,21 +3,20 @@ import subprocess
 import os
 import tempfile
 import pprint
+import json
 
 # all changes mean we should regen the file
 memcached_ips = []
 rl = subprocess.Popen("relation-list",stdout=subprocess.PIPE)
 for memcached_unit in rl.stdout:
-    p = subprocess.Popen(["relation-get", memcached_unit, "ip"],
+    p = subprocess.Popen(["relation-get", "--format", "json", "-", memcached_unit],
             stdout=subprocess.PIPE, close_fds=True)
-    ip=p.stdout.read().strip()
-    p.wait();
-    p = subprocess.Popen(["relation-get", memcached_unit, "port"],
-            stdout=subprocess.PIPE, close_fds=True)
-    port=p.stdout.read().strip()
-    p.wait();
-    if len(ip):
-        memcached_ips.append("'"+ip+":"+port+"'")
+    settings = json.loads(p.stdout.read().strip())
+    try:
+        if len(settings['ip']) and len(settings['port']):
+            memcached_ips.append("'"+settings['ip']+":"+settings['port']+"'")
+    except KeyError:
+        print memcached_unit + " has no settings. ["+str(settings)+"]"
 
 rl.wait()
 

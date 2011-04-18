@@ -62,7 +62,7 @@ def setup_wordpress():
         print "Already Configured, Exiting"
         return
 
-    p = subprocess.Popen(["relation-get", "--format", "json", remote_unit],
+    p = subprocess.Popen(["relation-get", "--format", "json"],
                          stdout=subprocess.PIPE, close_fds=True)
     settings = json.loads(p.stdout.read().strip())
 
