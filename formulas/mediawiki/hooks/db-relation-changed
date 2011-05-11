@@ -84,6 +84,7 @@ $wgDBserver         = "%(database_host)s";
 $wgDBname           = "%(database)s";
 $wgDBuser           = "%(database_user)s";
 $wgDBpassword       = "%(database_password)s";
+include("/etc/mediawiki/dbservers.php");
 
 # MySQL specific settings
 $wgDBprefix         = "";
@@ -283,7 +284,7 @@ def setup_mediawiki():
       # trying to create the whole DB.
       #do("mv","/var/lib/mediawiki/config/LocalSettings.php","/etc/mediawiki/LocalSettings.php.generated")
 
-    # Write the mediawiki config
+    # Write the mediawiki config - broken until dbservers.php is created
     fh = open('/etc/mediawiki/LocalSettings.php', "w")
     do("chmod", "0644", '/etc/mediawiki/LocalSettings.php')
     fh.write(mediawiki_template % config)
@@ -294,5 +295,9 @@ def setup_mediawiki():
     do("chmod", "0644", '/etc/mediawiki/AdminSettings.php')
     fh.write(adminsettings_template % config)
     fh.close()
+
+    # Refresh slave settings
+    scriptpath = os.dirname(__file__)
+    subprocess.check_call(os.path.join([scriptpath,'combine-dbservers']))
 
 setup_mediawiki()
