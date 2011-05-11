@@ -24,6 +24,7 @@ import os
 import subprocess
 import json
 import tempfile
+import glob
 
 remote_unit = os.environ.get("ENSEMBLE_REMOTE_UNIT")
 
@@ -70,6 +71,13 @@ for unit in p.stdout:
 
 print units
 
+# Right now we don't know how to connect fronts to backs, but we're going to say
+# if there are any upstream proxies we will turn off forwardedfor
+options = ''
+proxy_services = glob.glob("/etc/haproxy/*.is.proxy")
+if len(proxy_services) == 0:
+    options += "    option forwardedfor\n"
+
 servers = ''
 for unit in units:
     p = subprocess.Popen(["relation-get", "--format", "json", "-", unit],
@@ -83,7 +91,7 @@ for unit in units:
 print servers
 
 with tempfile.NamedTemporaryFile(dir="/etc/haproxy",prefix="haproxy.cfg", delete=False) as conf:
-    conf.write((template % service_name) + servers)
+    conf.write((template % service_name) + options + servers)
     try:
         os.unlink("/etc/haproxy/haproxy.cfg.old")
     except:
