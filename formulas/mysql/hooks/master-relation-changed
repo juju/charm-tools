@@ -23,26 +23,31 @@ fi
 # TODO: settings.. make mmin tunable as it is highly subjective
 recent_backup=`find $snapdir -name 'replication_seed.*.sql.gz' -mmin -60|head -1`
 if [ -z "$recent_backup" ] ; then
-    recent_backup=replication_seed.`date +%Y%m%d%H%M%S`.sql.gz
+    name=replication_seed.`date +%Y%m%d%H%M%S`.sql.gz
     echo `date`: Creating snapshot $recent_backup
     # Assumes transactional storage -- MyISAM please GO AWAY
-    mysqldump $ROOTARGS --all-databases --single-transaction --master-data |gzip>$snapdir/$recent_backup
+    mysqldump $ROOTARGS --all-databases --single-transaction --master-data |gzip>$snapdir/$name
+    # Make sure webserver can serve it
+else
+    name=`basename $recent_backup`
 fi
+chown -v -R www-data.www-data /var/www
 
 remote_ip=`relation-get ip`
 test -n "$remote_ip" || exit 1
 local_ip=`ifconfig  | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}'|head -n 1`
+pass=`pwgen -s 16`
 augtool -b <<EOF
 defvar webroot /files/etc/apache2/sites-available/default/VirtualHost/Directory[2]
 set \$webroot/directive[last()+1] allow
-set \$webroot/directive[last()]/arg from
-set \$webroot/directive[last()]/arg $remote_ip/32
+set \$webroot/directive[last()]/arg[1] from
+set \$webroot/directive[last()]/arg[2] $remote_ip/32
 save
 EOF
 service apache2 reload
-mysql $ROOTARGS -e "GRANT REPLICATION_CLIENT ON *.* TO \`$ENSEMBLE_REMOTE_UNIT\`@\`$remote_ip\` IDENTIFIED BY '$pass'"
+mysql $ROOTARGS -e "GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO \`$ENSEMBLE_REMOTE_UNIT\`@\`$remote_ip\` IDENTIFIED BY '$pass'"
 relation-set dumpurl=/snaps/$name \
                      user=$ENSEMBLE_REMOTE_UNIT \
                      password=$pass \
-                     ip=$local_ip
+                     ip=$local_ip \
                      port=3306
