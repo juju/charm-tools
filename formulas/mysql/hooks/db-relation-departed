@@ -1,7 +1,0 @@
-#!/usr/bin/env python
-
-from common import get_db_cursor, database_name, user
-
-cursor = get_db_cursor()
-cursor.execute("revoke all privileges on `%s`.* from `%s`" % (database_name, user))
-print "revoked privileges for `%s` on database `%s`" % (user, database_name)

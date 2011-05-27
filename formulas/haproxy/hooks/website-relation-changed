@@ -1,8 +1,0 @@
-#!/bin/sh
-
-service=`echo $ENSEMBLE_REMOTE_UNIT | cut -d/ -f1`
-isproxy=`relation-get is-proxy`
-
-if [ -n "$isproxy" ] ; then
-    touch /etc/haproxy/$service.is.proxy
-fi
