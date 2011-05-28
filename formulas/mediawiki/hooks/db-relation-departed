@@ -1,4 +1,0 @@
-#!/bin/bash
-echo "Shutting down without a db"
-home=`dirname $0`
-$home/stop
