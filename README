@@ -9,17 +9,21 @@ https://launchpad.net/ensemble
 
 Directory structure:
 
-formulas/
-  all formulas currently live under this root, to allow easy use of the 
-  repository parameter.
+scripts/
+  tools to help in building and testing formulas
 
 templates/
   templates for usage in building new formulas
 
+formulas/
+  This directory is now empty, as formulas are now controlled by the 'principia'
+  distribution at https://launchpad.net/principia. Formulas will now be assumed
+  to be in $PRINCIPIA_HOME or under the current working directory if it is unset.
+
 In order to use any of these formulas, once you have ensemble setup and
 working in your path:
 
-$ ensemble deploy --repository=formulas mysql
+$ ensemble deploy --repository=$PRINCIPIA_HOME mysql
 
 Will deploy the mysql formula.
 
@@ -29,4 +33,12 @@ To generate a new formula from a debian package available on your system
 
 $ scripts/formulate foo
 
-This should add a directory to formulas with the name foo, and some of the metadata.yml and hooks filled in
+This should add a directory to formulas with the name foo, and some of the metadata.yml and hooks filled in. It will create these in $PRINCIPIA_HOME or under the current working directory.
+
+proof
+====
+To perform basic static analysis on a formula, run
+
+$ scripts/proof foo
+
+It will analyze the formula for any obvious mistakes.

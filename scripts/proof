@@ -25,7 +25,12 @@ from stat import *
 import yaml
 
 formula_name = sys.argv[1]
-formula_path = path.join('formulas',formula_name)
+if '/' in formula_name:
+  formula_path = formula_name
+else:
+  formula_home = os.getenv('PRINCIPIA_HOME','.')
+  formula_path = path.join(formula_home,formula_name)
+
 yaml_path = path.join(formula_path, 'metadata.yaml')
 hooks_path = path.join(formula_path, 'hooks')
 

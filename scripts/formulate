@@ -31,16 +31,17 @@ from stat import ST_MODE
 try:
     package=sys.argv[1]
 except:
-    print "usage: formulate package_name [ home_dir ]"
+    print "usage: formulate package_name [ formula_home_dir ]"
     sys.exit(1)
 
 try:
-    home=sys.argv[2]
+    formula_home = sys.argv[2]
 except:
-    home = path.abspath(path.join(path.dirname(sys.argv[0]), '..'))
+    formula_home = os.getenv('PRINCIPIA_HOME','.')
 
+home = path.abspath(path.join(path.dirname(sys.argv[0]), '..'))
 template_dir = path.join(home, 'templates')
-output_dir = path.join(home, 'formulas', package)
+output_dir = path.join(formula_home, package)
 print "Generating template for " + package + " from templates in " + template_dir
 print "Formula will be stored in " + output_dir
 
