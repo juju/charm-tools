@@ -1,0 +1,4 @@
+Currently these tests are for manual purposes only, but should follow the
+pattern of exitting 0 only if all steps succeed, and taking a repository
+as their first argument, so that they can be run as a full suite of
+tests later on.
