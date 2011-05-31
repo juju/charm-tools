@@ -9,10 +9,10 @@ fi
 ENSEMBLE=`which ensemble`
 
 if [ "$repository" = "teardown" ] ; then
-  $ENSEMBLE destroy-service wiki-db
-  $ENSEMBLE destroy-service demo-wiki
-  $ENSEMBLE destroy-service wiki-cache
-  $ENSEMBLE destroy-service wiki-balancer
+  $ENSEMBLE destroy-service wiki-db || echo could not teardown wiki-db
+  $ENSEMBLE destroy-service demo-wiki || echo could not teardown demo-wiki
+  $ENSEMBLE destroy-service wiki-cache || echo could not teardown wiki-cache
+  $ENSEMBLE destroy-service wiki-balancer || echo could not teardown wiki-balancer
   exit 0
 fi
 
