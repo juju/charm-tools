@@ -4,7 +4,7 @@ set -e
 home=`dirname $0`/..
 if ! [ -d "$home/formulas" ] ; then
   bzr init-repo $home/formulas
-  cp $home/templates/mrconfig $home/formulas/.mrconfig
+  ln -sfv $home/templates/mrconfig $home/formulas/.mrconfig
   mr -c $home/formulas/.mrconfig -d $home/formulas --trust-all checkout
 else
   mr -c $home/formulas/.mrconfig -d $home/formulas --trust-all update
