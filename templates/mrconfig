@@ -12,3 +12,6 @@ checkout = bzr branch lp:~ensemble-composers/principia/oneiric/wordpress/trunk w
 
 [memcached]
 checkout = bzr branch lp:~ensemble-composers/principia/oneiric/memcached/trunk memcached
+
+[munin]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/munin/trunk munin
