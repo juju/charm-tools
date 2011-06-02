@@ -2,11 +2,13 @@
 set -e
 
 home=`dirname $0`/..
-if ! [ -d "$home/formulas" ] ; then
-  bzr init-repo $home/formulas
-  ln -sfv ../templates/mrconfig $home/formulas/.mrconfig
-  mr -c $home/formulas/.mrconfig -d $home/formulas --trust-all checkout
+home=`readlink -f $home`
+formula_home=${1:-${home}/formulas}
+if ! [ -e "$formula_home/.mrconfig" ] ; then
+  bzr init-repo $formula_home
+  ln -sfv $home/templates/mrconfig $formula_home/.mrconfig
+  mr -c $formula_home/.mrconfig -d $formula_home --trust-all checkout
   echo "In order to update formulas, run this script again."
 else
-  mr -c $home/formulas/.mrconfig -d $home/formulas --trust-all update
+  mr -c $formula_home/.mrconfig -d $formula_home --trust-all update
 fi
