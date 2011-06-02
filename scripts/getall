@@ -4,8 +4,9 @@ set -e
 home=`dirname $0`/..
 if ! [ -d "$home/formulas" ] ; then
   bzr init-repo $home/formulas
-  ln -sfv $home/templates/mrconfig $home/formulas/.mrconfig
+  ln -sfv ../templates/mrconfig $home/formulas/.mrconfig
   mr -c $home/formulas/.mrconfig -d $home/formulas --trust-all checkout
+  echo "In order to update formulas, run this script again."
 else
   mr -c $home/formulas/.mrconfig -d $home/formulas --trust-all update
 fi
