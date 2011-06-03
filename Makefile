@@ -9,9 +9,9 @@ all:
 install:
 	$(INSTALL) -d $(mandir)
 	$(INSTALL) -t $(mandir) principia.1
-	$(INSTALL) -d $(bindir)
+	$(INSTALL) -d $(datadir)
 	$(INSTALL) -t $(datadir) principia
+	$(INSTALL) -d $(bindir)
 	ln -sf $(datadir)/principia $(bindir)
 	gzip $(mandir)/principia.1
-	$(INSTALL) -d $(datadir)
 	cp -rf scripts templates $(datadir)
