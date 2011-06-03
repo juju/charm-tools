@@ -1,7 +1,9 @@
-DESTDIR = /usr
-bindir = $(DESTDIR)/bin
-mandir = $(DESTDIR)/share/man/man1
-datadir = $(DESTDIR)/share/principia-tools
+DESTDIR = 
+prefix = /usr
+DDIR = $(DESTDIR)$(prefix)
+bindir = $(DDIR)/bin
+mandir = $(DDIR)/share/man/man1
+datadir = $(DDIR)/share/principia-tools
 INSTALL = install
 
 all:
