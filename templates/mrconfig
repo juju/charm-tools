@@ -1,0 +1,17 @@
+[mysql]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/mysql/trunk mysql
+
+[mediawiki]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/mediawiki/trunk mediawiki
+
+[haproxy]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/haproxy/trunk haproxy
+
+[wordpress]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/wordpress/trunk wordpress
+
+[memcached]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/memcached/trunk memcached
+
+[munin]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/munin/trunk munin

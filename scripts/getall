@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+home=`dirname $0`/..
+home=`readlink -f $home`
+formula_home=${1:-${home}/formulas}
+if ! [ -e "$formula_home/.mrconfig" ] ; then
+  bzr init-repo $formula_home
+  ln -sfv $home/templates/mrconfig $formula_home/.mrconfig
+  mr -c $formula_home/.mrconfig -d $formula_home --trust-all checkout
+  echo "In order to update formulas, run this script again."
+else
+  mr -c $formula_home/.mrconfig -d $formula_home --trust-all update
+fi

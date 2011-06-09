@@ -7,26 +7,84 @@ more information.
 
 https://launchpad.net/ensemble
 
-Directory structure:
 
-formulas/
-  all formulas currently live under this root, to allow easy use of the 
-  repository parameter.
+Quick Start
+===========
+
+First, you'll need ensemble. If its not available in your version of Ubuntu
+yet (none provide it as of this writing), you can use the PPA:
+
+sudo add-apt-repository ppa:ensemble/ppa
+sudo apt-get install ensemble
+
+You'll also need the 'mr' program for the next step
+
+sudo apt-get install mr
+
+# Setup your AWS credentials in AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY
+export AWS_SECRET_ACCESS_KEY=aaaaaaaaaaaaaabbbbbbbbbbbbccccccccccccddddddddd
+export AWS_ACCESS_KEY_ID=0123456789ABCDEF
+bzr branch lp:principia-tools
+cd principia-tools
+scripts/getall
+
+This will give you all of the tools. 
+
+tests/mediawiki.sh
+
+This deploys a mediawiki with two web nodes, and two memcached nodes,
+and an haproxy load balancer.
+
+Once this returns you can run 'watch ensemble status' to watch the
+environment take shape, or
+
+ensemble debug-log
+
+to get all of the messages
+
+tests/wiki.sh
+
+This deploys mediawiki without memcached or a load balancer, but with
+a slave for expanding read query capacity.
+
+Directory structure
+===================
+
+scripts/
+  tools to help in building and testing formulas
 
 templates/
   templates for usage in building new formulas
 
+formulas/
+  This directory is now empty, as formulas are now controlled by the 'principia'
+  distribution at https://launchpad.net/principia. Formulas will now be assumed
+  to be in $PRINCIPIA_HOME or under the current working directory if it is unset.
+
 In order to use any of these formulas, once you have ensemble setup and
 working in your path:
 
-$ ensemble deploy --repository=formulas mysql
+$ ensemble deploy --repository=$PRINCIPIA_HOME mysql
 
 Will deploy the mysql formula.
 
 formulate
-====
+=========
 To generate a new formula from a debian package available on your system
 
 $ scripts/formulate foo
 
-This should add a directory to formulas with the name foo, and some of the metadata.yml and hooks filled in
+This should add a directory to formulas with the name foo, and some of the metadata.yml and hooks filled in. It will create these in $PRINCIPIA_HOME or under the current working directory.
+
+proof
+=====
+To perform basic static analysis on a formula, run
+
+$ scripts/proof foo
+
+It will analyze the formula for any obvious mistakes.
+
+getall
+======
+Retrieves all of the formulas in the principia distribution via bzr. This uses the
+mr command, which is available via 'sudo apt-get install mr' in Ubuntu.
