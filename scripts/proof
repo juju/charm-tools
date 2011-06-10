@@ -124,6 +124,10 @@ try:
   if not path.exists(hooks_path):
     err("no hooks directory")
 
+  # Must have a copyright file
+  if not path.exists(path.join(formula_path,'copyright')):
+    err("no copyright file")
+
   # All formulas should provide at least one thing
   try:
     provides = formula['provides']  
