@@ -144,8 +144,8 @@ try:
     pass
 
   check_hook('install')
-  check_hook('start')
-  check_hook('stop')
+  check_hook('start', required=False)
+  check_hook('stop', required=False)
 except IOError:
   err("could not find metadata file for " + formula_name)
   exit_code = -1
