@@ -24,12 +24,19 @@ import os,sys
 from stat import *
 import yaml
 
-formula_name = sys.argv[1]
+try:
+    formula_name = sys.argv[1]
+except:
+    print "usage: proof [ formula_name | path/to/formula ]"
+    print ""
+    print "Note that if no path is specfied, formulas will be searched for in the"
+    print "current dir, or the dir specified in the environment var PRINCIPIA_HOME"
+
 if '/' in formula_name:
   formula_path = formula_name
 else:
   formula_home = os.getenv('PRINCIPIA_HOME','.')
-  formula_path = path.join(formula_home,formula_name)
+  formula_path = path.join(formula_home,'formulas',formula_name)
 
 yaml_path = path.join(formula_path, 'metadata.yaml')
 hooks_path = path.join(formula_path, 'hooks')
@@ -117,6 +124,10 @@ try:
   if not path.exists(hooks_path):
     err("no hooks directory")
 
+  # Must have a copyright file
+  if not path.exists(path.join(formula_path,'copyright')):
+    err("no copyright file")
+
   # All formulas should provide at least one thing
   try:
     provides = formula['provides']  
@@ -137,8 +148,8 @@ try:
     pass
 
   check_hook('install')
-  check_hook('start')
-  check_hook('stop')
+  check_hook('start', required=False)
+  check_hook('stop', required=False)
 except IOError:
   err("could not find metadata file for " + formula_name)
   exit_code = -1
