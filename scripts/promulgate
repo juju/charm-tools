@@ -1,0 +1,115 @@
+#!/usr/bin/python
+#
+#    promulgate - makes a formula recipe branch the official one
+#
+#    Copyright (C) 2011  Canonical Ltd.
+#    Author: Francis J. Lacoste <francis.lacoste@canonical.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+from launchpadlib.launchpad import Launchpad
+
+import os
+import sys
+
+from optparse import OptionParser
+
+from bzrlib import bzrdir
+from bzrlib.plugins.launchpad import lp_api
+
+import yaml
+
+import logging
+
+DISTRIBUTION = 'principia'
+REVIEW_TEAM_NAME = 'ensemble-composers'
+OFFICIAL_BRANCH_POCKET = 'Release'
+OFFICAL_BRANCH_STATUS = 'Mature'
+
+def main(argv):
+    parser = OptionParser(usage='usage: %prog [options] <formula_dir>')
+    parser.add_option(
+        '-b', '--branch', dest='branch', default=None,
+        help='The location of the formula public branch. Will be determined '
+        'from the bzr configuration if omitted.')
+    parser.add_option(
+        '-t', '--lp-instance', dest='lp_instance', default='production',
+        help="The Launchpad instance to use. Defaults to production, but "
+        "staging' or 'qastaging' might be used for testing.")
+    parser.add_option(
+        '-v', '--verbose', dest='verbose', action='count', default=0,
+        help='Increase verbosity level.')
+    options, args = parser.parse_args()
+    if len(args) != 1:
+        parser.error('missing formula directory')
+        return 1
+
+    if options.verbose >= 2:
+        level = logging.DEBUG
+    elif options.verbose >= 1:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+    logging.basicConfig(level=level, format='%(levelname)s:%(message)s')
+
+    formula_dir = args[0]
+    formula_metadata = os.path.join(formula_dir, 'metadata.yaml')
+    if not os.access(formula_metadata, os.R_OK):
+        logging.error("can't read formula metadata: %s", formula_metadata)
+
+    with open(formula_metadata, 'r') as metadata:
+        formula = yaml.load(metadata)
+
+    logging.debug('login with %s launchpad:', options.lp_instance)
+    lp = Launchpad.login_with('promulgate', options.lp_instance)
+
+    if options.branch is None:
+        tree, branch, relpath = bzrdir.BzrDir.open_containing_tree_or_branch(
+            formula_dir)
+        formula_branch = lp_api.load_branch(lp, branch)
+        if formula_branch is None:
+            logging.error("can't determine Launchpad branch from bzr branch")
+            return 1
+    else:
+        formula_branch = lp.branches.getByUrl(url=options.branch)
+        if formula_branch is None:
+            logging.error("can't find branch on Launchpad: %s", options.branch)
+            return 1
+
+    logging.info(
+        "Setting status %s of to %s", formula_branch.bzr_identity,
+        OFFICAL_BRANCH_STATUS)
+    formula_branch.lifecycle_status = OFFICAL_BRANCH_STATUS
+    logging.info(
+        "Setting reviewer %s of to %s", formula_branch.bzr_identity,
+        REVIEW_TEAM_NAME)
+    formula_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
+    formula_branch.lp_save()
+
+    principia_series = lp.distributions[DISTRIBUTION].current_series
+    lp_formula = principia_series.getSourcePackage(name=formula['name'])
+    logging.info(
+        'Setting %s as the official branch for %s',
+        formula_branch.bzr_identity, lp_formula.name)
+    lp_formula.setBranch(branch=formula_branch, pocket=OFFICIAL_BRANCH_POCKET)
+
+    return 0
+
+
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))
+
