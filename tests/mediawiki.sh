@@ -22,7 +22,7 @@ $ENSEMBLE deploy --repository=$repository memcached wiki-cache
 $ENSEMBLE deploy --repository=$repository haproxy wiki-balancer
 $ENSEMBLE add-unit wiki-cache
 $ENSEMBLE add-unit demo-wiki
-$ENSEMBLE add-relation wiki-db demo-wiki:db
+$ENSEMBLE add-relation wiki-db:db demo-wiki:db
 $ENSEMBLE add-relation wiki-cache demo-wiki
 $ENSEMBLE add-relation wiki-balancer:reverseproxy demo-wiki:website
 $ENSEMBLE status
