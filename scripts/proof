@@ -23,6 +23,7 @@ import os.path as path
 import os,sys
 from stat import *
 import yaml
+import re
 
 try:
     formula_name = sys.argv[1]
@@ -43,6 +44,9 @@ hooks_path = path.join(formula_path, 'hooks')
 
 exit_code = 0
 
+hook_warnings = [{'re' : re.compile("http://169\.254\.169\.254/"), 
+                  'msg': "hook accesses EC2 metadata service directly"}]
+
 def check_hook(hook, required=True):
   global hooks_path
 
@@ -51,6 +55,13 @@ def check_hook(hook, required=True):
     mode = os.stat(hook_path)[ST_MODE]
     if not mode & S_IXUSR:
       warn(hook + " not executable")
+    with open(hook_path, 'r') as hook_file:
+      count = 0
+      for line in hook_file:
+        count += 1
+        for warning in hook_warnings:
+          if warning['re'].search(line):
+            warn("(%s:%d) - %s" % (hook,count,warning['msg']))
     return True
   except OSError as e:
     if required:
