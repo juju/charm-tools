@@ -20,6 +20,7 @@
 #
 
 from launchpadlib.launchpad import Launchpad
+from lazr.restfulclient.errors import BadRequest, NotFound
 
 import os
 import sys
@@ -44,6 +45,10 @@ def main(argv):
         '-b', '--branch', dest='branch', default=None,
         help='The location of the formula public branch. Will be determined '
         'from the bzr configuration if omitted.')
+    parser.add_option(
+        '-s', '--series', dest='series', default=None,
+        help='The distribution series on which to set the official branch. '
+        'Defaults to setting it in the current development series.')
     parser.add_option(
         '-t', '--lp-instance', dest='lp_instance', default='production',
         help="The Launchpad instance to use. Defaults to production, but "
@@ -98,7 +103,22 @@ def main(argv):
     formula_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
     formula_branch.lp_save()
 
-    principia_series = lp.distributions[DISTRIBUTION].current_series
+    principia = lp.distributions[DISTRIBUTION]
+    if options.series is None:
+        principia_series = principia.current_series
+    else:
+        try:
+            principia_series = principia.getSeries(
+                name_or_version=options.series)
+        except (BadRequest, NotFound), e:
+            # XXX flacoste 2011-06-15 bug=797917
+            # Should only be NotFound.
+            if e.content.startswith('No such distribution series:'):
+                logging.error("can't find series '%s'", options.series)
+                return 1
+            else:
+                raise
+
     lp_formula = principia_series.getSourcePackage(name=formula['name'])
     logging.info(
         'Setting %s as the official branch for %s',
