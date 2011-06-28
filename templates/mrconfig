@@ -15,3 +15,6 @@ checkout = bzr branch lp:~ensemble-composers/principia/oneiric/memcached/trunk m
 
 [munin]
 checkout = bzr branch lp:~ensemble-composers/principia/oneiric/munin/trunk munin
+
+[tomcat6]
+checkout = bzr branch lp:~ensemble-composers/principia/oneiric/tomcat6/trunk tomcat6
