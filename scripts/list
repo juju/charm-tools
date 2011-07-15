@@ -1,0 +1,5 @@
+#!/bin/bash
+
+PRINCIPIA_URL="https://code.launchpad.net/principia"
+
+curl -s "${PRINCIPIA_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr\>\</wbr\>##g | awk -F'>' '{ print $2 }' | awk -F'<' '{ print $1 }'
