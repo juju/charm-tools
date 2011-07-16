@@ -1,0 +1,7 @@
+#!/bin/bash
+
+[ -z "${1}" ] && echo "Search parameter required" && exit 1
+
+PRINCIPIA_URL="https://code.launchpad.net/principia"
+
+curl -s "${PRINCIPIA_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr\>\</wbr\>##g | awk -F'>' '{ print $2 }' | awk -F'<' '{ print $1 }' | grep "${1}"
