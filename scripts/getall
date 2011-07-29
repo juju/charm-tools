@@ -1,12 +1,29 @@
 #!/bin/sh
 set -e
 
-home=`dirname $0`/..
+usage()
+{
+    echo "usage: getall path_to_formulas" >&2
+    exit $1
+}
+
+if [ -z "$1" ] ; then
+    usage 1
+fi
+formula_home=$1
+
+if [ "$1" = "--help" -o "$1" = "-h" ] ; then
+    usage 0
+fi
+
+home=`dirname $0`
 home=`readlink -f $home`
-formula_home=${1:-${home}/formulas}
-if ! [ -e "$formula_home/.mrconfig" ] ; then
+
+if ! [ -d "$formula_home/.bzr" ] ; then
+  echo initializing $formula_home as bzr repository
   bzr init-repo $formula_home
-  ln -sfv $home/templates/mrconfig $formula_home/.mrconfig
+  $home/update $formula_home
+  echo checking out all formulas
   mr -c $formula_home/.mrconfig -d $formula_home --trust-all checkout
   echo "In order to update formulas, run this script again."
 else

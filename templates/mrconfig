@@ -1,20 +1,33 @@
+[jenkins-slave]
+checkout = bzr checkout lp:principia/jenkins-slave jenkins-slave
+
+[jenkins]
+checkout = bzr checkout lp:principia/jenkins jenkins
+
+[rabbitmq-server]
+checkout = bzr checkout lp:principia/rabbitmq-server rabbitmq-server
+
 [mysql]
-checkout = bzr branch lp:~ensemble-composers/principia/oneiric/mysql/trunk mysql
+checkout = bzr checkout lp:principia/mysql mysql
 
-[mediawiki]
-checkout = bzr branch lp:~ensemble-composers/principia/oneiric/mediawiki/trunk mediawiki
-
-[haproxy]
-checkout = bzr branch lp:~ensemble-composers/principia/oneiric/haproxy/trunk haproxy
-
-[wordpress]
-checkout = bzr branch lp:~ensemble-composers/principia/oneiric/wordpress/trunk wordpress
-
-[memcached]
-checkout = bzr branch lp:~ensemble-composers/principia/oneiric/memcached/trunk memcached
-
-[munin]
-checkout = bzr branch lp:~ensemble-composers/principia/oneiric/munin/trunk munin
+[pictor]
+checkout = bzr checkout lp:principia/pictor pictor
 
 [tomcat6]
-checkout = bzr branch lp:~ensemble-composers/principia/oneiric/tomcat6/trunk tomcat6
+checkout = bzr checkout lp:principia/tomcat6 tomcat6
+
+[mediawiki]
+checkout = bzr checkout lp:principia/mediawiki mediawiki
+
+[wordpress]
+checkout = bzr checkout lp:principia/wordpress wordpress
+
+[memcached]
+checkout = bzr checkout lp:principia/memcached memcached
+
+[haproxy]
+checkout = bzr checkout lp:principia/haproxy haproxy
+
+[munin]
+checkout = bzr checkout lp:principia/munin munin
+
