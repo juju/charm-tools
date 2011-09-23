@@ -1,5 +1,5 @@
 #!/bin/sh
-# Simple wrapper to call principia tools scripts. Meant to
+# Simple wrapper to call charm tools scripts. Meant to
 # be placed in user's path.
 set -ue
 

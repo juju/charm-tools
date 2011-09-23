@@ -6,18 +6,18 @@ if [ -z "$repository" ] ; then
   exit 1
 fi
 
-ENSEMBLE=`which ensemble`
+JUJU=`which juju`
 
 if [ "$repository" = "teardown" ] ; then
-  $ENSEMBLE destroy-service master
-  $ENSEMBLE destroy-service slave
-  $ENSEMBLE destroy-service demowiki
+  $JUJU destroy-service master
+  $JUJU destroy-service slave
+  $JUJU destroy-service demowiki
   exit 0
 fi
 
-$ENSEMBLE deploy --repository=$repository mysql master
-$ENSEMBLE deploy --repository=$repository mysql slave
-$ENSEMBLE add-relation master:master slave:slave
-$ENSEMBLE deploy --repository=$repository mediawiki demowiki
-$ENSEMBLE add-relation master:db demowiki:db
-$ENSEMBLE add-relation slave:db demowiki:slave
+$JUJU deploy --repository=$repository mysql master
+$JUJU deploy --repository=$repository mysql slave
+$JUJU add-relation master:master slave:slave
+$JUJU deploy --repository=$repository mediawiki demowiki
+$JUJU add-relation master:db demowiki:db
+$JUJU add-relation slave:db demowiki:slave

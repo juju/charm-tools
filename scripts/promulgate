@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#    promulgate - makes a formula recipe branch the official one
+#    promulgate - makes a charm recipe branch the official one
 #
 #    Copyright (C) 2011  Canonical Ltd.
 #    Author: Francis J. Lacoste <francis.lacoste@canonical.com>
@@ -34,16 +34,16 @@ import yaml
 
 import logging
 
-DISTRIBUTION = 'principia'
-REVIEW_TEAM_NAME = 'ensemble-composers'
+DISTRIBUTION = 'charm'
+REVIEW_TEAM_NAME = 'charmers'
 OFFICIAL_BRANCH_POCKET = 'Release'
 OFFICAL_BRANCH_STATUS = 'Mature'
 
 def main(argv):
-    parser = OptionParser(usage='usage: %prog [options] <formula_dir>')
+    parser = OptionParser(usage='usage: %prog [options] <charm_dir>')
     parser.add_option(
         '-b', '--branch', dest='branch', default=None,
-        help='The location of the formula public branch. Will be determined '
+        help='The location of the charm public branch. Will be determined '
         'from the bzr configuration if omitted.')
     parser.add_option(
         '-s', '--series', dest='series', default=None,
@@ -58,7 +58,7 @@ def main(argv):
         help='Increase verbosity level.')
     options, args = parser.parse_args()
     if len(args) != 1:
-        parser.error('missing formula directory')
+        parser.error('missing charm directory')
         return 1
 
     if options.verbose >= 2:
@@ -69,46 +69,46 @@ def main(argv):
         level = logging.WARNING
     logging.basicConfig(level=level, format='%(levelname)s:%(message)s')
 
-    formula_dir = args[0]
-    formula_metadata = os.path.join(formula_dir, 'metadata.yaml')
-    if not os.access(formula_metadata, os.R_OK):
-        logging.error("can't read formula metadata: %s", formula_metadata)
+    charm_dir = args[0]
+    charm_metadata = os.path.join(charm_dir, 'metadata.yaml')
+    if not os.access(charm_metadata, os.R_OK):
+        logging.error("can't read charm metadata: %s", charm_metadata)
 
-    with open(formula_metadata, 'r') as metadata:
-        formula = yaml.load(metadata)
+    with open(charm_metadata, 'r') as metadata:
+        charm = yaml.load(metadata)
 
     logging.debug('login with %s launchpad:', options.lp_instance)
     lp = Launchpad.login_with('promulgate', options.lp_instance)
 
     if options.branch is None:
         tree, branch, relpath = bzrdir.BzrDir.open_containing_tree_or_branch(
-            formula_dir)
-        formula_branch = lp_api.load_branch(lp, branch)
-        if formula_branch is None:
+            charm_dir)
+        charm_branch = lp_api.load_branch(lp, branch)
+        if charm_branch is None:
             logging.error("can't determine Launchpad branch from bzr branch")
             return 1
     else:
-        formula_branch = lp.branches.getByUrl(url=options.branch)
-        if formula_branch is None:
+        charm_branch = lp.branches.getByUrl(url=options.branch)
+        if charm_branch is None:
             logging.error("can't find branch on Launchpad: %s", options.branch)
             return 1
 
     logging.info(
-        "Setting status %s of to %s", formula_branch.bzr_identity,
+        "Setting status %s of to %s", charm_branch.bzr_identity,
         OFFICAL_BRANCH_STATUS)
-    formula_branch.lifecycle_status = OFFICAL_BRANCH_STATUS
+    charm_branch.lifecycle_status = OFFICAL_BRANCH_STATUS
     logging.info(
-        "Setting reviewer %s of to %s", formula_branch.bzr_identity,
+        "Setting reviewer %s of to %s", charm_branch.bzr_identity,
         REVIEW_TEAM_NAME)
-    formula_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
-    formula_branch.lp_save()
+    charm_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
+    charm_branch.lp_save()
 
-    principia = lp.distributions[DISTRIBUTION]
+    charm = lp.distributions[DISTRIBUTION]
     if options.series is None:
-        principia_series = principia.current_series
+        charm_series = charm.current_series
     else:
         try:
-            principia_series = principia.getSeries(
+            charm_series = charm.getSeries(
                 name_or_version=options.series)
         except (BadRequest, NotFound), e:
             # XXX flacoste 2011-06-15 bug=797917
@@ -119,11 +119,11 @@ def main(argv):
             else:
                 raise
 
-    lp_formula = principia_series.getSourcePackage(name=formula['name'])
+    lp_charm = charm_series.getSourcePackage(name=charm['name'])
     logging.info(
         'Setting %s as the official branch for %s',
-        formula_branch.bzr_identity, lp_formula.name)
-    lp_formula.setBranch(branch=formula_branch, pocket=OFFICIAL_BRANCH_POCKET)
+        charm_branch.bzr_identity, lp_charm.name)
+    lp_charm.setBranch(branch=charm_branch, pocket=OFFICIAL_BRANCH_POCKET)
 
     return 0
 

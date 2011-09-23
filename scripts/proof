@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#    proof - makes sure formulas follow principia conventions
+#    proof - makes sure charms follow conventions
 #
 #    Copyright (C) 2011  Canonical Ltd.
 #    Author: Clint Byrum <clint.byrum@canonical.com>
@@ -26,21 +26,21 @@ import yaml
 import re
 
 try:
-    formula_name = sys.argv[1]
+    charm_name = sys.argv[1]
 except:
-    print "usage: proof [ formula_name | path/to/formula ]"
+    print "usage: proof [ charm_name | path/to/charm ]"
     print ""
-    print "Note that if no path is specfied, formulas will be searched for in the"
-    print "current dir, or the dir specified in the environment var PRINCIPIA_HOME"
+    print "Note that if no path is specfied, charms will be searched for in the"
+    print "current dir, or the dir specified in the environment var CHARM_HOME"
 
-if '/' in formula_name:
-  formula_path = formula_name
+if '/' in charm_name:
+  charm_path = charm_name
 else:
-  formula_home = os.getenv('PRINCIPIA_HOME','.')
-  formula_path = path.join(formula_home,'formulas',formula_name)
+  charm_home = os.getenv('CHARM_HOME','.')
+  charm_path = path.join(charm_home,'charms',charm_name)
 
-yaml_path = path.join(formula_path, 'metadata.yaml')
-hooks_path = path.join(formula_path, 'hooks')
+yaml_path = path.join(charm_path, 'metadata.yaml')
+hooks_path = path.join(charm_path, 'hooks')
 
 exit_code = 0
 
@@ -74,7 +74,7 @@ def check_relation_hooks(relations):
 
   for r in relations:
     if r in template_relations:
-      err("template relations should be renamed to fit formula: "+r)
+      err("template relations should be renamed to fit charm: "+r)
 
     has_one = False
     has_one = has_one or check_hook(r+'-relation-changed', required=False)
@@ -113,19 +113,19 @@ def crit(msg):
 try:
   yamlfile= open(yaml_path,'r')
   try:
-    formula = yaml.load(yamlfile)
+    charm = yaml.load(yamlfile)
   except Exception as e:
     crit('cannot parse ' + yaml_path + ":" + str(e))
 
   yamlfile.close()
 
   # summary should be short
-  if len(formula['summary']) > 72:
+  if len(charm['summary']) > 72:
     warn('summary sould be less than 72') 
 
   # revision must be an integer
   try:
-    x = int(formula['revision'])
+    x = int(charm['revision'])
     if x < 0:
       raise ValueError
   except (TypeError, ValueError):
@@ -136,24 +136,24 @@ try:
     err("no hooks directory")
 
   # Must have a copyright file
-  if not path.exists(path.join(formula_path,'copyright')):
+  if not path.exists(path.join(charm_path,'copyright')):
     err("no copyright file")
 
-  # All formulas should provide at least one thing
+  # All charms should provide at least one thing
   try:
-    provides = formula['provides']  
+    provides = charm['provides']  
     check_relation_hooks(provides)
   except KeyError:
-    warn("all formulas should provide at least one thing")
+    warn("all charms should provide at least one thing")
 
   try:
-    requires = formula['requires']
+    requires = charm['requires']
     check_relation_hooks(requires)
   except KeyError:
     pass
 
   try:
-    peers = formula['peers']
+    peers = charm['peers']
     check_relation_hooks(peers)
   except KeyError:
     pass
@@ -162,7 +162,7 @@ try:
   check_hook('start', required=False)
   check_hook('stop', required=False)
 except IOError:
-  err("could not find metadata file for " + formula_name)
+  err("could not find metadata file for " + charm_name)
   exit_code = -1
 
 sys.exit(exit_code)

@@ -3,17 +3,17 @@ prefix = /usr
 DDIR = $(DESTDIR)$(prefix)
 bindir = $(DDIR)/bin
 mandir = $(DDIR)/share/man/man1
-datadir = $(DDIR)/share/principia-tools
+datadir = $(DDIR)/share/charm-tools
 INSTALL = install
 
 all:
 
 install:
 	$(INSTALL) -d $(mandir)
-	$(INSTALL) -t $(mandir) principia.1
+	$(INSTALL) -t $(mandir) charm.1
 	$(INSTALL) -d $(datadir)
-	$(INSTALL) -t $(datadir) principia
+	$(INSTALL) -t $(datadir) charm
 	$(INSTALL) -d $(bindir)
-	ln -sf $(datadir)/principia $(bindir)
-	gzip $(mandir)/principia.1
+	ln -sf $(datadir)/charm $(bindir)
+	gzip $(mandir)/charm.1
 	cp -rf scripts templates $(datadir)

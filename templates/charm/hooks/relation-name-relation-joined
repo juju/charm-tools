@@ -3,5 +3,5 @@
 # affect any change needed by relationships being formed
 # This script should be idempotent.
 #raw
-echo $ENSEMBLE_REMOTE_UNIT joined
+echo $JUJU_REMOTE_UNIT joined
 #end raw

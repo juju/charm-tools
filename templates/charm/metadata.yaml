@@ -1,4 +1,3 @@
-ensemble: formula
 name: $package
 revision: 1
 summary: $summary

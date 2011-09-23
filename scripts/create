@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#    formulate - generate formulas from templates
+#    create - generate Juju charm from template
 #
 #    Copyright (C) 2011  Canonical Ltd.
 #    Author: Clint Byrum <clint.byrum@canonical.com>
@@ -31,25 +31,25 @@ from stat import ST_MODE
 try:
     package=sys.argv[1]
 except:
-    print "usage: formulate package_name [ formula_home_dir ]"
+    print "usage: create package_name [ charm_home_dir ]"
     sys.exit(1)
 
 try:
-    formula_home = sys.argv[2]
+    charm_home = sys.argv[2]
 except:
-    formula_home = os.getenv('PRINCIPIA_HOME','.')
+    charm_home = os.getenv('CHARM_HOME','.')
 
 home = path.abspath(path.join(path.dirname(sys.argv[0]), '..'))
 template_dir = path.join(home, 'templates')
-output_dir = path.join(formula_home, package)
+output_dir = path.join(charm_home, package)
 print "Generating template for " + package + " from templates in " + template_dir
-print "Formula will be stored in " + output_dir
+print "Charm will be stored in " + output_dir
 
 if path.exists(output_dir):
   print output_dir + " exists. Please move it out of the way."
   sys.exit(1)
 
-shutil.copytree(path.join(template_dir,'formula'), output_dir)
+shutil.copytree(path.join(template_dir,'charm'), output_dir)
 
 
 v={'package': package}

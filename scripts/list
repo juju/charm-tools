@@ -1,5 +1,5 @@
 #!/bin/bash
 
-PRINCIPIA_URL="https://code.launchpad.net/principia"
+CHARM_URL="https://code.launchpad.net/charm"
 
-curl -s "${PRINCIPIA_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr\>\</wbr\>##g | awk -F'>' '{ print $2 }' | awk -F'<' '{ print $1 }'
+curl -s "${CHARM_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr\>\</wbr\>##g | awk -F'>' '{ print $2 }' | awk -F'<' '{ print $1 }'

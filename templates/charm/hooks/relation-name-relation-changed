@@ -4,7 +4,7 @@
 # affect any change needed by relationships being formed, modified, or broken
 # This script should be idempotent.
 #raw
-echo $ENSEMBLE_REMOTE_UNIT modified its settings
+echo $JUJU_REMOTE_UNIT modified its settings
 echo Relation settings:
 relation-get
 echo Relation members:

@@ -1,21 +1,21 @@
 #!/bin/sh
 home=`dirname $0`
-formula_home=$1
+charm_home=$1
 
-if [ -z "$formula_home" ] ; then
-    echo "usage: update formula_directory" >&2
+if [ -z "$charm_home" ] ; then
+    echo "usage: update charm_directory" >&2
     exit 1
 fi
 
-echo Pulling formula list from launchpad
-newfile=`mktemp $formula_home/.mrconfig.XXXXXXXX`
+echo Pulling charm list from launchpad
+newfile=`mktemp $charm_home/.mrconfig.XXXXXXXX`
 cp /dev/null $newfile
-for s in `$home/list | awk -F\/ '/^lp:principia\// { print $2 }'` ; do
+for s in `$home/list | awk -F\/ '/^lp:charm\// { print $2 }'` ; do
     cat >> $newfile <<EOF
 [$s]
-checkout = bzr checkout lp:principia/$s $s
+checkout = bzr checkout lp:charm/$s $s
 
 EOF
 done
-echo updating $formula_home/.mrconfig
-mv -f $newfile $formula_home/.mrconfig
+echo updating $charm_home/.mrconfig
+mv -f $newfile $charm_home/.mrconfig

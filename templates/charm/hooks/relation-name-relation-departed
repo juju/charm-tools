@@ -3,5 +3,5 @@
 # affect any change needed by the remote unit leaving the relationship.
 # This script should be idempotent.
 #raw
-echo $ENSEMBLE_REMOTE_UNIT departed
+echo $JUJU_REMOTE_UNIT departed
 #end raw
