@@ -57,9 +57,6 @@ def main(argv):
         '-v', '--verbose', dest='verbose', action='count', default=0,
         help='Increase verbosity level.')
     options, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error('missing charm directory')
-        return 1
 
     if options.verbose >= 2:
         level = logging.DEBUG
@@ -69,7 +66,11 @@ def main(argv):
         level = logging.WARNING
     logging.basicConfig(level=level, format='%(levelname)s:%(message)s')
 
-    charm_dir = args[0]
+    if len(args):
+        charm_dir = args[0]
+    else:
+        charm_dir = '.'
+
     charm_metadata = os.path.join(charm_dir, 'metadata.yaml')
     if not os.access(charm_metadata, os.R_OK):
         logging.error("can't read charm metadata: %s", charm_metadata)
