@@ -99,11 +99,11 @@ def main(argv):
             return 1
 
     logging.info(
-        "Setting status %s of to %s", charm_branch.bzr_identity,
+        "Setting status of %s to %s", charm_branch.bzr_identity,
         OFFICAL_BRANCH_STATUS)
     charm_branch.lifecycle_status = OFFICAL_BRANCH_STATUS
     logging.info(
-        "Setting reviewer %s of to %s", charm_branch.bzr_identity,
+        "Setting reviewer of %s to %s", charm_branch.bzr_identity,
         REVIEW_TEAM_NAME)
     charm_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
     charm_branch.lp_save()
