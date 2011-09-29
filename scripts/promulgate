@@ -83,7 +83,11 @@ def main(argv):
     if options.branch is None:
         tree, branch, relpath = bzrdir.BzrDir.open_containing_tree_or_branch(
             charm_dir)
-        charm_branch = lp_api.load_branch(lp, branch)
+        push_location = branch.get_push_location()
+        if push_location is None:
+            logging.error("Branch has not been pushed.")
+            return 1
+        charm_branch = lp.branches.getByUrl(url=push_location)
         if charm_branch is None:
             logging.error("can't determine Launchpad branch from bzr branch")
             return 1
@@ -103,12 +107,12 @@ def main(argv):
     charm_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
     charm_branch.lp_save()
 
-    charm = lp.distributions[DISTRIBUTION]
+    charm_distro = lp.distributions[DISTRIBUTION]
     if options.series is None:
-        charm_series = charm.current_series
+        charm_series = charm_distro.current_series
     else:
         try:
-            charm_series = charm.getSeries(
+            charm_series = charm_distro.getSeries(
                 name_or_version=options.series)
         except (BadRequest, NotFound), e:
             # XXX flacoste 2011-06-15 bug=797917
