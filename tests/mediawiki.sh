@@ -16,10 +16,10 @@ if [ "$repository" = "teardown" ] ; then
   exit 0
 fi
 
-$JUJU deploy --repository=$repository mysql wiki-db
-$JUJU deploy --repository=$repository mediawiki demo-wiki
-$JUJU deploy --repository=$repository memcached wiki-cache
-$JUJU deploy --repository=$repository haproxy wiki-balancer
+$JUJU deploy --repository=$repository local:mysql wiki-db
+$JUJU deploy --repository=$repository local:mediawiki demo-wiki
+$JUJU deploy --repository=$repository local:memcached wiki-cache
+$JUJU deploy --repository=$repository local:haproxy wiki-balancer
 $JUJU add-unit wiki-cache
 $JUJU add-unit demo-wiki
 $JUJU add-relation wiki-db:db demo-wiki:db

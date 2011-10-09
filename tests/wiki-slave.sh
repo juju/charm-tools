@@ -15,9 +15,9 @@ if [ "$repository" = "teardown" ] ; then
   exit 0
 fi
 
-$JUJU deploy --repository=$repository mysql master
-$JUJU deploy --repository=$repository mysql slave
+$JUJU deploy --repository=$repository local:mysql master
+$JUJU deploy --repository=$repository local:mysql slave
 $JUJU add-relation master:master slave:slave
-$JUJU deploy --repository=$repository mediawiki demowiki
+$JUJU deploy --repository=$repository local:mediawiki demowiki
 $JUJU add-relation master:db demowiki:db
 $JUJU add-relation slave:db demowiki:slave
