@@ -32,6 +32,7 @@ except:
     print ""
     print "Note that if no path is specfied, charms will be searched for in the"
     print "current dir, or the dir specified in the environment var CHARM_HOME"
+    sys.exit(1)
 
 if '/' in charm_name:
   charm_path = charm_name
@@ -123,13 +124,6 @@ try:
   if len(charm['summary']) > 72:
     warn('summary sould be less than 72') 
 
-  # revision must be an integer
-  try:
-    x = int(charm['revision'])
-    if x < 0:
-      raise ValueError
-  except (TypeError, ValueError):
-    warn("revision should be a positive integer")
 
   # Must have a hooks dir
   if not path.exists(hooks_path):
@@ -158,12 +152,33 @@ try:
   except KeyError:
     pass
 
+  if 'revision' in charm:
+    warn("Revision should not be stored in metadata.yaml anymore. Move it to the revision file")
+    # revision must be an integer
+    try:
+      x = int(charm['revision'])
+      if x < 0:
+        raise ValueError
+    except (TypeError, ValueError):
+      warn("revision should be a positive integer")
+
   check_hook('install')
   check_hook('start', required=False)
   check_hook('stop', required=False)
 except IOError:
   err("could not find metadata file for " + charm_name)
   exit_code = -1
+
+rev_path = os.path.join(charm_path, 'revision')
+if not path.exists(rev_path):
+  err("revision file in root of charm is required")
+else:
+  with open(rev_path, 'r') as rev_file:
+      content = rev_file.read().rstrip()
+      try:
+          rev = int(content)
+      except ValueError:
+          err("revision file contains non-numeric data")
 
 def apparmor_problem(message, func):
     message = "%s (https://juju.ubuntu.com/AppArmor)" % message
