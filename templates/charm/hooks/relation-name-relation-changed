@@ -4,9 +4,9 @@
 # affect any change needed by relationships being formed, modified, or broken
 # This script should be idempotent.
 #raw
-echo $JUJU_REMOTE_UNIT modified its settings
-echo Relation settings:
+juju-log $JUJU_REMOTE_UNIT modified its settings
+juju-log Relation settings:
 relation-get
-echo Relation members:
+juju-log Relation members:
 relation-list
 #end raw
