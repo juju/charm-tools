@@ -1,5 +1,4 @@
 name: $package
-revision: 1
 summary: $summary
 description: |
   $description
