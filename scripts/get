@@ -8,5 +8,5 @@ CHARM_BRANCH=`curl -s "${CHARM_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr
 
 for CHARM in $CHARM_BRANCH
 do
-	echo "bzr branch $CHARM"
+	bzr branch $CHARM
 done
