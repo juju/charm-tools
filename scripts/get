@@ -1,0 +1,12 @@
+#!/bin/bash
+
+[ -z "${1}" ] && echo "Search parameter required" && exit 1
+
+CHARM_URL="https://code.launchpad.net/charm"
+
+CHARM_BRANCH=`curl -s "${CHARM_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr\>\</wbr\>##g | awk -F'>' '{ print $2 }' | awk -F'<' '{ print $1 }' | grep "${1}"`
+
+for CHARM in $CHARM_BRANCH
+do
+	echo "bzr branch $CHARM"
+done
