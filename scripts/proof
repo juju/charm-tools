@@ -180,21 +180,4 @@ else:
       except ValueError:
           err("revision file contains non-numeric data")
 
-def apparmor_problem(message, func):
-    message = "%s (https://juju.ubuntu.com/AppArmor)" % message
-    return func(message)
-
-apparmor_path = os.path.join(charm_path, 'apparmor')
-try:
-    entries = os.listdir(apparmor_path)
-    if len(entries) == 0:
-        apparmor_problem("apparmor directory is empty", warn)
-except OSError, e:
-    if e.errno == 20:
-        apparmor_problem("apparmor must be a directory", err)
-    elif e.errno == 2:
-        apparmor_problem("missing apparmor directory", err)
-    else:
-        apparmor_problem("problem listing apparmor directory [errno=%d]" % e.errno, err)
-
 sys.exit(exit_code)
