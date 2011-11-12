@@ -1,12 +1,18 @@
 #!/bin/bash
 
-[ -z "${1}" ] && echo "Search parameter required" && exit 1
+if [ -z "$1" ] ; then
+    echo "Retrieves official charm branches from https://launchpad.net/charm" >&2
+    echo "usage: charm get name_of_charm" >&2
+    exit 1
+fi
 
-CHARM_URL="https://code.launchpad.net/charm"
+home=`dirname $0`
 
-CHARM_BRANCH=`curl -s "${CHARM_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr\>\</wbr\>##g | awk -F'>' '{ print $2 }' | awk -F'<' '{ print $1 }' | grep "${1}"`
+CHARM_BRANCH=`$home/search $1 | grep ^lp:charm/$1`
 
-for CHARM in $CHARM_BRANCH
-do
-	bzr branch $CHARM
-done
+if [ -z "$CHARM_BRANCH" ] ; then
+    echo "$1 does not exist in official charm store." >&2
+    exit 1
+fi
+
+bzr branch $CHARM_BRANCH
