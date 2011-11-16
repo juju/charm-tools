@@ -2,9 +2,11 @@
 
 if [ -z "$1" ] ; then
     echo "Retrieves official charm branches from https://launchpad.net/charm" >&2
-    echo "usage: charm get name_of_charm" >&2
+    echo "usage: charm get name_of_charm [ local_charm_repo ]" >&2
     exit 1
 fi
+
+dest=$2
 
 home=`dirname $0`
 
@@ -15,4 +17,4 @@ if [ -z "$CHARM_BRANCH" ] ; then
     exit 1
 fi
 
-bzr branch $CHARM_BRANCH
+bzr branch $CHARM_BRANCH $dest
