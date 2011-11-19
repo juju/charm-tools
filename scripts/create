@@ -31,7 +31,7 @@ from stat import ST_MODE
 try:
     package=sys.argv[1]
 except:
-    print "usage: create package_name [ charm_home_dir ]"
+    print "Usage: create package_name [ charm_home_dir ]"
     sys.exit(1)
 
 try:
@@ -57,10 +57,11 @@ try:
     c = apt.Cache()
     c.open()
     p = c[package]
+    print "Found " + package + " package in apt cache, as a result charm contents have been pre-populated based on package metadata."
     v['summary'] = p.summary
     v['description'] = textwrap.fill(p.description,width=72, subsequent_indent='  ')
 except:
-    print "failed to find " + package + " in apt cache."
+    print "Failed to find " + package + " in apt cache, creating an empty charm instead."
     v['summary'] = '<Fill in summary here>'
     v['description'] = '<Multi-line description here>'
 
