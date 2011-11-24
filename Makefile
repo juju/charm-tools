@@ -4,6 +4,7 @@ DDIR = $(DESTDIR)$(prefix)
 bindir = $(DDIR)/bin
 mandir = $(DDIR)/share/man/man1
 datadir = $(DDIR)/share/charm-tools
+helperdir = $(DDIR)/share/charm-helper
 INSTALL = install
 
 all:
@@ -14,6 +15,8 @@ install:
 	$(INSTALL) -d $(datadir)
 	$(INSTALL) -t $(datadir) charm
 	$(INSTALL) -d $(bindir)
+	$(INSTALL) -d $(helperdir)
 	ln -sf $(datadir)/charm $(bindir)
 	gzip $(mandir)/charm.1
 	cp -rf scripts templates $(datadir)
+	cp -rf helpers/* $(helperdir)
