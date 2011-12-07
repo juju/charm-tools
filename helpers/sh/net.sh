@@ -32,38 +32,43 @@ ch_get_file()
 {
 	local FILE="$1"
 	local HASH="$2"
-	local FILENAME=`basename $FILE`
+	local TMP_DIR=$(date +%s | md5sum | md5sum | awk '{ string=substr($1, 8, 8); print string; }')
+	local DOWNLOAD_DIR="/tmp/$TMP_DIR"
+
+	mkdir -p $DOWNLOAD_DIR
 
 	if [ `ch_is_url $FILE` ]; then
-		wget -q "$FILE" -O /tmp/$FILENAME
-	elif [ ! -f $FILE ]; then
+		wget -q --directory-prefix="$DOWNLOAD_DIR/" "$FILE"
+		FILE=$DOWNLOAD_DIR/$(ls -tr $DOWNLOAD_DIR)
+	fi
+
+	if [ ! -f $FILE ]; then
 		return 2
 	fi
 
 	if [ `ch_is_url "$HASH"` ]; then
-		echo "URL!"
-		local HASHNAME=`basename $HASH`
+		local HASHNAME=$(basename $HASH)
 		wget -q "$HASH" -O /tmp/$HASHNAME
-		HASH=`cat /tmp/$HASHNAME | awk '{ print $1 }'`
+		HASH=$(cat /tmp/$HASHNAME | awk '{ print $1 }')
 	elif [ -f $HASH ]; then
-		HASH=`cat $HASH | awk '{ print $1 }'`
+		HASH=$(cat $HASH | awk '{ print $1 }')
 	elif [ ! `ch_type_hash "$HASH"` ]; then
 		return 3
 	fi
 
-	local HASH_TYPE=`ch_type_hash $HASH`
+	local HASH_TYPE=$(ch_type_hash $HASH)
 
 	if [ ! $HASH_TYPE ]; then
 		return 3
 	else
-		local FILE_HASH=`${HASH_TYPE}sum /tmp/$FILENAME | awk '{ print $1 }'`
+		local FILE_HASH=$(${HASH_TYPE}sum $FILE | awk '{ print $1 }')
 
-		if [ ! "$FILE_HASH" == "$HASH" ]; then
+		if [ "$FILE_HASH" != "$HASH" ]; then
 			return 4
 		fi
 	fi
 
-	echo "/tmp/$FILENAME"
+	echo "$FILE"
 	return 0
 }
 
@@ -135,7 +140,7 @@ ch_is_url()
 ch_is_ip()
 {
 	local DIRTY="$1"
-	local IP=`echo $DIRTY | awk -F="." '$1 <=255 && $2 <= 255 && $3 <= 255 && $4 <= 255 '`
+	local IP=$(echo $DIRTY | awk -F="." '$1 <=255 && $2 <= 255 && $3 <= 255 && $4 <= 255 ')
 
 	if [ -z "$IP" ]; then
 		return 1
@@ -158,11 +163,11 @@ ch_get_ip()
 	local HOST="$1"
 	#So, if there's multiple IP addresses, just grab the first
 	# for now.
-	local CHECK_IP=`host -t A $HOST | awk 'NR==1{ print $4 }'`
+	local CHECK_IP=$(host -t A $HOST | awk 'NR==1{ print $4 }')
 
 	if [ ! `ch_is_ip $CHECK_IP` ]; then
 		# Try a dig, why not?
-		CHECK_IP=`dig +short $HOST | awk 'NR==1{ print $1 }'`
+		CHECK_IP=$(dig +short $HOST | awk 'NR==1{ print $1 }')
 
 		if [ ! `ch_is_ip $CHECK_IP` ]; then
 			return 1
