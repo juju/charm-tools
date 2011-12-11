@@ -30,8 +30,8 @@
 ##
 ch_get_file()
 {
-	local FILE="$1"
-	local HASH="$2"
+	local FILE=${1:-""}
+	local HASH=${2:-""}
 	local TMP_DIR=$(date +%s | md5sum | md5sum | awk '{ string=substr($1, 8, 8); print string; }')
 	local DOWNLOAD_DIR="/tmp/$TMP_DIR"
 
@@ -165,11 +165,11 @@ ch_get_ip()
 	# for now.
 	local CHECK_IP=$(host -t A $HOST | awk 'NR==1{ print $4 }')
 
-	if [ ! `ch_is_ip $CHECK_IP` ]; then
+	if [ ! `ch_is_ip "$CHECK_IP"` ]; then
 		# Try a dig, why not?
 		CHECK_IP=$(dig +short $HOST | awk 'NR==1{ print $1 }')
 
-		if [ ! `ch_is_ip $CHECK_IP` ]; then
+		if [ ! `ch_is_ip "$CHECK_IP"` ]; then
 			return 1
 		fi
 	fi
