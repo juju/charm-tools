@@ -84,7 +84,7 @@ temp_dir=`mktemp -d /tmp/charm-helper-tests.XXXXXX`
 save_pwd=$PWD
 cd $temp_dir
 echo Starting SimpleHTTPServer in $PWD on port 8999 to test fetching files...
-$test_home/run_webserver.sh 8999 &
+$test_home/run_webserver.sh 8999 > /dev/null 2>&1 &
 echo Giving it 1 second to start
 sleep 1
 echo Creating temp data file
@@ -97,7 +97,7 @@ gzip -c testdata.txt > testdata.txt.gz
 gzip_hash=`sha256sum testdata.txt.gz|cut -d' ' -f1`
 cd $save_pwd
 test_url=http://127.0.0.1:8999
-echo -n Testing ch_get_file... 
+echo -n Testing ch_get_file...
 ch_get_file _bad_#args/foo && return 1 || :
 ch_get_file $test_url/testdata.txt
 ch_get_file $test_url/testdata.txt $text_hash
