@@ -19,6 +19,11 @@
 # along with Charm Helpers.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
+## 
+# Globally overridable settings. Make sure to set them before sourcing 
+# this file.
+CH_WGET_ARGS=${CH_WGET_ARGS:-"-q"}
+
 ##
 # Get File
 # Retrives a file and compares the file to a hash
@@ -32,37 +37,32 @@ ch_get_file()
 {
 	local FILE=${1:-""}
 	local HASH=${2:-""}
-	local TMP_DIR=$(date +%s | md5sum | md5sum | awk '{ string=substr($1, 8, 8); print string; }')
-	local DOWNLOAD_DIR="/tmp/$TMP_DIR"
-
-	mkdir -p $DOWNLOAD_DIR
+    local DOWNLOAD_DIR=${CH_DOWNLOAD_DIR:-"`mktemp -d /tmp/ch-downloads.XXXXXX`"}
 
 	if [ `ch_is_url "$FILE"` ]; then
-		wget -q --directory-prefix="$DOWNLOAD_DIR/" "$FILE"
-		FILE=$DOWNLOAD_DIR/$(ls -tr $DOWNLOAD_DIR)
+		wget $CH_WGET_ARGS --directory-prefix="$CH_DOWNLOAD_DIR/" "$FILE"
+		FILE=$CH_DOWNLOAD_DIR/$(ls -tr $CH_DOWNLOAD_DIR|head -n 1)
 	fi
 
 	if [ ! -f "$FILE" ]; then
 		return 2
 	fi
 
-	if [ `ch_is_url "$HASH"` ]; then
-		local HASHNAME=$(basename $HASH)
-		wget -q "$HASH" -O /tmp/$HASHNAME
-		HASH=$(cat /tmp/$HASHNAME | awk '{ print $1 }')
-	elif [ -f "$HASH" ]; then
-		HASH=$(cat "$HASH" | awk '{ print $1 }')
-	elif [ ! `ch_type_hash "$HASH"` ]; then
-		return 3
-	else
+    if [ -z "$HASH" ];then
 		#echo "Warning, no has specified. The file will be downloaded but not cryptographically checked!" > 2
 		echo "$FILE"
 		return 0
+	elif [ `ch_is_url "$HASH"` ]; then
+		local HASHNAME=$(basename $HASH)
+		wget $CH_WGET_ARGS "$HASH" -O /tmp/$HASHNAME
+		HASH=$(cat /tmp/$HASHNAME | awk '{ print $1 }')
+	elif [ -f "$HASH" ]; then
+		HASH=$(cat "$HASH" | awk '{ print $1 }')
 	fi
 
 	local HASH_TYPE=$(ch_type_hash $HASH)
 
-	if [ ! $HASH_TYPE ]; then
+	if [ -z "$HASH_TYPE" ]; then
 		return 3
 	else
 		local FILE_HASH=$(${HASH_TYPE}sum $FILE | awk '{ print $1 }')
@@ -144,7 +144,7 @@ ch_is_url()
 ch_is_ip()
 {
 	local DIRTY="$1"
-	local IP=$(echo $DIRTY | awk -F="." '$1 <=255 && $2 <= 255 && $3 <= 255 && $4 <= 255 ')
+	local IP=$(echo $DIRTY | awk -F. '$1 <=255 && $2 <= 255 && $3 <= 255 && $4 <= 255 ')
 
 	if [ -z "$IP" ]; then
 		return 1
