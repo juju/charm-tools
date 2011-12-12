@@ -9,7 +9,7 @@ INSTALL = install
 
 all:
 
-install:
+install: check
 	$(INSTALL) -d $(mandir)
 	$(INSTALL) -t $(mandir) charm.1
 	$(INSTALL) -d $(datadir)
@@ -20,3 +20,8 @@ install:
 	gzip $(mandir)/charm.1
 	cp -rf scripts templates $(datadir)
 	cp -rf helpers/* $(helperdir)
+
+check:
+	tests/helpers/helpers.sh
+	@echo Test shell helpers with bash
+	bash tests/helpers/helpers.sh
