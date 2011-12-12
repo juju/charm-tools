@@ -37,12 +37,12 @@ ch_get_file()
 
 	mkdir -p $DOWNLOAD_DIR
 
-	if [ `ch_is_url $FILE` ]; then
+	if [ `ch_is_url "$FILE"` ]; then
 		wget -q --directory-prefix="$DOWNLOAD_DIR/" "$FILE"
 		FILE=$DOWNLOAD_DIR/$(ls -tr $DOWNLOAD_DIR)
 	fi
 
-	if [ ! -f $FILE ]; then
+	if [ ! -f "$FILE" ]; then
 		return 2
 	fi
 
@@ -50,10 +50,14 @@ ch_get_file()
 		local HASHNAME=$(basename $HASH)
 		wget -q "$HASH" -O /tmp/$HASHNAME
 		HASH=$(cat /tmp/$HASHNAME | awk '{ print $1 }')
-	elif [ -f $HASH ]; then
-		HASH=$(cat $HASH | awk '{ print $1 }')
+	elif [ -f "$HASH" ]; then
+		HASH=$(cat "$HASH" | awk '{ print $1 }')
 	elif [ ! `ch_type_hash "$HASH"` ]; then
 		return 3
+	else
+		#echo "Warning, no has specified. The file will be downloaded but not cryptographically checked!" > 2
+		echo "$FILE"
+		return 0
 	fi
 
 	local HASH_TYPE=$(ch_type_hash $HASH)
