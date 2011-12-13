@@ -100,6 +100,10 @@ cleanup_temp () {
                 echo DONE
             fi
         fi
+        if [ -n "$temp_srv_dir" ] && [ -s $temp_srv_dir/server.log ] ; then
+            output Printing server log
+            cat $temp_srv_dir/server.log
+        fi
         local dir=""
         for dir in $temp_dirs ; do
             rm -f $dir/*
@@ -114,11 +118,25 @@ trap cleanup_temp EXIT
 temp_srv_dir=`mktemp -d /tmp/charm-helper-srv.XXXXXX`
 temp_dl_dir=`mktemp -d /tmp/charm-helper-dl.XXXXXX`
 temp_dirs="$temp_srv_dir $temp_dl_dir"
+test_url=http://127.0.0.1:8999
 cd $temp_srv_dir
 output Starting SimpleHTTPServer in $PWD on port 8999 to test fetching files.
 sh $test_home/run_webserver.sh 8999 > $temp_srv_dir/server.log 2>&1 &
-output Giving it 1 second to start
-sleep 1
+output Looping wget until webserver responds...
+listening=0
+for i in 1 2 3 4 5 ; do
+  sleep 1
+  if wget -q $test_url/ ; then
+    output Attempt $i succeeded.
+    listening=1
+    break
+  fi
+  output Attempt $i failed..
+done
+if [ $listening -eq 0 ] ; then
+    output fetching from test webserver Failed $i times, aborting.
+    exit 1
+fi
 output Creating temp data file
 cat > testdata.txt <<EOF
 The quick brown fox jumped over the lazy brown dog.
@@ -129,7 +147,6 @@ gzip -c testdata.txt > testdata.txt.gz
 gzip_hash=`sha256sum testdata.txt.gz|cut -d' ' -f1`
 
 cd $temp_dl_dir
-test_url=http://127.0.0.1:8999
 CH_DOWNLOAD_DIR=$temp_dl_dir
 start_test ch_get_file...
 ch_get_file '_bad_#args/foo' && return 1 || :
