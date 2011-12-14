@@ -262,3 +262,9 @@ ch_my_unit_id()
 {
     echo "`ch_unit_id $JUJU_UNIT_NAME`"
 }
+
+
+##
+# Peer File Operations
+
+./peer_net.bash
