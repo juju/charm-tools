@@ -39,6 +39,7 @@ start_test () {
 
 #mock relation-list
 HELPERS_TEST=1
+alias relation-list=relation_list
 relation_list()
 {
     echo "TEST/2
