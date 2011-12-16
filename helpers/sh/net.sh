@@ -199,13 +199,8 @@ ch_peer_am_I_leader()
 {
     REMOTE_UNIT_ID=`echo $JUJU_REMOTE_UNIT | cut -d/ -f2`
     LOCAL_UNIT_ID=`echo $JUJU_UNIT_NAME | cut -d/ -f2`
-    if [ -z $HELPERS_TEST  ]; then
-        LIST=`relation-list`
-    else
-        LIST=`relation_list`
-    fi
+    LIST=`relation-list`
     FIRST_UNIT_ID=`echo "$LIST" | head -n 1 | cut -d/ -f2`
-
 
     if [ $LOCAL_UNIT_ID -lt $REMOTE_UNIT_ID ] && [ $LOCAL_UNIT_ID -lt $FIRST_UNIT_ID ]; then
         echo "1"
@@ -231,11 +226,7 @@ ch_peer_leader()
         leader="$JUJU_UNIT_NAME"
     else
         # this is  a slave the leader is the head of the list
-        if [ -z $HELPERS_TEST  ]; then
-            LIST=`relation-list`
-        else
-            LIST=`relation_list`
-        fi
+        LIST=`relation-list`
         leader="`echo "$LIST" | head -n 1`"
     fi
     if [ $# -gt 0 ] && [ "$1" = "--id" ]; then
@@ -273,4 +264,4 @@ ch_my_unit_id()
 ##
 # Peer File Operations
 
-./peer_net.bash
+. ../../helpers/sh/peer_net.bash

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #Copyright: Copyright 2011, Canonical Ltd., All Rights Reserved.
 #License: GPL-3
@@ -92,6 +92,7 @@ USAGE: ch_peer_rsync path1 [...pathN]"
           CH_paths="$CH_paths $CH_arg root@$CH_remote:$CH_arg"
         else
           juju-log "$0: Path does not exist, skipping distribution of: $arg"
+        fi
         ;;
     done
     if [ -z $CH_paths ]; then
