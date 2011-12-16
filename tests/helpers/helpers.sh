@@ -114,7 +114,6 @@ cleanup_temp () {
         done
     fi
     cd $save_pwd
-    CH_cleanup_sshd
 }
 
 trap cleanup_temp EXIT

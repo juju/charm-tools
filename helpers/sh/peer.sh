@@ -117,48 +117,48 @@ ch_my_unit_id()
 alias ch_peer_scp=ch_peer_copy
 alias ch_peer_rsync='ch_peer_copy --rsync'
 ch_peer_copy() {
-  CH_USAGE="ERROR in $*
+  local USAGE="ERROR in $*
 USAGE: ch_peer_scp [-r] path1 [...pathN]
 USAGE: ch_peer_rsync path1 [...pathN]"
-  CH_ssh_key_p="$HOME/.ssh"
+  local ssh_key_p="$HOME/.ssh"
   if [ $# -eq 0 ]; then
-    juju-log "$CH_USAGE"
+    juju-log "$USAGE"
     juju-log "ch_peer_copy: please provide at least one argument (path)"
     exit 1
   fi
 
   ## LEADER ##
   
-  if  [ `ch_peer_am_I_leader` = 1 ] ; then
+  if ch_peer_i_am_leader ; then
     juju-log "ch_peer_copy: This is our leader"
     
-    CH_remote=`relation-get scp-hostname`
-    CH_ssh_key_saved=`relation-get scp-ssh-key-saved`
-    if [ -z $CH_remote ]; then
+    local remote=`relation-get scp-hostname`
+    local ssh_key_saved=`relation-get scp-ssh-key-saved`
+    if [ -z $remote ]; then
       juju-log "ch_peer_copy: We do not have a remote hostname yet"
-      CH_remote=0
+      remote=0
     fi  
   
-    CH_scp_options="-o StrictHostKeyChecking=no -B -v"
-    CH_rsync_options="-avz -e ssh"
-    CH_paths=""
-    CH_copy_command="scp"
+    local scp_options="-o StrictHostKeyChecking=no -B -v"
+    local rsync_options="-avz -e ssh"
+    local paths=""
+    local copy_command="scp"
     
     while [ "$#" -gt 0 ]; 
     do
       case "$1" in
       "-r") # scp recure
-        CH_scp_options="$CH_scp_options -r"
+        scp_options="$scp_options -r"
         shift
         ;;
       "-p") # port number
         shift
-        CH_scp_options="$CH_scp_options -P $1"
-        CH_rsync_options="-avz -e 'ssh -p $1'"
+        scp_options="$scp_options -P $1"
+        rsync_options="-avz -e 'ssh -p $1'"
         shift
         ;;
       "--rsync") # rsync secure (-e ssh)
-        CH_copy_command="rsync"
+        copy_command="rsync"
         shift
         ;;
       "$0")
@@ -166,7 +166,7 @@ USAGE: ch_peer_rsync path1 [...pathN]"
         ;;
       *) # should be a file
         if [ -e "$1" ]; then
-          CH_paths="$CH_paths $1 $USER@$CH_remote:$1"
+          paths="$paths $1 $USER@$remote:$1"
           juju-log "ch_peer_copy: path found: $1"
         else
           juju-log "ch_peer_copy: Path does not exist, skipping distribution of: $1"
@@ -175,28 +175,28 @@ USAGE: ch_peer_rsync path1 [...pathN]"
         ;;
       esac
     done
-    if [ ! -n "$CH_paths" ]; then
-      juju-log "$CH_USAGE"
+    if [ ! -n "$paths" ]; then
+      juju-log "$USAGE"
       juju-log "ch_peer_copy: please provide at least one path"
       exit 1
     fi
     
-    if [ -n $CH_remote ]; then
+    if [ -n $remote ]; then
       # We know where to send file to
       
-      case $CH_ssh_key_saved in
+      case $ssh_key_saved in
       1) # ssh keys have been save, let's copy
-        juju-log "ch_peer_copy: $CH_copy_command $CH_scp_options $CH_paths"
-        $CH_copy_command $CH_scp_options $CH_paths ||
+        juju-log "ch_peer_copy: $copy_command $scp_options $paths"
+        $copy_command $scp_options $paths ||
         relation-set scp-copy-done=1
         ;;
         
       *) # we need to first distribute our ssh key files
         juju-log "ch_peer_copy: distributing ssh key"
-        if [ ! -f "$CH_ssh_key_p/id_rsa" ]; then
-          ssh-keygen -q -N '' -t rsa -b 2048 -f $CH_ssh_key_p/id_rsa
+        if [ ! -f "$ssh_key_p/id_rsa" ]; then
+          ssh-keygen -q -N '' -t rsa -b 2048 -f $ssh_key_p/id_rsa
         fi
-        relation-set scp-ssh-key="`cat $CH_ssh_key_p/id_rsa.pub`"
+        relation-set scp-ssh-key="`cat $ssh_key_p/id_rsa.pub`"
         ;;
         
       esac
@@ -207,30 +207,32 @@ USAGE: ch_peer_rsync path1 [...pathN]"
   else # Not the leader
     juju-log "ch_peer_copy: This is a slave"
  
-    CH_scp_copy_done=`relation-get scp-copy-done`
-    CH_scp_ssh_key=`relation-get scp-ssh-key`
+    local scp_copy_done=`relation-get scp-copy-done`
+    local scp_ssh_key="`relation-get scp-ssh-key`"
  
-    if [ -n "$CH_scp_copy_done" ] && [ $CH_scp_copy_done = 1 ]; then
+    if [ -n "$scp_copy_done" ] && [ $scp_copy_done = 1 ]; then
       juju-log "ch_peer_copy: copy done, thanks"
       echo "done"
     else
-      if [ -n "$CH_scp_ssh_key" ]; then
-        mkdir -p $CH_ssh_key_p
-        grep -q -F "$CH_scp_ssh_key" $CH_ssh_key_p/authorized_keys
-        if [ $? != 0 ]; then
-          juju-log "ch_peer_copy: saving ssh key $CH_scp_ssh_key"
-          echo "CH_$scp_ssh_key" >> $CH_ssh_key_p/authorized_keys
+      if [ -n "$scp_ssh_key" ]; then
+        juju-log "ssh key dir: $ssh_key_p"
+        mkdir -p $ssh_key_p
+        chmod 700 $ssh_key_p
+        if ! grep -q -F "$scp_ssh_key" $ssh_key_p/authorized_keys ; then
+          juju-log "ch_peer_copy: saving ssh key $scp_ssh_key"
+          echo "$scp_ssh_key" >> $ssh_key_p/authorized_keys
           relation-set scp-ssh-key-saved=1
         else
           juju-log "ch_peer_copy: ssh keys already saved, thanks"
           relation-set scp-ssh-key-saved=1
         fi
+        chmod 600 "$ssh_key_p/authorized_keys"
       else
         juju-log "ch_peer_copy: ssh_keys not set yet, later"
         relation-set scp-hostname=`unit-get private-address`
       fi 
     fi 
   fi 
-
+  juju-log "ch_peer_copy: out"
 }
 

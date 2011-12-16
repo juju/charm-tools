@@ -109,34 +109,41 @@ mock_relation_get()
 }
 
 
+
 # mock sshd server
-CH_TEMPDIR=`mktemp -d`
+[ ! `which pwgen` ] && apt-get -y install pwgen
+CH_TEMPDIR="/tmp/juju-helpers-peers"
+mkdir -p $CH_TEMPDIR/testdir/emptydir/
+[ -e $CH_TEMPDIR/testdir/ ]] || echo "whatt????"
 CH_CHROOT="$CH_TEMPDIR/chroot"
-mkdir -p $CH_CHROOT/$HOME/.ssh
+mkdir -p $CH_CHROOT/$HOME/.ssh/
 touch  $CH_CHROOT/$HOME/.ssh/authorized_keys
+mkdir -p $CH_CHROOT/root/.ssh/
+touch  $CH_CHROOT/root/.ssh/authorized_keys
 mkdir -p $CH_CHROOT/$CH_TEMPDIR
-mkdir -p $CH_CHROOT/var/run
-mkdir -p $CH_CHROOT/var/log
-mkdir -p $CH_CHROOT/usr/bin
+mkdir -p $CH_CHROOT/var/run/
+mkdir -p $CH_CHROOT/var/log/
+mkdir -p $CH_CHROOT/usr/bin/
 cp -R /usr/bin $CH_CHROOT/usr/bin
 mkdir -p $CH_CHROOT/etc/ssh
-cp -R /etc/ssh $CH_CHROOT/etc/ssh > /dev/null ||
-mkdir -p $CH_TEMPDIR/testdir
+cp -R /etc/ssh $CH_CHROOT/etc > /dev/null ||
+
 pwgen > $CH_TEMPDIR/testdir/testfile0
 pwgen > $CH_TEMPDIR/testdir/testfile1
 pwgen > $CH_TEMPDIR/testfile
 CH_portnum=8822
-/usr/sbin/sshd -o ChrootDirectory=$CH_CHROOT -o PidFile=$CH_CHROOT/var/run/sshd.pid -p $CH_portnum
-CH_cleanup_sshd()
+/usr/sbin/sshd -o ChrootDirectory=$CH_CHROOT -o PidFile=$CH_CHROOT/var/run/sshd.pid -p $CH_portnum -o AuthorizedKeysFile="$CH_CHROOT/root/.ssh/authorized_keys" -o StrictModes=no
+cleanup_peer()
 {
     kill -9 `cat $CH_CHROOT/var/run/sshd.pid`
-    rm -rf $CH_TEMPDIR
+    #rm -rf $CH_TEMPDIR
     unalias juju-log
     unalias relation-set
     unalias relation-get
     unalias unit-get
     unalias relation-list
 }
+trap cleanup_peer EXIT
 
 output () {
     echo `date`: $*
@@ -170,6 +177,7 @@ echo PASS
 start_test ch_peer_i_am_leader...
 JUJU_REMOTE_UNIT="TEST/3"
 JUJU_UNIT_NAME="TEST/2"
+CH_MASTER=1
 ch_peer_i_am_leader && return 1 || :
 JUJU_UNIT_NAME="TEST/1"
 ch_peer_i_am_leader || return 1 && :
@@ -184,22 +192,26 @@ JUJU_UNIT_NAME="TEST/3"
 echo PASS
 
 start_test "ch_peer_scp -r..."
-for i in 1 2 3 4
+local HOME_SAVE=$HOME
+for i in 1 2 3 
 do
-    echo "Begin $i"
+    echo "Begin $i  $HOME $USER"
     #slave relation joined
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
+    HOME="$CH_CHROOT/root"
     CH_MASTER=0
     ch_peer_scp -r -p $CH_portnum $CH_TEMPDIR/testdir
     echo "middle $i"
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
+    HOME="/root"
     CH_MASTER=1
     ch_peer_scp -r -p $CH_portnum $CH_TEMPDIR/testdir
     echo "End $i"
 done
+HOME=$HOME_SAVE
 [ ! -e $CH_CHROOT/$CH_TEMPDIR/testdir ] && echo "dir not copied" && exit 1
 [ ! -e $CH_CHROOT/$CH_TEMPDIR/testdir/testfile0 ] && echo "file1 not copied" && exit 1
 [ ! -e $CH_CHROOT/$CH_TEMPDIR/testdir/testfile0 ] && echo "file2 not copied" && exit 1
@@ -211,21 +223,24 @@ echo PASS
 
 
 start_test "ch_peer_scp..."
-for i in 1 2 3 4
+for i in 1 2 3 
 do
     mock_juju_log "Begin $i"
     #slave relation joined
     JUJU_UNIT_NAME="TEST/2" 
     JUJU_REMOTE_UNIT="TEST/1"
+    HOME="$CH_CHROOT/root"
     CH_MASTER=0
     ch_peer_scp -p $CH_portnum $CH_TEMPDIR/testfile
     #master relation joined
     JUJU_UNIT_NAME="TEST/1" 
     JUJU_REMOTE_UNIT="TEST/2"
+    HOME="/root"
     CH_MASTER=1
     ch_peer_scp -p $CH_portnum $CH_TEMPDIR/testfile
     mock_juju_log "End $i"
 done
+HOME=$HOME_SAVE
 [ ! -e $CH_CHROOT/$CH_TEMPDIR/testfile ] && echo "file not copied" && exit 1
 CH_t1=`md5sum $CH_CHROOT/$CH_TEMPDIR/testfile`
 CH_t2=`md5sum /$CH_TEMPDIR/testfile`
