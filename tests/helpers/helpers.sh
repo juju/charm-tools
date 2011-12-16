@@ -37,17 +37,6 @@ start_test () {
     echo -n `date`: Testing $*
 }
 
-#mock relation-list
-HELPERS_TEST=1
-alias relation-list=relation_list
-relation_list()
-{
-    echo "TEST/2
-TEST/3
-TEST/4"
-}
-
-
 if [ "$MOCK_NET" = "true" ] ; then
     alias host=mock_host
     alias dig=mock_dig    
@@ -171,29 +160,4 @@ cmp $f $temp_srv_dir/testdata.txt.gz
 ch_get_file $test_url/testdata.txt.gz $gzip_hash > /dev/null
 echo PASS
 
-start_test ch_unit_id...
-JUJU_UNIT_NAME="TEST/1"
-[ ! `ch_unit_id $JUJU_UNIT_NAME` -eq 1 ] && return 1
-bad="badarg"
-ch_unit_id $bad > /dev/null || return 1
-echo PASS
 
-start_test ch_my_unit_id...
-[ ! `ch_my_unit_id` -eq  1 ] && return 1
-echo PASS
-
-start_test ch_peer_am_I_leader...
-JUJU_REMOTE_UNIT="TEST/3"
-JUJU_UNIT_NAME="TEST/2"
-[ `ch_peer_am_I_leader` -eq 1 ] && return 1 || :
-JUJU_UNIT_NAME="TEST/1"
-[ `ch_peer_am_I_leader` -eq 1 ] || return 1 && :
-echo PASS
-
-start_test ch_peer_leader...
-[ "`ch_peer_leader`" = "TEST/1" ] ||  return 1
-[ `ch_peer_leader --id` -eq 1 ] || return 1
-JUJU_UNIT_NAME="TEST/3"
-[ "`ch_peer_leader`" = "TEST/2" ] || return 1
-[ `ch_peer_leader --id` -eq 2 ] || return 1
-echo PASS
