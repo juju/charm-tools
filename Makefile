@@ -22,6 +22,6 @@ install: check
 	cp -rf helpers/* $(helperdir)
 
 check:
-	tests/helpers/helpers.sh || sh -x tests/helpers/helpers.sh
+	tests/helpers/helpers.sh || sh -x tests/helpers/helpers.sh timeout
 	@echo Test shell helpers with bash
-	bash tests/helpers/helpers.sh || bash -x tests/helpers/helpers.sh
+	bash tests/helpers/helpers.sh || bash -x tests/helpers/helpers.sh timeout

@@ -1,18 +1,14 @@
 #!/bin/sh
-set -ue
-
-test_home=`dirname $0`
-test_home=`readlink -f $test_home`
-
-# Should set 60 second timeout
-if [ -z ${1:-""} ] ; then
-    exec $test_home/run_with_timeout.py $0 timeout
+if [ -z "$test_home" ] ; then
+    test_home=`dirname $0`
+    test_home=`readlink -f $test_home`
 fi
 
-PEER_SOURCE=${PEER_SOURCE:-"$test_home/../../helpers/sh/peer.sh"}
+[ "$LIB_SOURCED" = "1" ] || . $test_home/lib.sh
+
+set -ue
 
 #mock relation-list
-HELPERS_TEST=1
 alias relation-list=relation_list
 relation_list()
 {
@@ -21,23 +17,7 @@ TEST/3
 TEST/4"
 }
 
-output () {
-    echo `date`: $*
-}
-
-start_output () {
-    echo -n `date`: $*
-}
-
-start_test () {
-    echo -n `date`: Testing $*
-}
-
-
-# Uncomment this to get more info on why wget failed
-#CH_WGET_ARGS="--verbose"
-
-. $PEER_SOURCE
+. $HELPERS_HOME/peer.sh
 
 start_test ch_unit_id...
 JUJU_UNIT_NAME="TEST/1"
