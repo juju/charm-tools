@@ -86,16 +86,21 @@ ch_my_unit_id()
 
 
 ##
-# ch_peer_copy [-r|--rsync] path1 [...pathN]
-# ch_peer_scp [-r] path1 [...pathN]
-# ch_peer_rsync path1 [...pathN]
+# ch_peer_copy [-r|--rsync][-p <port>][-o "<opt>"] sourcepath1 destpath1 [... sourcepathN destpathN]
+# ch_peer_scp [-r][-p <port>][-o "<opt>"] sourcepath1 destpath1 [... sourcepathN destpathN]
+# ch_peer_rsync [-p <port>] sourcepath1 destpath1 [... sourcepathN destpathN]
 #
 # distribute a list of file to all slave of the peer relation
 #
 # param
-#  -r      recursive scp copy
-#  --rsync use rsync instead of scp
-#  path    file or directory path
+#  -r            recursive scp copy (scp only, always on with rsync)
+#  -p <port>     destination port to connect to
+#  -o "<opt>"    any pathttrough options to the copy util
+#  --rsync       use rsync instead of scp
+#  sourcepath    path from which to copy (do not specify host, it will always
+#                be coming from the leader of the peer relation)
+#  destpath      path to which to copy (do not specify host, it will always
+#                be the slaves of the peer relation)
 #
 # returns
 #  "done" when copy is complete on the slave side
@@ -118,8 +123,8 @@ alias ch_peer_scp=ch_peer_copy
 alias ch_peer_rsync='ch_peer_copy --rsync'
 ch_peer_copy() {
   local USAGE="ERROR in $*
-USAGE: ch_peer_scp [-r] path1 [...pathN]
-USAGE: ch_peer_rsync path1 [...pathN]"
+USAGE: ch_peer_scp [-r][-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]
+USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]"
   local ssh_key_p="$HOME/.ssh"
   if [ $# -eq 0 ]; then
     juju-log "$USAGE"
@@ -139,8 +144,8 @@ USAGE: ch_peer_rsync path1 [...pathN]"
       remote=0
     fi  
   
-    local scp_options="-o StrictHostKeyChecking=no -B -v"
-    local rsync_options="-avz -e ssh"
+    local scp_options="-o StrictHostKeyChecking=no -B"
+    local rsync_options=""
     local paths=""
     local copy_command="scp"
     
@@ -154,7 +159,13 @@ USAGE: ch_peer_rsync path1 [...pathN]"
       "-p") # port number
         shift
         scp_options="$scp_options -P $1"
-        rsync_options="-avz -e 'ssh -p $1'"
+        rsync_options="$rsync_options -e 'ssh -p $1'"
+        shift
+        ;;
+      "-o") # passthrough option
+        shift
+        scp_options="$scp_options $1"
+        rsync_options="$rsync_options $1"
         shift
         ;;
       "--rsync") # rsync secure (-e ssh)
@@ -164,12 +175,14 @@ USAGE: ch_peer_rsync path1 [...pathN]"
       "$0")
         shift
         ;;
-      *) # should be a file
-        if [ -e "$1" ]; then
-          paths="$paths $1 $USER@$remote:$1"
-          juju-log "ch_peer_copy: path found: $1"
+      *) # should be a pair of file
+        if [ -e "`echo "$1" | sed 's/\*$//'`" ]; then
+          local sourcep="$1"
+          shift
+          paths="$paths $sourcep $USER@$remote:$1"
+          juju-log "ch_peer_copy: paths found: $sourcep -> $1"
         else
-          juju-log "ch_peer_copy: Path does not exist, skipping distribution of: $1"
+          juju-log "ch_peer_copy: unknown option, skipping: $1"
         fi
         shift
         ;;
@@ -186,8 +199,11 @@ USAGE: ch_peer_rsync path1 [...pathN]"
       
       case $ssh_key_saved in
       1) # ssh keys have been save, let's copy
+        if [ x"$copy_command" = x"rsync" ]; then
+          scp_options=$rsync_options
+        fi
         juju-log "ch_peer_copy: $copy_command $scp_options $paths"
-        $copy_command $scp_options $paths ||
+        eval "$copy_command $scp_options $paths"
         relation-set scp-copy-done=1
         ;;
         
@@ -212,7 +228,6 @@ USAGE: ch_peer_rsync path1 [...pathN]"
  
     if [ -n "$scp_copy_done" ] && [ $scp_copy_done = 1 ]; then
       juju-log "ch_peer_copy: copy done, thanks"
-      echo "done"
     else
       if [ -n "$scp_ssh_key" ]; then
         juju-log "ssh key dir: $ssh_key_p"
