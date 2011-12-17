@@ -1,4 +1,11 @@
 #!/bin/sh
+if [ -z "$test_home" ] ; then
+    test_home=`dirname $0`
+    test_home=`readlink -f $test_home`
+fi
+
+[ "$LIB_SOURCED" = "1" ] || . $test_home/lib.sh
+
 set -ue
 
 if [ ! x"$USER" = x"root" ]; then
@@ -6,15 +13,6 @@ if [ ! x"$USER" = x"root" ]; then
    exit 1
 fi
 
-test_home=`dirname $0`
-test_home=`readlink -f $test_home`
-
-# Should set 60 second timeout
-if [ -z ${1:-""} ] ; then
-    exec $test_home/run_with_timeout.py $0 timeout
-fi
-
-PEER_SOURCE=${PEER_SOURCE:-"$test_home/../../helpers/sh/peer.sh"}
 
 #mock relation-list
 alias relation-list=mock_relation_list
@@ -142,23 +140,7 @@ cleanup_peer()
 }
 trap cleanup_peer EXIT
 
-output () {
-    echo `date`: $*
-}
-
-start_output () {
-    echo -n `date`: $*
-}
-
-start_test () {
-    echo -n `date`: Testing $*
-}
-
-
-# Uncomment this to get more info on why wget failed
-#CH_WGET_ARGS="--verbose"
-
-. $PEER_SOURCE
+. $HELPERS_HOME/peer.sh
 
 start_test ch_unit_id...
 JUJU_UNIT_NAME="TEST/1"
