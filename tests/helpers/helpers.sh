@@ -15,3 +15,8 @@ fi
 for i in $test_home/test_*.sh ; do
   . $i
 done
+
+for i in $test_home/test-sudo*.sh ; do
+  sudo $i
+done
+
