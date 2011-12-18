@@ -147,6 +147,6 @@ ch_get_file $test_url/testdata.txt.gz $gzip_hash > /dev/null
 #test with CH_DOWLOAD_DIR unset
 unset CH_DOWNLOAD_DIR
 f=`ch_get_file $test_url/testdata.txt`
-cmp $f $temp_srv_dir/testdata.txt.gz
-rm f
+cmp $f $temp_srv_dir/testdata.txt
+rm $f
 echo PASS
