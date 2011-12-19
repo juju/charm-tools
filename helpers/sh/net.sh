@@ -37,7 +37,7 @@ ch_get_file()
 {
 	local FILE=${1:-""}
 	local HASH=${2:-""}
-    local DOWNLOAD_DIR=${CH_DOWNLOAD_DIR:-"`mktemp -d /tmp/ch-downloads.XXXXXX`"}
+    local CH_DOWNLOAD_DIR=${CH_DOWNLOAD_DIR:-"`mktemp -d /tmp/ch-downloads.XXXXXX`"}
 
 	if [ `ch_is_url "$FILE"` ]; then
 		wget $CH_WGET_ARGS --directory-prefix="$CH_DOWNLOAD_DIR/" "$FILE"
