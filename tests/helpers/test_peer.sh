@@ -32,7 +32,7 @@ TEST/4"
 #Save juju-log for debugging
 CH_TEMPLOG="/tmp/tmp-juju-log"
 echo "" > $CH_TEMPLOG
-echo "creating test-log in $CH_TEMPLOG"
+output "creating test-log in $CH_TEMPLOG"
 alias juju-log=mock_juju_log
 mock_juju_log()
 {
@@ -142,11 +142,11 @@ JUJU_UNIT_NAME="TEST/1"
 [ ! `ch_unit_id $JUJU_UNIT_NAME` -eq 1 ] && return 1
 CH_bad="badarg"
 ch_unit_id $CH_bad > /dev/null || return 1
-echo PASS
+output PASS
 
 start_test ch_my_unit_id...
 [ ! `ch_my_unit_id` -eq  1 ] && return 1
-echo PASS
+output PASS
 
 start_test ch_peer_i_am_leader...
 JUJU_REMOTE_UNIT="TEST/3"
@@ -155,7 +155,7 @@ CH_MASTER=1
 ch_peer_i_am_leader && return 1 || :
 JUJU_UNIT_NAME="TEST/1"
 ch_peer_i_am_leader || return 1 && :
-echo PASS
+output PASS
 
 start_test ch_peer_leader...
 [ "`ch_peer_leader`" = "TEST/1" ] ||  return 1
@@ -163,7 +163,7 @@ start_test ch_peer_leader...
 JUJU_UNIT_NAME="TEST/3"
 [ "`ch_peer_leader`" = "TEST/2" ] || return 1
 [ `ch_peer_leader --id` -eq 2 ] || return 1
-echo PASS
+output PASS
 
 start_test "ch_peer_scp -r..."
 #save authorized keys and known_hosts before modifications
@@ -186,17 +186,17 @@ do
     ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
-[ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && echo "file1 not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && echo "file2 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
-[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
 mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
-echo PASS
+output PASS
 
 start_test "ch_peer_rsync..."
 CH_scp_hostname=""
@@ -223,17 +223,17 @@ do
     ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
-[ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && echo "file1 not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && echo "file2 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/ ] && output"dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
-[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
 mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
-echo PASS
+output PASS
 
 start_test "ch_peer_scp..."
 CH_scp_hostname=""
@@ -260,15 +260,15 @@ do
     ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
-[ ! -e $CH_TEMPDIR/destdir/testfile ] && echo "file not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile ] && output"file not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile | cut -d" " -f1`
-[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
 mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
-echo PASS
+output PASS
 
 trap - EXIT
 cleanup_peer
