@@ -8,10 +8,10 @@ fi
 
 set -ue
 
-if [ ! x"$USER" = x"root" ]; then
-   echo "This test must be run as root, sorry" 1>&2
-   exit 1
-fi
+#if [ ! x"$USER" = x"root" ]; then
+#   echo "This test must be run as root, sorry" 1>&2
+#   exit 1
+#fi
 
 
 #mock relation-list
@@ -125,8 +125,9 @@ mkdir -p $CH_TEMPDIR/$HOME/
 pwgen > $CH_TEMPDIR/sourcedir/testfile0
 pwgen > $CH_TEMPDIR/sourcedir/testfile1
 pwgen > $CH_TEMPDIR/sourcedir/testfile
-CH_portnum=8822
-/usr/sbin/sshd -o PidFile=$CH_TEMPDIR/sshd.pid -p $CH_portnum 
+CH_portnum=28822
+ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
+/usr/sbin/sshd -o PidFile=$CH_TEMPDIR/sshd.pid -o HostKey=$CH_TEMPDIR/my_host_key -p $CH_portnum > /dev/null 2>&1 
 cleanup_peer()
 {
     echo "Cleaning up..."
@@ -171,24 +172,24 @@ JUJU_UNIT_NAME="TEST/3"
 echo PASS
 
 start_test "ch_peer_scp -r..."
-local HOME_SAVE=$HOME
-HOME="/root"
-#save authorized keys before modifications
+#save authorized keys and known_hosts before modifications
 touch $HOME/.ssh/authorized_keys
 cp $HOME/.ssh/authorized_keys $HOME/.ssh/authorized_keys_saved
+touch $HOME/.ssh/known_hosts
+cp $HOME/.ssh/known_hosts $HOME/.ssh/known_hosts_saved
 for i in 1 2 3 
 do
     #slave relation joined
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result
+    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result
+    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
@@ -198,34 +199,34 @@ CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
 [ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
-#restore authorized_keys
+#restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
-HOME=$HOME_SAVE
+mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
 echo PASS
 
 start_test "ch_peer_rsync..."
-local HOME_SAVE=$HOME
-HOME="/root"
 CH_scp_hostname=""
 CH_scp_ssh_key_saved=""
 CH_scp_ssh_key=""
 CH_scp_copy_done=""
-#save authorized keys before modifications
+#save authorized keys and known_hosts before modifications
 touch $HOME/.ssh/authorized_keys
 cp $HOME/.ssh/authorized_keys $HOME/.ssh/authorized_keys_saved
+touch $HOME/.ssh/known_hosts
+cp $HOME/.ssh/known_hosts $HOME/.ssh/known_hosts_saved
 for i in 1 2 3 
 do
     #slave relation joined
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result
+    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result
+    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
@@ -235,34 +236,34 @@ CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
 [ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
-#restore authorized_keys
+#restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
-HOME=$HOME_SAVE
+mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
 echo PASS
 
 start_test "ch_peer_scp..."
-local HOME_SAVE=$HOME
-HOME="/root"
 CH_scp_hostname=""
 CH_scp_ssh_key_saved=""
 CH_scp_ssh_key=""
 CH_scp_copy_done=""
-#save authorized keys before modifications
+#save authorized keys and known_hosts before modifications
 touch $HOME/.ssh/authorized_keys
 cp $HOME/.ssh/authorized_keys $HOME/.ssh/authorized_keys_saved
+touch $HOME/.ssh/known_hosts
+cp $HOME/.ssh/known_hosts $HOME/.ssh/known_hosts_saved
 for i in 1 2 3 
 do
     #slave relation joined
     JUJU_UNIT_NAME="TEST/2" 
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result
+    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
     #master relation joined
     JUJU_UNIT_NAME="TEST/1" 
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result
+    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
 [ ! -e $CH_TEMPDIR/destdir/testfile ] && echo "file not copied" && exit 1
@@ -270,7 +271,7 @@ CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile | cut -d" " -f1`
 [ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
-#restore authorized_keys
+#restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
-HOME=$HOME_SAVE
+mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
 echo PASS

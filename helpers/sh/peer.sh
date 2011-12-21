@@ -161,7 +161,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       "-p") # port number
         shift
         scp_options="$scp_options -P $1"
-        rsync_options="$rsync_options -e 'ssh -p $1'"
+        rsync_options="$rsync_options -e 'ssh -p $1 -o StrictHostKeyChecking=no'"
         shift
         ;;
       "-o") # passthrough option
