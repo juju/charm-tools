@@ -25,12 +25,6 @@
 CH_WGET_ARGS=${CH_WGET_ARGS:-"-q"}
 
 ##
-#
-# Version of net.sh to allow for backward compat
-
-CHARM_HELPER_VERSION="0.01-nb"
-
-##
 # Get File
 # Retrives a file and compares the file to a hash
 #
