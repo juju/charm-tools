@@ -145,3 +145,6 @@ f=`ch_get_file $test_url/testdata.txt.gz`
 cmp $f $temp_srv_dir/testdata.txt.gz
 ch_get_file $test_url/testdata.txt.gz $gzip_hash > /dev/null
 echo PASS
+
+trap - EXIT
+cleanup_temp

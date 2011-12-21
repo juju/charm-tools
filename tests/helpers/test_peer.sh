@@ -269,3 +269,6 @@ rm -rf $CH_TEMPDIR/destdir/*
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
 mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
 echo PASS
+
+trap - EXIT
+cleanup_peer
