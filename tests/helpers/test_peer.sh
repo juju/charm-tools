@@ -8,12 +8,6 @@ fi
 
 set -ue
 
-#if [ ! x"$USER" = x"root" ]; then
-#   echo "This test must be run as root, sorry" 1>&2
-#   exit 1
-#fi
-
-
 #mock relation-list
 alias relation-list=mock_relation_list
 mock_relation_list()
