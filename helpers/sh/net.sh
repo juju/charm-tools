@@ -22,7 +22,7 @@
 ## 
 # Globally overridable settings. Make sure to set them before sourcing 
 # this file.
-CH_WGET_ARGS=${CH_WGET_ARGS:-"-q"}
+CH_WGET_ARGS=${CH_WGET_ARGS:-"-q --content-disposition"}
 
 ##
 # Get File
