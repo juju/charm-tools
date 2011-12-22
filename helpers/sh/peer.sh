@@ -118,9 +118,6 @@ ch_my_unit_id()
 #
 # This function is idempotent and should be called for each JOINED or 
 # CHANGED event for slave or leader in the peer relation exactly the same way
-CH_PEER_COPY_P="/var/lib/juju/$JUJU_UNIT_NAME"
-CH_PEER_COPY_HOST_F="$CH_PEER_COPY_P/ch_peer_copy_hosts"
-CH_PEER_COPY_PATHS_F="$CH_PEER_COPY_P/ch_peer_copy_paths"
 
 alias ch_peer_scp=ch_peer_copy
 alias ch_peer_rsync='ch_peer_copy --rsync'
@@ -152,7 +149,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
     "-p") # port number
       shift
       scp_options="$scp_options -P $1"
-      rsync_options="$rsync_options -e 'ssh -p $1'"
+      rsync_options="$rsync_options -e 'ssh -p $1 -o StrictHostKeyChecking=no'"
       shift
       ;;
     "-o") # passthrough option
@@ -190,9 +187,15 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
     scp_options=$rsync_options
   fi
   
+  local list=""
+  list=`relation-list`
   # if we are not in a relation, do ch_peer_copy_new
-  [ ! -n `relation_list` ] && return _ch_peer_copy_new "$copy_command $scp_options" "$paths"
-  
+  if [ -z $list ] || [ $list = "" ] ; then
+    result=`_ch_peer_copy_new "$copy_command $scp_options" "$paths"`
+    echo $result
+    return
+  fi
+
   ## LEADER ##
   
   if ch_peer_i_am_leader ; then
@@ -210,12 +213,13 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       
       case $ssh_key_saved in
       1) # ssh keys have been save, let's copy
-        paths=`echo $path | sed 's/X0X0X0X0/$remote/'`
+        paths=`echo "$paths" | sed "s/X0X0X0X0/$remote/"`
         juju-log "ch_peer_copy: $copy_command $scp_options $paths"
         eval "$copy_command $scp_options $paths"
         relation-set scp-copy-done=1
          #save host and paths for later use
-         _ch_peer_save_copy "$copy_command" "$scp_options" "$remote" "$paths" 
+         _ch_peer_copy_save "$copy_command" "$scp_options" "$remote" "$paths" "$JUJU_REMOTE_UNIT"
+         juju-log "ch_peer_copy: save done"
         ;;
         
       *) # we need to first distribute our ssh key files
@@ -239,7 +243,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
  
     if [ -n "$scp_copy_done" ] && [ $scp_copy_done = 1 ]; then
       juju-log "ch_peer_copy: copy done, thanks"
-      result=1
+      local result=1
     else
       if [ -n "$scp_ssh_key" ]; then
         juju-log "ssh key dir: $ssh_key_p"
@@ -260,40 +264,63 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       fi 
     fi 
   fi 
-  juju-log "ch_peer_copy: returning: $result"
+  
   echo $result
 }
 
+_ch_peer_copy_set_paths() {
+  juju-log "_ch_peer_copy_set_paths"
+  local unitname=""
+  unitname=`echo $JUJU_UNIT_NAME | sed 's/\//-/g'`
+  CH_PEER_COPY_P="/var/lib/juju/$unitname"
+  if [ ! `mkdir -p $CH_PEER_COPY_P 2>/dev/null` ] ; then
+    CH_PEER_COPY_P="$HOME/ch_test/$unitname"
+    mkdir -p $CH_PEER_COPY_P
+  fi
+  CH_PEER_COPY_HOST_F="$CH_PEER_COPY_P/ch_peer_copy_hosts"
+  CH_PEER_COPY_PATHS_F="$CH_PEER_COPY_P/ch_peer_copy_paths"
+}
 # Save copy commands and host for later replay
 _ch_peer_copy_save() {
   # $1 copy_command
   # $2 options
   # $3 remote host
   # $4 paths
+  # $5 remote unit name
+  
+  juju-log "_ch_peer_copy_save: $*"
+  
+  _ch_peer_copy_set_paths
   
   #save paths
-  local suffix=`echo "$1\\$2" | base64`
-  local paths=`echo "$4" | base64`
+  local suffix=`echo "$1%$2" | base64 -w 0 `
+  local paths=`echo "$4" | base64 -w 0`
+  echo "$4 $paths" > $CH_PEER_COPY_P/prout
   local do_save=1
   
-  # just in case the path does not exist yet
-  mkdir -p $CH_PEER_COPY_P
+  juju-log "_ch_peer_copy_save: $* in ${CH_PEER_COPY_PATHS_F}-$suffix"
   
   if [ -e "${CH_PEER_COPY_PATHS_F}-$suffix" ]; then
-    if ! grep -F "$paths" "${CH_PEER_COPY_PATHS_F}-$suffix" ; then
+    if grep -q -F "$paths" "${CH_PEER_COPY_PATHS_F}-$suffix"  ; then
       do_save=0
     fi
   fi
-  [ $do_save = 1 ] && echo $paths >> "${CH_PEER_COPY_PATHS_F}-$suffix"
+  if [ $do_save = 1 ] ; then
+    juju-log "_ch_peer_copy_save: saving $paths in ${CH_PEER_COPY_PATHS_F}-$suffix"
+    echo "$paths" >> ${CH_PEER_COPY_PATHS_F}-$suffix
+    juju-log "_ch_peer_copy_save: paths: saved"
+  fi
   do_save=1
+  
   
   #save hosts
   if [ -e "${CH_PEER_COPY_HOST_F}" ]; then
-    if ! grep -F "$3" "${CH_PEER_COPY_HOST_F}" ; then
+    if grep -q -F "$3" "${CH_PEER_COPY_HOST_F}" ; then
       do_save=0
     fi
   fi
-  [ $do_save = 1 ] && echo $3 >> "$CH_PEER_COPY_HOST_F"
+  [ $do_save = 1 ] && echo "$5 $3" >> $CH_PEER_COPY_HOST_F
+  juju-log "_ch_peer_copy_save: host: $5 $3"
 }
 
 # do a new copy when not called within a relation
@@ -301,22 +328,25 @@ _ch_peer_copy_new() {
   # $1 "$copy_command $scp_options" 
   # $2 "$paths"
   
+  _ch_peer_copy_set_paths
   local result=0
+  local hosts=""
+  local paths=""
   
   if [ -e "$CH_PEER_COPY_HOST_F" ] ; then
-    local hosts=`cat $CH_PEER_COPY_HOST_F`
+    hosts=`cat $CH_PEER_COPY_HOST_F | cut -d" " -f2`
     
     for h in $hosts ;
     do
-      local paths=`echo $2 | sed 's/X0X0X0X0/$h/'`
-      juju-log "ch_peer_copy_new: $1 $paths"
+      paths=`echo "$2" | sed "s/X0X0X0X0/$h/"`
+      juju-log "_ch_peer_copy_new: $1 $paths"
       eval "$1 $paths"
       result=1
     done
   else
     juju-log "ch_peer_copy_new: no host cache yet"
   fi
-  return $result
+  echo $result
 }
 
 ##
@@ -334,40 +364,62 @@ _ch_peer_copy_new() {
 #  FALSE  if an error was encountered
 
 ch_peer_copy_replay() {
-  if [ ! -e "$CH_PEER_COPY_HOST_F" ] ; then
+  _ch_peer_copy_set_paths
+  local result=-1
+  local hosts=""
+  local copies=""
+  local h=""
+  local c=""
+  local commandopt=""
+  local list_paths=""
+  local encp=""
+  local mpath=""
+  
+  if [ ! -e $CH_PEER_COPY_HOST_F ] ; then
     juju-log "ch_peer_copy_replay: no host cache yet"
-    return 0
+    result=0
   fi
   
-  local hosts=`cat $CH_PEER_COPY_HOST_F`
-  local copies=`ls "${CH_PEER_COPY_PATHS_F}-"`
-  
-  if [ ! -n $copies ] ; then
-    juju-log "ch_peer_copy_replay: no command cache yet"
-    return 0
+  if [ $result = -1 ];  then
+   hosts=`cat $CH_PEER_COPY_HOST_F`
+   copies=`ls ${CH_PEER_COPY_PATHS_F}-* | xargs -n1 basename`
+   
+   if [ ! -n $copies ] ; then
+     juju-log "ch_peer_copy_replay: no command cache yet"
+     result=0
+   fi
   fi
   
-  for h in $hosts ;
-  do
-    for c in $copies ; 
-    do
-      local commandopt=`echo $c cut -d- -f2 | base64 -d | sed 's|\\| |'`  
-      local paths=`cat "$CH_PEER_COPY_P/$c"`
-      for p in $paths ;
-      do
-        local path=`echo $p | base64 -d`
-        juju-log "ch_peer_copy_replay: $commandopt $path"
-        eval "$commandopt $path"
-      done
-    done
-  done
-  return 1
+  if [ $result = -1 ];  then
+   result=0
+   for h in $hosts ;
+   do
+     
+     for c in $copies ; 
+     do
+       commandopt=`echo $c | cut -d- -f2 | base64 -d | sed 's/%/ /'`  
+       list_paths=`cat $CH_PEER_COPY_P/$c`
+      
+       for encp in $list_paths ;
+       do
+         mpath=`echo $encp | base64 -d`
+         juju-log "ch_peer_copy_replay: $commandopt $mpath"
+         eval "$commandopt $mpath" 
+         result=1
+       done
+       
+     done
+     
+   done
+  fi
+  echo $result
 }
 
 ##
 # ch_peer_copy_cleanup <remote-unit>
 #
 # Removes a parting remote unit fron the host cache
+# Should be called for each peer-relation-departed
 #
 # param
 #  <remote-unit>    name of the remote unit
@@ -375,9 +427,13 @@ ch_peer_copy_replay() {
 # return nothing
 
 ch_peer_copy_cleanup() {
+   juju-log "ch_peer_copy_cleanup: $1"
+   _ch_peer_copy_set_paths
    if [ ! -e "$CH_PEER_COPY_HOST_F" ] ; then
     juju-log "ch_peer_copy_cleanup: no host cache yet"
     return
    fi
-   sed -i '/^`echo $1`$/d' $CH_PEER_COPY_HOST_F
+   local unitname=""
+   unitname=`echo $1 | sed -e 's/\(\.\|\/\|\*\|\[\|\]\)/\\&/g'`
+   sed -i "/^$unitname.*$/d" $CH_PEER_COPY_HOST_F
 }

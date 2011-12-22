@@ -8,6 +8,8 @@ fi
 
 set -ue
 
+JUJU_UNIT_NAME="EMPTY"
+
 #mock relation-list
 alias relation-list=mock_relation_list
 mock_relation_list()
@@ -24,6 +26,9 @@ TEST/4"
         echo "TEST/1
 TEST/3
 TEST/4"
+        ;;
+    -1)
+        echo ""
         ;;
     esac
         
@@ -45,7 +50,7 @@ mock_unit_get()
 {
    case $1 in
    "private-address")
-       echo "127.0.0.1"
+       echo "localhost"
        ;;
    *)
        echo "UNDEFINED"
@@ -111,7 +116,7 @@ mock_relation_get()
 
 
 # mock sshd server
-CH_TEMPDIR="/tmp/`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`"
+CH_TEMPDIR="`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`"
 mkdir -p $CH_TEMPDIR/sourcedir/
 mkdir -p $CH_TEMPDIR/destdir/
 mkdir -p $CH_TEMPDIR/$HOME/
@@ -127,6 +132,7 @@ cleanup_peer()
     echo "Cleaning up..."
     kill -9 `cat $CH_TEMPDIR/sshd.pid`
     rm -rf $CH_TEMPDIR
+    rm -rf $HOME/ch_test
     unalias juju-log
     unalias relation-set
     unalias relation-get
@@ -214,13 +220,13 @@ do
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
@@ -269,3 +275,96 @@ rm -rf $CH_TEMPDIR/destdir/*
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
 mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
 echo PASS
+
+start_test "ch_peer_copy_replay..."
+CH_scp_hostname=""
+CH_scp_ssh_key_saved=""
+CH_scp_ssh_key=""
+CH_scp_copy_done=""
+#save authorized keys and known_hosts before modifications
+touch $HOME/.ssh/authorized_keys
+cp $HOME/.ssh/authorized_keys $HOME/.ssh/authorized_keys_saved
+touch $HOME/.ssh/known_hosts
+cp $HOME/.ssh/known_hosts $HOME/.ssh/known_hosts_saved
+#We are not in a relation, we are on master
+JUJU_UNIT_NAME="TEST/1" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+ch_peer_copy_replay > $CH_TEMPDIR/result 2> /dev/null
+[ `cat $CH_TEMPDIR/result` = 0 ] && output "should not have returned 0" && exit 1
+#We are not in a relation, we are on slave
+JUJU_UNIT_NAME="TEST/2" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+ch_peer_copy_replay > $CH_TEMPDIR/result 2> /dev/null
+[ `cat $CH_TEMPDIR/result` = 1 ] && output "should not have returned 1" && exit 1
+
+[ ! -e $CH_TEMPDIR/destdir/testfile ] && output "file not copied" && exit 1
+CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile | cut -d" " -f1`
+CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile | cut -d" " -f1`
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
+CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
+CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
+rm -rf $CH_TEMPDIR/destdir/*
+#restore authorized_keys & known_hosts
+mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
+mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
+echo PASS
+
+start_test "ch_peer_rsync (out of relation)..."
+CH_scp_hostname=""
+CH_scp_ssh_key_saved=""
+CH_scp_ssh_key=""
+CH_scp_copy_done=""
+#save authorized keys and known_hosts before modifications
+touch $HOME/.ssh/authorized_keys
+cp $HOME/.ssh/authorized_keys $HOME/.ssh/authorized_keys_saved
+touch $HOME/.ssh/known_hosts
+cp $HOME/.ssh/known_hosts $HOME/.ssh/known_hosts_saved
+#We are not in a relation, we are on master
+JUJU_UNIT_NAME="TEST/1" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+[ `cat $CH_TEMPDIR/result` = 0 ] && output "should not have returned 0" && exit 1
+#We are not in a relation, we are on slave
+JUJU_UNIT_NAME="TEST/2" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+[ `cat $CH_TEMPDIR/result` = 1 ] &&output "should not have returned 1" && exit 1
+
+[ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && echo "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && echo "file2 not copied" && exit 1
+CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
+CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
+[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+rm -rf $CH_TEMPDIR/destdir/*
+#restore authorized_keys & known_hosts
+mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
+mv $HOME/.ssh/known_hosts_saved $HOME/.ssh/known_hosts
+echo PASS
+
+start_test "ch_peer_copy_cleanup..."
+# as a leader
+JUJU_UNIT_NAME="TEST/1" 
+JUJU_REMOTE_UNIT="TEST/2"
+CH_MASTER=-1
+ch_peer_copy_cleanup "$JUJU_REMOTE_UNIT"
+local unitname=""
+unitname=`echo $JUJU_UNIT_NAME | sed 's/\//-/g'`
+[ `grep -F "$JUJU_REMOTE_UNIT" $HOME/ch_test/$unitname` ] && output "not cleaned up" && exit 1
+# as a slave
+JUJU_UNIT_NAME="TEST/2" 
+JUJU_REMOTE_UNIT="TEST/1"
+CH_MASTER=-1
+ch_peer_copy_cleanup "$JUJU_REMOTE_UNIT"
+unitname=`echo $JUJU_UNIT_NAME | sed 's/\//-/g'`
+[ `grep -F "$JUJU_REMOTE_UNIT" $HOME/ch_test/$unitname` ] && output "not cleaned up" && exit 1
+echo PASS
+
