@@ -115,9 +115,9 @@ CH_TEMPDIR="/tmp/`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`"
 mkdir -p $CH_TEMPDIR/sourcedir/
 mkdir -p $CH_TEMPDIR/destdir/
 mkdir -p $CH_TEMPDIR/$HOME/
-pwgen > $CH_TEMPDIR/sourcedir/testfile0
-pwgen > $CH_TEMPDIR/sourcedir/testfile1
-pwgen > $CH_TEMPDIR/sourcedir/testfile
+head -c 16384 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile0
+head -c 32385 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile1
+head -c 19998 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile
 CH_portnum=28822
 ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
 /usr/sbin/sshd -o PidFile=$CH_TEMPDIR/sshd.pid -o HostKey=$CH_TEMPDIR/my_host_key -p $CH_portnum > /dev/null 2>&1 
