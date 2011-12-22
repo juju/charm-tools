@@ -126,7 +126,7 @@ output "waiting for sshd to be available"
 local listening=0
 for i in 1 2 3 4 5 ; do
   sleep 1
-  ssh -o StrictHostKeyChecking=no -p $CH_portnum bozo@localhost 2> /tmp/result ||
+  ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no -p $CH_portnum bozo@localhost 2> /tmp/result ||
   if grep -F "Permission denied" /tmp/result ; then
     output Attempt $i succeeded.
     listening=1
