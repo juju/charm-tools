@@ -120,7 +120,24 @@ head -c 32385 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile1
 head -c 19998 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile
 CH_portnum=28822
 ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
-/usr/sbin/sshd -o PidFile=$CH_TEMPDIR/sshd.pid -o HostKey=$CH_TEMPDIR/my_host_key -p $CH_portnum > /dev/null 2>&1 
+/usr/sbin/sshd -o PidFile=$CH_TEMPDIR/sshd.pid -h $CH_TEMPDIR/my_host_key -p $CH_portnum > /dev/null 2>&1 
+# wait for server
+output "waiting for sshd to be available"
+local listening=0
+for i in 1 2 3 4 5 ; do
+  sleep 1
+  ssh -o StrictHostKeyChecking=no -p $CH_portnum bozo@localhost 2> /tmp/result ||
+  if grep -F "Permission denied" /tmp/result ; then
+    output Attempt $i succeeded.
+    listening=1
+    break
+  fi
+  output Attempt $i failed..
+done
+if [ $listening = 0 ] ; then
+  exit 1
+fi
+
 cleanup_peer()
 {
     echo "Cleaning up..."
