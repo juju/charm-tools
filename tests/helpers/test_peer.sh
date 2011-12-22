@@ -115,7 +115,6 @@ CH_TEMPDIR="/tmp/`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`"
 mkdir -p $CH_TEMPDIR/sourcedir/
 mkdir -p $CH_TEMPDIR/destdir/
 mkdir -p $CH_TEMPDIR/$HOME/
-[ ! `which pwgen` ] && apt-get -y install pwgen
 pwgen > $CH_TEMPDIR/sourcedir/testfile0
 pwgen > $CH_TEMPDIR/sourcedir/testfile1
 pwgen > $CH_TEMPDIR/sourcedir/testfile
