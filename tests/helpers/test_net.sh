@@ -150,3 +150,6 @@ f=`ch_get_file $test_url/testdata.txt`
 cmp $f $temp_srv_dir/testdata.txt
 rm $f
 echo PASS
+
+trap - EXIT
+cleanup_temp
