@@ -193,13 +193,13 @@ do
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
@@ -230,13 +230,13 @@ do
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && output"dir not copied" && exit 1
@@ -267,13 +267,13 @@ do
     JUJU_UNIT_NAME="TEST/2" 
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
     #master relation joined
     JUJU_UNIT_NAME="TEST/1" 
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 2> /dev/null
+    ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
 [ ! -e $CH_TEMPDIR/destdir/testfile ] && output"file not copied" && exit 1
