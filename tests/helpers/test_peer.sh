@@ -213,7 +213,6 @@ done
 [ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
-echo "t1: $CH_t1 t2: $CH_t2"
 [ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
