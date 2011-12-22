@@ -192,7 +192,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
   local list=""
   list=`relation-list`
   # if we are not in a relation, do ch_peer_copy_new
-  if [ -z $list ] || [ $list = "" ] ; then
+  if [ -z "$list" ] || [ x"$list" = x"" ] ; then
     result=`_ch_peer_copy_new "$copy_command $scp_options" "$paths"`
     echo $result
     return
