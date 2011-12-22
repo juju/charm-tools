@@ -377,7 +377,7 @@ ch_peer_copy_replay() {
   local encp=""
   local mpath=""
   
-  if [ ! -e $CH_PEER_COPY_HOST_F ] ; then
+  if [ ! -e "$CH_PEER_COPY_HOST_F" ] ; then
     juju-log "ch_peer_copy_replay: no host cache yet"
     result=0
   fi
@@ -386,7 +386,7 @@ ch_peer_copy_replay() {
    hosts=`cat $CH_PEER_COPY_HOST_F`
    copies=`ls ${CH_PEER_COPY_PATHS_F}-* | xargs -n1 basename`
    
-   if [ ! -n $copies ] ; then
+   if [ ! -n "$copies" ] ; then
      juju-log "ch_peer_copy_replay: no command cache yet"
      result=0
    fi
