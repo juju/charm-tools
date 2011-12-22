@@ -103,8 +103,9 @@ ch_my_unit_id()
 #                be the slaves of the peer relation)
 #
 # returns
-#  1      when copy is complete on the slave side
-#  FALSE  if an error was encountered
+#  0 when the file is copied
+#  1 when there was an error
+#  100 when the file is not copied
 #
 # This executes in multiple passes between the leader and each peer
 #
@@ -126,12 +127,12 @@ ch_peer_copy() {
 USAGE: ch_peer_scp [-r][-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]
 USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]"
   local ssh_key_p="$HOME/.ssh"
-  local result=0
+  local result=100
   
   if [ $# -eq 0 ]; then
     juju-log "$USAGE"
     juju-log "ch_peer_copy: please provide at least one argument (path)"
-    exit 1
+    return 1
   fi
 
   ## LEADER ##
@@ -193,7 +194,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
     if [ ! -n "$paths" ]; then
       juju-log "$USAGE"
       juju-log "ch_peer_copy: please provide at least one path"
-      exit 1
+      return 1
     fi
     
     if [ -n $remote ]; then
@@ -230,7 +231,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
  
     if [ -n "$scp_copy_done" ] && [ $scp_copy_done = 1 ]; then
       juju-log "ch_peer_copy: copy done, thanks"
-      result=1
+      result=0
     else
       if [ -n "$scp_ssh_key" ]; then
         juju-log "ssh key dir: $ssh_key_p"
@@ -252,6 +253,6 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
     fi 
   fi 
   juju-log "ch_peer_copy: returning: $result"
-  echo $result
+  return $result
 }
 
