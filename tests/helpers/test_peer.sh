@@ -37,7 +37,7 @@ TEST/4"
 #Save juju-log for debugging
 CH_TEMPLOG="/tmp/tmp-juju-log"
 echo "" > $CH_TEMPLOG
-echo "creating test-log in $CH_TEMPLOG"
+output "creating test-log in $CH_TEMPLOG"
 alias juju-log=mock_juju_log
 mock_juju_log()
 {
@@ -192,12 +192,12 @@ do
     ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
-[ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && echo "file1 not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && echo "file2 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
-[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
@@ -229,12 +229,12 @@ do
     ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
-[ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && echo "file1 not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && echo "file2 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/ ] && output"dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
-[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
@@ -266,10 +266,10 @@ do
     ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ > $CH_TEMPDIR/result 2> /dev/null
     [ `cat $CH_TEMPDIR/result` = 1 ] && break
 done
-[ ! -e $CH_TEMPDIR/destdir/testfile ] && echo "file not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile ] && output"file not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile | cut -d" " -f1`
-[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
@@ -338,12 +338,12 @@ CH_MASTER=-1
 ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" > $CH_TEMPDIR/result 2> /dev/null
 [ `cat $CH_TEMPDIR/result` = 1 ] &&output "should not have returned 1" && exit 1
 
-[ ! -e $CH_TEMPDIR/destdir/ ] && echo "dir not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && echo "file1 not copied" && exit 1
-[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && echo "file2 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
-[ ! "$CH_t1" = "$CH_t2" ] && echo "md5sum differ" && exit 1
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
 #restore authorized_keys & known_hosts
 mv $HOME/.ssh/authorized_keys_saved $HOME/.ssh/authorized_keys
@@ -368,3 +368,5 @@ unitname=`echo $JUJU_UNIT_NAME | sed 's/\//-/g'`
 [ `grep -F "$JUJU_REMOTE_UNIT" $HOME/ch_test/$unitname` ] && output "not cleaned up" && exit 1
 echo PASS
 
+trap - EXIT
+cleanup_peer
