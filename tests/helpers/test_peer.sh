@@ -148,6 +148,7 @@ CH_TEMPDIR=`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`
 mkdir -p $CH_TEMPDIR/sourcedir/
 mkdir -p $CH_TEMPDIR/destdir/
 mkdir -p $CH_TEMPDIR/$HOME/
+mkdir -p /var/run/sshd/
 # Protect user's normal home dir
 head -c 16384 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile0
 head -c 32385 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile1
