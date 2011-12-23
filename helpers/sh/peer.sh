@@ -105,8 +105,9 @@ ch_my_unit_id()
 #                be the slaves of the peer relation)
 #
 # returns
-#  1      when copy is complete on the slave side
-#  FALSE  if an error was encountered
+#  0 when the file is copied
+#  1 when there was an error
+#  100 when the file is not copied
 #
 # This executes in multiple passes between the leader and each peer
 #
@@ -128,12 +129,12 @@ ch_peer_copy() {
 USAGE: ch_peer_scp [-r][-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]
 USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]"
   local ssh_key_p="$HOME/.ssh"
-  local result=0
+  local result=100
   
   if [ $# -eq 0 ]; then
     juju-log "$USAGE"
     juju-log "ch_peer_copy: please provide at least one argument (path)"
-    exit 1
+    return 1
   fi
   
   local scp_options="-o StrictHostKeyChecking=no -B"
@@ -194,8 +195,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
   # if we are not in a relation, do ch_peer_copy_new
   if [ -z "$list" ] || [ x"$list" = x"" ] ; then
     result=`_ch_peer_copy_new "$copy_command $scp_options" "$paths"`
-    echo $result
-    return
+    return 1
   fi
 
   ## LEADER ##
@@ -245,7 +245,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
  
     if [ -n "$scp_copy_done" ] && [ $scp_copy_done = 1 ]; then
       juju-log "ch_peer_copy: copy done, thanks"
-      local result=1
+      result=0
     else
       if [ -n "$scp_ssh_key" ]; then
         juju-log "ssh key dir: $ssh_key_p"
@@ -266,8 +266,9 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       fi 
     fi 
   fi 
-  
-  echo $result
+
+  juju-log "ch_peer_copy: returning: $result"
+  return $result
 }
 
 _ch_peer_copy_set_paths() {
@@ -326,12 +327,16 @@ _ch_peer_copy_save() {
 }
 
 # do a new copy when not called within a relation
+# returns
+#  0 when the file is copied
+#  1 when there was an error
+#  100 when the file is not copied
 _ch_peer_copy_new() {
   # $1 "$copy_command $scp_options" 
   # $2 "$paths"
   
   _ch_peer_copy_set_paths
-  local result=0
+  local result=100
   local hosts=""
   local paths=""
   
@@ -343,12 +348,12 @@ _ch_peer_copy_new() {
       paths=`echo "$2" | sed "s/X0X0X0X0/$h/"`
       juju-log "_ch_peer_copy_new: $1 $paths"
       eval "$1 $paths"
-      result=1
+      result=0
     done
   else
     juju-log "ch_peer_copy_new: no host cache yet"
   fi
-  echo $result
+  return $result
 }
 
 ##
@@ -361,13 +366,13 @@ _ch_peer_copy_new() {
 # param none
 #
 # returns
-#  1      when copy is complete on the slave side
-#  0      when there is no command or host cache set yet
-#  FALSE  if an error was encountered
+#  0 when the file is copied
+#  1 when there was an error
+#  100 when the file is not copied
 
 ch_peer_copy_replay() {
   _ch_peer_copy_set_paths
-  local result=-1
+  local result=100
   local hosts=""
   local copies=""
   local h=""
@@ -379,21 +384,20 @@ ch_peer_copy_replay() {
   
   if [ ! -e "$CH_PEER_COPY_HOST_F" ] ; then
     juju-log "ch_peer_copy_replay: no host cache yet"
-    result=0
+    result=1
   fi
   
-  if [ $result = -1 ];  then
+  if [ $result = 100 ];  then
    hosts=`cat $CH_PEER_COPY_HOST_F`
    copies=`ls ${CH_PEER_COPY_PATHS_F}-* | xargs -n1 basename`
    
    if [ ! -n "$copies" ] ; then
      juju-log "ch_peer_copy_replay: no command cache yet"
-     result=0
+     result=1
    fi
   fi
   
-  if [ $result = -1 ];  then
-   result=0
+  if [ $result = 100 ];  then
    for h in $hosts ;
    do
      
@@ -407,7 +411,7 @@ ch_peer_copy_replay() {
          mpath=`echo $encp | base64 -d`
          juju-log "ch_peer_copy_replay: $commandopt $mpath"
          eval "$commandopt $mpath" 
-         result=1
+         result=0
        done
        
      done
@@ -426,7 +430,7 @@ ch_peer_copy_replay() {
 # param
 #  <remote-unit>    name of the remote unit
 #
-# return nothing
+# returns nothing
 
 ch_peer_copy_cleanup() {
    juju-log "ch_peer_copy_cleanup: $1"
@@ -439,3 +443,4 @@ ch_peer_copy_cleanup() {
    unitname=`echo $1 | sed -e 's/\(\.\|\/\|\*\|\[\|\]\)/\\&/g'`
    sed -i "/^$unitname.*$/d" $CH_PEER_COPY_HOST_F
 }
+
