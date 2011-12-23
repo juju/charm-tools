@@ -194,8 +194,10 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
   list=`relation-list`
   # if we are not in a relation, do ch_peer_copy_new
   if [ -z "$list" ] || [ x"$list" = x"" ] ; then
-    result=`_ch_peer_copy_new "$copy_command $scp_options" "$paths"`
-    return 1
+    _ch_peer_copy_new "$copy_command $scp_options" "$paths"
+    result=$?
+    juju-log "ch_peer_copy: returning $result"
+    return $result
   fi
 
   ## LEADER ##
@@ -283,6 +285,7 @@ _ch_peer_copy_set_paths() {
   CH_PEER_COPY_HOST_F="$CH_PEER_COPY_P/ch_peer_copy_hosts"
   CH_PEER_COPY_PATHS_F="$CH_PEER_COPY_P/ch_peer_copy_paths"
 }
+
 # Save copy commands and host for later replay
 _ch_peer_copy_save() {
   # $1 copy_command
@@ -353,6 +356,7 @@ _ch_peer_copy_new() {
   else
     juju-log "ch_peer_copy_new: no host cache yet"
   fi
+  juju-log "_ch_peer_copy_new: returning $result"
   return $result
 }
 
@@ -418,7 +422,7 @@ ch_peer_copy_replay() {
      
    done
   fi
-  echo $result
+  return $result
 }
 
 ##

@@ -133,6 +133,9 @@ cleanup_peer()
         output "Backing up created $HOME/.ssh to $backup_dir/dot-ssh"
         mv $HOME/.ssh $backup_dir/dot-ssh
     fi
+    if [ -e $HOME/ch_test ] ; then
+        rm -rf $HOME/ch_test
+    fi
 }
 trap cleanup_peer EXIT
 
@@ -326,15 +329,15 @@ JUJU_UNIT_NAME="TEST/1"
 JUJU_REMOTE_UNIT=""
 CH_MASTER=-1
 if ! ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then
-    output "should not have returned 1"
+    output "should not have returned not copied"
     exit 1
 fi
 #We are not in a relation, we are on slave
 JUJU_UNIT_NAME="TEST/2" 
 JUJU_REMOTE_UNIT=""
 CH_MASTER=-1
-if ! ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then
-    output "should not have returned 1" 
+if ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then
+    output "should not have returned copied" 
     exit 1
 fi
 [ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
