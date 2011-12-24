@@ -217,7 +217,7 @@ do
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    if ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
+    if ch_peer_scp -r -p $CH_portnum -o "-v" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
 [ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
