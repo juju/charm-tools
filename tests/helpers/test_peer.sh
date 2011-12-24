@@ -136,7 +136,7 @@ trap cleanup_peer EXIT
 if [ ! -d $HOME ] ; then
     mkdir -p $HOME
     chown $USER:$USER $HOME
-    chmod 744 $HOME
+    chmod 700 $HOME
 fi
 if [ ! -d $HOME/.ssh ] ; then
     mkdir -p $HOME/.ssh
@@ -149,6 +149,8 @@ else
 fi
 touch $HOME/.ssh/authorized_keys
 touch $HOME/.ssh/known_hosts
+chmod 600 $HOME/.ssh/authorized_keys
+chmod 644 $HOME/.ssh/known_hosts
 
 # mock sshd server
 CH_TEMPDIR=`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`
