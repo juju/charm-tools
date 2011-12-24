@@ -116,7 +116,7 @@ created_ssh_home=0
 
 cleanup_peer()
 {
-    [ $debug = 1 ] && output "sshd server log" ; cat cat /tmp/juju-sshd-log
+    [ $debug = 1 ] && output "sshd server log" ; cat /tmp/juju-sshd-log
     output "Cleaning up..."
     unalias juju-log
     unalias relation-set
@@ -133,14 +133,18 @@ cleanup_peer()
     fi
 }
 trap cleanup_peer EXIT
-
+if [ ! -d $HOME ] ; then
+    mkdir -p $HOME
+    chown $USER:$USER $HOME
+    chmod 744 $HOME
+fi
 if [ ! -d $HOME/.ssh ] ; then
     mkdir -p $HOME/.ssh
     chmod 700 $HOME/.ssh
     created_ssh_home=1
 else
     output "ch_peer_scp can be destructive to \$HOME/.ssh, move it out of the way or"
-    output "run these tests in a clean chroot. Skipping."
+    output "run these tests in a clean chroot or with a test user. Skipping."
     exit 0
 fi
 touch $HOME/.ssh/authorized_keys
