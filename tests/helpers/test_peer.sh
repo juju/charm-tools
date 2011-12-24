@@ -1,4 +1,6 @@
 #!/bin/sh
+debug=1
+
 if [ -z "$test_home" ] ; then
     test_home=`dirname $0`
     test_home=`readlink -f $test_home`
@@ -114,6 +116,7 @@ created_ssh_home=0
 
 cleanup_peer()
 {
+    [ $debug = 1 ] && output "sshd server log" ; cat cat /tmp/juju-sshd-log
     output "Cleaning up..."
     unalias juju-log
     unalias relation-set
@@ -157,22 +160,26 @@ head -c 32385 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile1
 head -c 19998 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile
 CH_portnum=28822
 ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
-/usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -h $CH_TEMPDIR/my_host_key -p $CH_portnum 
-# wait for server
-output "waiting for sshd to be available"
-listening=0
-for i in 1 2 3 4 5 ; do
-  sleep 1
-  ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no -p $CH_portnum bozo@localhost 2> /tmp/result ||
-  if grep -q -F "Permission denied" /tmp/result ; then
-    output Attempt $i succeeded.
+if [ $debug = 1 ] ; then
+    /usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -d -h $CH_TEMPDIR/my_host_key -p $CH_portnum 2> /tmp/juju-sshd-log &
     listening=1
-    break
-  fi
-  output Attempt $i failed..
-done
-if [ $listening = 0 ] ; then
-  exit 1
+else
+    # wait for server
+    output "waiting for sshd to be available"
+    listening=0
+    for i in 1 2 3 4 5 ; do
+      sleep 1
+      ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no -p $CH_portnum bozo@localhost 2> /tmp/result ||
+      if grep -q -F "Permission denied" /tmp/result ; then
+        output Attempt $i succeeded.
+        listening=1
+        break
+      fi
+      output Attempt $i failed..
+    done
+    if [ $listening = 0 ] ; then
+        exit 1
+    fi
 fi
 
 . $HELPERS_HOME/peer.sh
@@ -217,7 +224,11 @@ do
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    if ch_peer_scp -r -p $CH_portnum -o "-v" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
+    if [ $debug = 1 ] ; then
+        if ch_peer_scp -r -p $CH_portnum -o "-v" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
+    else
+        if ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
+    fi
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
 [ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
