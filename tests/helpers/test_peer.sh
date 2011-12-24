@@ -148,14 +148,16 @@ CH_TEMPDIR=`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`
 mkdir -p $CH_TEMPDIR/sourcedir/
 mkdir -p $CH_TEMPDIR/destdir/
 mkdir -p $CH_TEMPDIR/$HOME/
-mkdir -p /var/run/sshd
+if ! mkdir -p /var/run/sshd ; then
+    mkdir -p $HOME/var/run/sshd/
+fi
 # Protect user's normal home dir
 head -c 16384 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile0
 head -c 32385 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile1
 head -c 19998 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile
 CH_portnum=28822
 ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
-/usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -h $CH_TEMPDIR/my_host_key -p $CH_portnum 
+/usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -h $CH_TEMPDIR/my_host_key -p $CH_portnum 
 # wait for server
 output "waiting for sshd to be available"
 listening=0
@@ -210,7 +212,7 @@ do
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    if ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
+    if ch_peer_scp -r -p $CH_portnum -o "-q -v" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
