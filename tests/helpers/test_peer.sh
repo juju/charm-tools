@@ -119,7 +119,8 @@ created_ssh_home=0
 
 cleanup_peer()
 {
-    [ $debug = 1 ] && output "sshd server log" && cat /tmp/juju-sshd-log
+    [ $debug = 1 ] && output "====== sshd server log ======" && cat /tmp/juju-sshd-log
+    [ $debug -gt 1 ] && output "===== juju debug log ======" && cat /tmp/tmp-juju-log
     output "Cleaning up..."
     unalias juju-log
     unalias relation-set
@@ -136,6 +137,7 @@ cleanup_peer()
     fi
 }
 trap cleanup_peer EXIT
+if [ $debug -gt 0 ] ; then echo "user: $USER, home: $HOME"; fi
 if [ ! -d $HOME ] ; then
     mkdir -p $HOME
     chown $USER:$USER $HOME
@@ -149,6 +151,12 @@ else
     output "ch_peer_scp can be destructive to \$HOME/.ssh, move it out of the way or"
     output "run these tests in a clean chroot or with a test user. Skipping."
     exit 0
+fi
+if [ x"$USER" = x"root" ] ; then
+    if ! touch /root/.ssh/known_hosts ; then
+        USER=`basename $HOME`
+        echo "forcing user to: $USER"
+    fi
 fi
 touch $HOME/.ssh/authorized_keys
 touch $HOME/.ssh/known_hosts
@@ -190,7 +198,7 @@ else
     if [ $listening = 0 ] ; then
         exit 1
     fi
-    if [ $debug = 2 ]; then CH_scpopt="-v" ; else CH_scpopt="-q"; fi;
+    if [ $debug -gt 0 ]; then CH_scpopt="-v" ; else CH_scpopt="-q"; fi;
 fi
 
 . $HELPERS_HOME/peer.sh
