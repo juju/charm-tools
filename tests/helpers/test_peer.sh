@@ -116,7 +116,7 @@ created_ssh_home=0
 
 cleanup_peer()
 {
-    [ $debug = 1 ] && output "sshd server log" ; cat /tmp/juju-sshd-log
+    [ $debug = 1 ] && output "sshd server log" && cat /tmp/juju-sshd-log
     output "Cleaning up..."
     unalias juju-log
     unalias relation-set
@@ -167,8 +167,10 @@ CH_portnum=28822
 ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
 if [ $debug = 1 ] ; then
     /usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -o StrictModes=no -d -h $CH_TEMPDIR/my_host_key -p $CH_portnum 2> /tmp/juju-sshd-log &
+    local scpopt="-v"
     listening=1
 else
+    /usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -o StrictModes=no -h $CH_TEMPDIR/my_host_key -p $CH_portnum
     # wait for server
     output "waiting for sshd to be available"
     listening=0
@@ -185,6 +187,7 @@ else
     if [ $listening = 0 ] ; then
         exit 1
     fi
+    local scpopt="-q"
 fi
 
 . $HELPERS_HOME/peer.sh
@@ -224,16 +227,12 @@ do
     JUJU_UNIT_NAME="TEST/2"  
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    if ch_peer_scp -r -p $CH_portnum -o "-v" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
+    if ch_peer_scp -r -p $CH_portnum -o "$scpopt" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
     #master relation joined
     JUJU_UNIT_NAME="TEST/1"  
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    if [ $debug = 1 ] ; then
-        if ch_peer_scp -r -p $CH_portnum -o "-v" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
-    else
-        if ch_peer_scp -r -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
-    fi
+    if ch_peer_scp -r -p $CH_portnum -o "$scpopt" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then break ; fi
 done
 [ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
 [ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
