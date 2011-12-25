@@ -167,7 +167,7 @@ head -c 19998 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile
 CH_portnum=28822
 ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
 if [ $debug = 1 ] ; then
-    /usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -d -h $CH_TEMPDIR/my_host_key -p $CH_portnum 2> /tmp/juju-sshd-log &
+    /usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -o StrictModes=no -d -h $CH_TEMPDIR/my_host_key -p $CH_portnum 2> /tmp/juju-sshd-log &
     listening=1
 else
     # wait for server
