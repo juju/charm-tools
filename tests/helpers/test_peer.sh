@@ -1,5 +1,8 @@
 #!/bin/sh
-debug=0
+
+# debug=1 full
+# debug=2 client only
+debug=2 
 
 if [ -z "$test_home" ] ; then
     test_home=`dirname $0`
@@ -187,7 +190,7 @@ else
     if [ $listening = 0 ] ; then
         exit 1
     fi
-    CH_scpopt="-q"
+    if [ $debug = 2 ]; then CH_scpopt="-v" ; else CH_scpopt="-q"; fi;
 fi
 
 . $HELPERS_HOME/peer.sh

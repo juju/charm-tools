@@ -179,7 +179,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
         shift
         ;;
       *) # should be a pair of file
-        if [ -e "`echo "$1" | sed 's/\*$//'`" ]; then
+        if [ -e `echo "$1" | sed 's/\*$//'` ]; then
           local sourcep="$1"
           shift
           paths="$paths $sourcep $USER@$remote:$1"
@@ -203,7 +203,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       case $ssh_key_saved in
       1) # ssh keys have been save, let's copy
         if [ x"$copy_command" = x"rsync" ]; then
-          scp_options=$rsync_options
+          scp_options="$rsync_options"
         fi
         juju-log "ch_peer_copy: $copy_command $scp_options $paths"
         eval "$copy_command $scp_options $paths"
