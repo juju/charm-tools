@@ -1,5 +1,5 @@
 #!/bin/sh
-debug=1
+debug=0
 
 if [ -z "$test_home" ] ; then
     test_home=`dirname $0`
@@ -150,7 +150,6 @@ fi
 touch $HOME/.ssh/authorized_keys
 touch $HOME/.ssh/known_hosts
 chmod 600 $HOME/.ssh/authorized_keys
-chmod 644 $HOME/.ssh/known_hosts
 
 # mock sshd server
 CH_TEMPDIR=`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`
