@@ -35,7 +35,7 @@ TEST/4"
 }
 
 #Save juju-log for debugging
-CH_TEMPLOG="/tmp/tmp-juju-log"
+CH_TEMPLOG="/tmp/$USER-tmp-juju-log"
 echo "" > $CH_TEMPLOG
 output "creating test-log in $CH_TEMPLOG"
 alias juju-log=mock_juju_log
@@ -119,8 +119,8 @@ created_ssh_home=0
 
 cleanup_peer()
 {
-    [ $debug = 1 ] && output "====== sshd server log ======" && cat /tmp/juju-sshd-log
-    [ $debug -gt 1 ] && output "===== juju debug log ======" && cat /tmp/tmp-juju-log
+    [ $debug = 1 ] && output "====== sshd server log ======" && cat /tmp/juju-sshd-log ; rm /tmp/juju-sshd-log
+    [ $debug -gt 1 ] && output "===== juju debug log ======" && cat $CH_TEMPLOG
     output "Cleaning up..."
     unalias juju-log
     unalias relation-set
@@ -185,16 +185,19 @@ else
     # wait for server
     output "waiting for sshd to be available"
     listening=0
+    ch_tmp_result=`mktemp`
     for i in 1 2 3 4 5 ; do
       sleep 1
-      ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no -p $CH_portnum bozo@localhost 2> /tmp/result ||
-      if grep -q -F "Permission denied" /tmp/result ; then
+
+      ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no -p $CH_portnum bozo@localhost 2> $ch_tmp_result ||
+      if grep -q -F "Permission denied" $ch_tmp_result ; then
         output Attempt $i succeeded.
         listening=1
         break
       fi
       output Attempt $i failed..
     done
+    rm $ch_tmp_result
     if [ $listening = 0 ] ; then
         exit 1
     fi
