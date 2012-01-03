@@ -9,7 +9,7 @@ INSTALL = install
 
 all:
 
-install: check
+install:
 	$(INSTALL) -d $(mandir)
 	$(INSTALL) -t $(mandir) charm.1
 	$(INSTALL) -d $(datadir)
