@@ -119,7 +119,7 @@ created_ssh_home=0
 
 cleanup_peer()
 {
-    [ $debug = 1 ] && output "====== sshd server log ======" && cat /tmp/juju-sshd-log ; rm /tmp/juju-sshd-log
+    [ $debug = 1 ] && output "====== sshd server log ======" && cat /tmp/juju-sshd-log ; rm -f /tmp/juju-sshd-log
     [ $debug -gt 1 ] && output "===== juju debug log ======" && cat $CH_TEMPLOG
     output "Cleaning up..."
     unalias juju-log
@@ -197,7 +197,7 @@ else
       fi
       output Attempt $i failed..
     done
-    rm $ch_tmp_result
+    rm -f $ch_tmp_result
     if [ $listening = 0 ] ; then
         exit 1
     fi
