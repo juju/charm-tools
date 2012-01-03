@@ -2,7 +2,7 @@
 
 # debug=1 full
 # debug=2 client only
-debug=2 
+debug=0
 
 if [ -z "$test_home" ] ; then
     test_home=`dirname $0`
