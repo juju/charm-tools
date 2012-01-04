@@ -223,7 +223,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       
       case $ssh_key_saved in
       1) # ssh keys have been saved, let's copy
-        paths=`echo "$paths" | sed "s/X0X0X0X0/$remote/"`
+        paths=`echo "$paths" | sed "s/X0X0X0X0/$remote/g"`
         juju-log "ch_peer_copy: $copy_command $scp_options $paths"
         eval "$copy_command $scp_options $paths"
         relation-set scp-copy-done=1
