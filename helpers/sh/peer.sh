@@ -129,7 +129,12 @@ ch_peer_copy() {
   local USAGE="ERROR in $*
 USAGE: ch_peer_scp [-r][-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]
 USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]"
-  local ssh_key_p="$HOME/.ssh"
+  if [ x"$USER" = x"root" ] ; then
+    #juju sets home to /home/ubuntu while user is root :(
+    local ssh_key_p="/root/.ssh"
+  else
+    local ssh_key_p="$HOME/.ssh"
+  fi
   local result=100
   
   if [ $# -eq 0 ]; then
