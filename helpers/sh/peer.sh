@@ -108,6 +108,7 @@ ch_my_unit_id()
 #  0 when the file is copied
 #  1 when there was an error
 #  100 when the file is not copied
+#  101 files were sent from the leader
 #
 # This executes in multiple passes between the leader and each peer
 #
@@ -224,6 +225,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
          #save host and paths for later use
          _ch_peer_copy_save "$copy_command" "$scp_options" "$remote" "$paths" "$JUJU_REMOTE_UNIT"
          juju-log "ch_peer_copy: save done"
+         result=101
         ;;
         
       *) # we need to first distribute our ssh key files
@@ -351,7 +353,7 @@ _ch_peer_copy_new() {
       paths=`echo "$2" | sed "s/X0X0X0X0/$h/"`
       juju-log "_ch_peer_copy_new: $1 $paths"
       eval "$1 $paths"
-      result=0
+      result=101
     done
   else
     juju-log "ch_peer_copy_new: no host cache yet"
