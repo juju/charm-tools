@@ -338,9 +338,10 @@ _ch_peer_copy_save() {
 
 # do a new copy when not called within a relation
 # returns
-#  0 when the file is copied
 #  1 when there was an error
 #  100 when the file is not copied
+#  101 when the file is sent from server
+
 _ch_peer_copy_new() {
   # $1 "$copy_command $scp_options" 
   # $2 "$paths"

@@ -360,16 +360,20 @@ CH_scp_copy_done=""
 JUJU_UNIT_NAME="TEST/1" 
 JUJU_REMOTE_UNIT=""
 CH_MASTER=-1
-if ! ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then
-    output "should not have returned not copied (1)"
+ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ||
+chres=$?
+if [ $chres -ne 101 ] ; then
+    output "should not have returned not copied (received $chres, 101 expected)"
     exit 1
 fi
 #We are not in a relation, we are on slave
 JUJU_UNIT_NAME="TEST/2" 
 JUJU_REMOTE_UNIT=""
 CH_MASTER=-1
-if ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ; then
-    output "should not have returned copied (0)" 
+ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" ||
+chres=$?
+if [ $chres -ne 100 ] ; then
+    output "should not have returned copied (received $chres, 100 expected)"
     exit 1
 fi
 [ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
