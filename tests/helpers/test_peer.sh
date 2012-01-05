@@ -167,15 +167,25 @@ CH_TEMPDIR=`mktemp -d "/tmp/juju-helpers-tmp.XXXXXXX"`
 mkdir -p $CH_TEMPDIR/sourcedir/
 mkdir -p $CH_TEMPDIR/destdir/
 mkdir -p $CH_TEMPDIR/$HOME/
-if ! mkdir -p /var/run/sshd ; then
-    mkdir -p $HOME/var/run/sshd/
+if ! [ -d /var/run/sshd ] ; then
+    if ! mkdir -p /var/run/sshd ; then
+        mkdir -p $HOME/var/run/sshd/
+    fi
 fi
 # Protect user's normal home dir
 head -c 16384 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile0
 head -c 32385 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile1
 head -c 19998 /dev/urandom > $CH_TEMPDIR/sourcedir/testfile
 CH_portnum=28822
-ssh-keygen -t rsa -b 1024 -N "" -h -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
+# lucid's ssh-keygen does not accept -h, so we check for maverick or
+# later to add -h
+ssh_version=`dpkg -l 'openssh-client'|awk '/^ii/ { print $3 }'`
+if dpkg --compare-versions $ssh_version lt 1:5.5p1-4ubuntu4 ; then
+  opts=""
+else
+  opts="-h"
+fi
+ssh-keygen -t rsa -b 1024 -N "" $opts -f $CH_TEMPDIR/my_host_key > /dev/null 2>&1 
 if [ $debug = 1 ] ; then
     /usr/sbin/sshd -e -o PidFile=$CH_TEMPDIR/sshd.pid -o UsePrivilegeSeparation=no -o StrictModes=no -d -h $CH_TEMPDIR/my_host_key -p $CH_portnum 2> /tmp/juju-sshd-log &
     CH_scpopt="-v"
