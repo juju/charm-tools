@@ -149,7 +149,6 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
     fi  
   fi
   local ssh_key_p="$HOME/.ssh"
-
   local result=100
   
   if [ $# -eq 0 ]; then
