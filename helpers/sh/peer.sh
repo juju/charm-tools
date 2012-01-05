@@ -129,12 +129,24 @@ ch_peer_copy() {
   local USAGE="ERROR in $*
 USAGE: ch_peer_scp [-r][-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]
 USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]"
-  if [ x"$USER" = x"root" ] ; then
-    #juju sets home to /home/ubuntu while user is root :(
-    local ssh_key_p="/root/.ssh"
-  else
-    local ssh_key_p="$HOME/.ssh"
+  # $USER may not be set
+  USER=${USER:-`whoami`}
+  # $HOME may not be set
+  if [ -z $HOME ] ; then
+    if [ x"$USER" = x"root" ] ; then 
+      HOME="/$USER"
+    else
+      HOME="/home/$USER"
+    fi  
   fi
+  if [ ! x`echo "$HOME" | grep  "$USER"` = x"$HOME" ] ; then 
+    if [ x"$USER" = x"root" ] ; then 
+      HOME="/$USER"
+    else
+      HOME="/home/$USER"
+    fi  
+  fi
+  local ssh_key_p="$HOME/.ssh"
   local result=100
   
   if [ $# -eq 0 ]; then
@@ -224,13 +236,25 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       case $ssh_key_saved in
       1) # ssh keys have been saved, let's copy
         paths=`echo "$paths" | sed "s/X0X0X0X0/$remote/g"`
-        juju-log "ch_peer_copy: $copy_command $scp_options $paths"
-        eval "$copy_command $scp_options $paths"
+        local p1=""
+        set -f
+        for path in $paths ; do 
+          if [ "$p1" != "" ] ; then
+            juju-log "ch_peer_copy: $copy_command $scp_options $p1 $path"
+            set +f
+            eval "$copy_command $scp_options $p1 $path"
+            set -f
+            p1=""
+          else
+            p1=$path
+          fi
+        done
+        set +f
         relation-set scp-copy-done=1
-         #save host and paths for later use
-         _ch_peer_copy_save "$copy_command" "$scp_options" "$remote" "$paths" "$JUJU_REMOTE_UNIT"
-         juju-log "ch_peer_copy: save done"
-         result=101
+        #save host and paths for later use
+        _ch_peer_copy_save "$copy_command" "$scp_options" "$remote" "$paths" "$JUJU_REMOTE_UNIT"
+        juju-log "ch_peer_copy: save done"
+        result=101
         ;;
         
       *) # we need to first distribute our ssh key files
@@ -261,6 +285,11 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
         mkdir -p $ssh_key_p
         chmod 700 $ssh_key_p
         if ! grep -q -F "$scp_ssh_key" $ssh_key_p/authorized_keys ; then
+          if [ x"$USER" = x"root" ] ; then
+            # if we are root, need to ensure we can login
+            sed -i 's/PermitRootLogin no/PermitRootLogin yes/' /etc/ssh/sshd_config
+            service ssh reload
+          fi
           juju-log "ch_peer_copy: saving ssh key $scp_ssh_key"
           echo "$scp_ssh_key" >> $ssh_key_p/authorized_keys
           relation-set scp-ssh-key-saved=1
@@ -357,8 +386,20 @@ _ch_peer_copy_new() {
     for h in $hosts ;
     do
       paths=`echo "$2" | sed "s/X0X0X0X0/$h/"`
-      juju-log "_ch_peer_copy_new: $1 $paths"
-      eval "$1 $paths"
+      local p1=""
+      set -f
+      for path in $paths ; do 
+        if [ "$p1" != "" ] ; then
+          juju-log "_ch_peer_copy_new: $1 $p1 $path"
+          set +f
+          eval "$1 $p1 $path"
+          set -f
+          p1=""
+        else
+          p1=$path
+        fi
+      done
+      set +f
       result=101
     done
   else
@@ -421,8 +462,20 @@ ch_peer_copy_replay() {
        for encp in $list_paths ;
        do
          mpath=`echo $encp | base64 -d`
-         juju-log "ch_peer_copy_replay: $commandopt $mpath"
-         eval "$commandopt $mpath" 
+         local p1=""
+         set -f
+         for path in $mpath ; do 
+           if [ "$p1" != "" ] ; then
+             juju-log "ch_peer_copy_replay: $commandopt $p1 $path"
+             set +f
+             eval "$commandopt $p1 $path"
+             set -f
+             p1=""
+           else
+             p1=$path
+           fi
+         done
+         set +f
          result=0
        done
        

@@ -303,14 +303,15 @@ do
     JUJU_UNIT_NAME="TEST/2" 
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    if ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ ; then break ; fi
+    if ch_peer_scp -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/testfile" "$CH_TEMPDIR/destdir/" "$CH_TEMPDIR/sourcedir/testfile1" "$CH_TEMPDIR/destdir/" ; then break ; fi
     #master relation joined
     JUJU_UNIT_NAME="TEST/1" 
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    if ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ ; then break ; fi
+    if ch_peer_scp -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/testfile" "$CH_TEMPDIR/destdir/" "$CH_TEMPDIR/sourcedir/testfile1" "$CH_TEMPDIR/destdir/" ; then break ; fi
 done
-[ ! -e $CH_TEMPDIR/destdir/testfile ] && output"file not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile | cut -d" " -f1`
 [ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
