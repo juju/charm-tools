@@ -132,7 +132,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
   # $USER may not be set
   USER=${USER:-`whoami`}
   # $HOME may not be set
-  if [ -z $HOME ] ; then
+  if [ -z "$HOME" ] ; then
     if [ x"$USER" = x"root" ] ; then 
       HOME="/$USER"
     else

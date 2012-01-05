@@ -393,7 +393,6 @@ JUJU_UNIT_NAME="TEST/1"
 JUJU_REMOTE_UNIT="TEST/2"
 CH_MASTER=-1
 ch_peer_copy_cleanup "$JUJU_REMOTE_UNIT"
-local unitname=""
 unitname=`echo $JUJU_UNIT_NAME | sed 's/\//-/g'`
 [ `grep -F "$JUJU_REMOTE_UNIT" $HOME/ch_test/$unitname` ] && output "not cleaned up" && exit 1
 # as a slave
