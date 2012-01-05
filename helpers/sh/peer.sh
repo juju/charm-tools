@@ -129,6 +129,7 @@ ch_peer_copy() {
   local USAGE="ERROR in $*
 USAGE: ch_peer_scp [-r][-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]
 USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... sourcepathN destpathN]"
+  set +u
   # $USER may not be set
   USER=${USER:-`whoami`}
   # $HOME may not be set
@@ -139,6 +140,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       HOME="/home/$USER"
     fi  
   fi
+  set -u
   if [ ! x`echo "$HOME" | grep  "$USER"` = x"$HOME" ] ; then 
     if [ x"$USER" = x"root" ] ; then 
       HOME="/$USER"
@@ -147,6 +149,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
     fi  
   fi
   local ssh_key_p="$HOME/.ssh"
+
   local result=100
   
   if [ $# -eq 0 ]; then
@@ -177,6 +180,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       shift
       scp_options="$scp_options $1"
       rsync_options="$rsync_options $1"
+
       shift
       ;;
     "--rsync") # rsync secure (-e ssh)
