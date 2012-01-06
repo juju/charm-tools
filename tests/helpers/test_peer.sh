@@ -46,7 +46,7 @@ output "creating test-log in $CH_TEMPLOG"
 alias juju-log=mock_juju_log
 mock_juju_log()
 {
-    echo "$1" >> $CH_TEMPLOG
+    echo "$*" >> $CH_TEMPLOG
 }
 
 #mock unit-get
