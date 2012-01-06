@@ -133,13 +133,13 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
   USER=${USER:-`whoami`}
   # $HOME may not be set
   if [ -z "${HOME:-}" ] ; then
-    if [ x"$USER" = x"root" ] ; then 
+    if [ "$USER" = "root" ] ; then 
       HOME="/$USER"
     else
       HOME="/home/$USER"
     fi  
   fi
-  if [ ! `echo "$HOME" | grep  "$USER"` = "$HOME" ] ; then 
+  if ! echo "$HOME" | grep -q "$USER" ; then 
     if [ "$USER" = "root" ] ; then 
       HOME="/$USER"
     else
@@ -226,8 +226,9 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
     
     local remote=`relation-get scp-hostname`
     local ssh_key_saved=`relation-get scp-ssh-key-saved`
-    if [ -z $remote ]; then
+    if [ -z $remote ] || [ "$remote" = "0" ] ; then
       juju-log -l DEBUG "ch_peer_copy: We do not have a remote hostname yet"
+      relation-set scp-copy-done=0
       remote=0
     fi  
     
@@ -279,6 +280,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
  
     local scp_copy_done=`relation-get scp-copy-done`
     local scp_ssh_key="`relation-get scp-ssh-key`"
+    relation-set scp-hostname=`unit-get private-address`
  
     if [ -n "$scp_copy_done" ] && [ $scp_copy_done = 1 ]; then
       juju-log -l DEBUG "ch_peer_copy: copy done, thanks"
@@ -306,7 +308,6 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
         chmod 600 "$ssh_key_p/authorized_keys"
       else
         juju-log -l DEBUG "ch_peer_copy: ssh_keys not set yet, later"
-        relation-set scp-hostname=`unit-get private-address`
       fi 
     fi 
   fi 
@@ -327,7 +328,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
 # returns nothing
 
 ch_sshd_set_root_login() {
-  local $on=${1:-1}
+  local on=${1:-1}
   if [ $on = 1 ] ; then
     if ! grep -q "^PermitRootLogin yes" /etc/ssh/sshd_config ; then
       sed -i 's/PermitRootLogin no/PermitRootLogin yes/' /etc/ssh/sshd_config
