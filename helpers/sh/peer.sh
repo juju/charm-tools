@@ -26,8 +26,7 @@ ch_peer_i_am_leader()
 {
     local REMOTE_UNIT_ID=`ch_unit_id $JUJU_REMOTE_UNIT`
     local LOCAL_UNIT_ID=`ch_my_unit_id`
-    local FIRST_UNIT=`relation-list | head -n 1`
-    local FIRST_UNIT_ID=`ch_unit_id $FIRST_UNIT`
+    local FIRST_UNIT_ID=`relation-list | cut -d/ -f2 | sort -n | head -n 1`
 
     if [ $LOCAL_UNIT_ID -lt $REMOTE_UNIT_ID ] && [ $LOCAL_UNIT_ID -lt $FIRST_UNIT_ID ]; then
         return 0
