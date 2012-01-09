@@ -369,7 +369,6 @@ _ch_peer_copy_save() {
   #save paths
   local suffix=`echo "$1%$2" | base64 -w 0 `
   local paths=`echo "$4" | base64 -w 0`
-  echo "$4 $paths" > $CH_PEER_COPY_P/prout
   local do_save=1
   
   juju-log -l DEBUG "_ch_peer_copy_save: $* in ${CH_PEER_COPY_PATHS_F}-$suffix"
