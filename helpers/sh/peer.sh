@@ -186,14 +186,10 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
       shift
       ;;
     *) # should be a pair of file
-      if [ -e "`echo "$1" | sed 's/\*$//'`" ]; then
-        local sourcep="$1"
-        shift
-        paths="$paths $sourcep $USER@X0X0X0X0:$1"
-        juju-log -l DEBUG "ch_peer_copy: paths found: $sourcep -> $1"
-      else
-        juju-log -l WARNING "ch_peer_copy: unknown option, skipping: $1"
-      fi
+      local sourcep="$1"
+      shift
+      paths="$paths $sourcep $USER@X0X0X0X0:$1"
+      juju-log -l DEBUG "ch_peer_copy: paths found: $sourcep -> $1"
       shift
       ;;
     esac
