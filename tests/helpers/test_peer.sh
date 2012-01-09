@@ -22,7 +22,21 @@ mock_relation_list()
     [ -z $CH_MASTER ] && let CH_MASTER=1
     
     case $CH_MASTER in
-    1)
+    4)
+        echo "TEST/3
+TEST/2
+TEST/4"
+        ;;
+    3)
+        echo "TEST/4
+TEST/3
+TEST/1"
+        ;;
+    2)
+        echo "TEST/3
+TEST/4"
+        ;;
+     1)
         echo "TEST/2
 TEST/3
 TEST/4"
@@ -35,8 +49,8 @@ TEST/4"
     -1)
         echo ""
         ;;
-    esac
-        
+    esac 
+
 }
 
 #Save juju-log for debugging
@@ -244,10 +258,53 @@ JUJU_UNIT_NAME="TEST/1"
 ch_peer_i_am_leader || return 1 && :
 echo PASS
 
+start_test "ch_peer_i_am_leader (unordered list 1)..."
+JUJU_REMOTE_UNIT="TEST/3"
+JUJU_UNIT_NAME="TEST/2"
+CH_MASTER=3
+ch_peer_i_am_leader && return 1 || :
+echo PASS
+
+start_test "ch_peer_i_am_leader (unordered list 2)..."
+JUJU_UNIT_NAME="TEST/1"
+CH_MASTER=4
+ch_peer_i_am_leader || return 1 && :
+echo PASS
+
+start_test "ch_peer_i_am_leader (unordered list 3)..."
+JUJU_UNIT_NAME="TEST/2"
+CH_MASTER=3
+ch_peer_i_am_leader && return 1 || :
+echo PASS
+
+start_test "ch_peer_i_am_leader (unordered list 4)..."
+JUJU_UNIT_NAME="TEST/3"
+ch_peer_i_am_leader && return 1 && :
+echo PASS
+
+start_test "ch_peer_i_am_leader (empty list)..."
+JUJU_REMOTE_UNIT="TEST/3"
+JUJU_UNIT_NAME="TEST/1"
+CH_MASTER=-1
+ch_peer_i_am_leader || return 1 && :
+echo PASS
+
+start_test "ch_peer_i_am_leader (departed leader)..."
+JUJU_REMOTE_UNIT="TEST/1"
+JUJU_UNIT_NAME="TEST/4"
+CH_MASTER=2
+ch_peer_i_am_leader && return 1 || :
+JUJU_UNIT_NAME="TEST/2"
+ch_peer_i_am_leader || return 1 && :
+echo PASS
+
 start_test ch_peer_leader...
+JUJU_REMOTE_UNIT="TEST/3"
+JUJU_UNIT_NAME="TEST/1"
+CH_MASTER=1
 [ "`ch_peer_leader`" = "TEST/1" ] ||  return 1
 [ `ch_peer_leader --id` -eq 1 ] || return 1
-JUJU_UNIT_NAME="TEST/3"
+JUJU_UNIT_NAME="TEST/2"
 [ "`ch_peer_leader`" = "TEST/2" ] || return 1
 [ `ch_peer_leader --id` -eq 2 ] || return 1
 echo PASS

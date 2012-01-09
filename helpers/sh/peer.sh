@@ -27,11 +27,23 @@ ch_peer_i_am_leader()
     local REMOTE_UNIT_ID=`ch_unit_id $JUJU_REMOTE_UNIT`
     local LOCAL_UNIT_ID=`ch_my_unit_id`
     local FIRST_UNIT_ID=`relation-list | cut -d/ -f2 | sort -n | head -n 1`
-
-    if [ $LOCAL_UNIT_ID -lt $REMOTE_UNIT_ID ] && [ $LOCAL_UNIT_ID -lt $FIRST_UNIT_ID ]; then
-        return 0
+    if [ -z $FIRST_UNIT_ID ] ; then
+      #no one else in the list, we are obviously the leader
+      return 0
+    fi
+    if [ $REMOTE_UNIT_ID -lt $FIRST_UNIT_ID ] ; then
+      #remote must be departing, lets not worry about it
+      if [ $LOCAL_UNIT_ID -lt $FIRST_UNIT_ID ]; then
+          return 0
+      else
+          return 1
+      fi
     else
-        return 1
+      if [ $LOCAL_UNIT_ID -lt $REMOTE_UNIT_ID ] && [ $LOCAL_UNIT_ID -lt $FIRST_UNIT_ID ]; then
+          return 0
+      else
+          return 1
+      fi
     fi
 } 
 
@@ -47,15 +59,17 @@ ch_peer_leader()
 {
     if ch_peer_i_am_leader; then
         # this is the leader, return our own unit name
-        local leader="$JUJU_UNIT_NAME"
+        local leader_id=`ch_unit_id $JUJU_UNIT_NAME`
+        local leader_name=$JUJU_UNIT_NAME
     else
         # this is  a slave the leader is the head of the list
-        local leader="`relation-list | head -n 1`"
+        local leader_id=`relation-list | cut -d/ -f2 | sort -n | head -n 1`
+        local leader_name=`relation-list | grep "/$leader_id$"`
     fi
     if [ $# -gt 0 ] && [ "$1" = "--id" ]; then
-        echo "`ch_unit_id $leader`"
+        echo $leader_id
     else
-        echo "$leader"
+        echo $leader_name
     fi
 }
 
