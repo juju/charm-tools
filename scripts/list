@@ -1,5 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-CHARM_URL="https://code.launchpad.net/charm"
+from launchpadlib.launchpad import Launchpad
 
-curl -s "${CHARM_URL}" | grep 'lp:'| grep 'href=' | sed -e s#\<wbr\>\</wbr\>##g | awk -F'>' '{ print $2 }' | awk -F'<' '{ print $1 }'
+lp = Launchpad.login_anonymously('charm-tools', 'production', version='devel')
+
+charm = lp.distributions['charm']
+
+branches = charm.getBranchTips()
+
+for branch in branches:
+   print "lp:%s" % branch[0]
+
