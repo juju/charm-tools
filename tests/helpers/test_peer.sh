@@ -13,6 +13,8 @@ fi
 
 set -ue
 
+JUJU_UNIT_NAME="EMPTY"
+
 #mock relation-list
 alias relation-list=mock_relation_list
 mock_relation_list()
@@ -20,7 +22,21 @@ mock_relation_list()
     [ -z $CH_MASTER ] && let CH_MASTER=1
     
     case $CH_MASTER in
-    1)
+    4)
+        echo "TEST/3
+TEST/2
+TEST/4"
+        ;;
+    3)
+        echo "TEST/4
+TEST/3
+TEST/1"
+        ;;
+    2)
+        echo "TEST/3
+TEST/4"
+        ;;
+     1)
         echo "TEST/2
 TEST/3
 TEST/4"
@@ -30,8 +46,11 @@ TEST/4"
 TEST/3
 TEST/4"
         ;;
-    esac
-        
+    -1)
+        echo ""
+        ;;
+    esac 
+
 }
 
 #Save juju-log for debugging
@@ -41,7 +60,7 @@ output "creating test-log in $CH_TEMPLOG"
 alias juju-log=mock_juju_log
 mock_juju_log()
 {
-    echo "$1" >> $CH_TEMPLOG
+    echo "$*" >> $CH_TEMPLOG
 }
 
 #mock unit-get
@@ -50,7 +69,7 @@ mock_unit_get()
 {
    case $1 in
    "private-address")
-       echo "127.0.0.1"
+       echo "localhost"
        ;;
    *)
        echo "UNDEFINED"
@@ -134,6 +153,9 @@ cleanup_peer()
         backup_dir=`mktemp -d /tmp/backup-charm-helper.ssh.XXXXXXXX`
         output "Backing up created $HOME/.ssh to $backup_dir/dot-ssh"
         mv $HOME/.ssh $backup_dir/dot-ssh
+    fi
+    if [ -e $HOME/ch_test ] ; then
+        rm -rf $HOME/ch_test
     fi
 }
 trap cleanup_peer EXIT
@@ -236,10 +258,53 @@ JUJU_UNIT_NAME="TEST/1"
 ch_peer_i_am_leader || return 1 && :
 echo PASS
 
+start_test "ch_peer_i_am_leader (unordered list 1)..."
+JUJU_REMOTE_UNIT="TEST/3"
+JUJU_UNIT_NAME="TEST/2"
+CH_MASTER=3
+ch_peer_i_am_leader && return 1 || :
+echo PASS
+
+start_test "ch_peer_i_am_leader (unordered list 2)..."
+JUJU_UNIT_NAME="TEST/1"
+CH_MASTER=4
+ch_peer_i_am_leader || return 1 && :
+echo PASS
+
+start_test "ch_peer_i_am_leader (unordered list 3)..."
+JUJU_UNIT_NAME="TEST/2"
+CH_MASTER=3
+ch_peer_i_am_leader && return 1 || :
+echo PASS
+
+start_test "ch_peer_i_am_leader (unordered list 4)..."
+JUJU_UNIT_NAME="TEST/3"
+ch_peer_i_am_leader && return 1 && :
+echo PASS
+
+start_test "ch_peer_i_am_leader (empty list)..."
+JUJU_REMOTE_UNIT="TEST/3"
+JUJU_UNIT_NAME="TEST/1"
+CH_MASTER=-1
+ch_peer_i_am_leader || return 1 && :
+echo PASS
+
+start_test "ch_peer_i_am_leader (departed leader)..."
+JUJU_REMOTE_UNIT="TEST/1"
+JUJU_UNIT_NAME="TEST/4"
+CH_MASTER=2
+ch_peer_i_am_leader && return 1 || :
+JUJU_UNIT_NAME="TEST/2"
+ch_peer_i_am_leader || return 1 && :
+echo PASS
+
 start_test ch_peer_leader...
+JUJU_REMOTE_UNIT="TEST/3"
+JUJU_UNIT_NAME="TEST/1"
+CH_MASTER=1
 [ "`ch_peer_leader`" = "TEST/1" ] ||  return 1
 [ `ch_peer_leader --id` -eq 1 ] || return 1
-JUJU_UNIT_NAME="TEST/3"
+JUJU_UNIT_NAME="TEST/2"
 [ "`ch_peer_leader`" = "TEST/2" ] || return 1
 [ `ch_peer_leader --id` -eq 2 ] || return 1
 echo PASS
@@ -305,18 +370,102 @@ do
     JUJU_UNIT_NAME="TEST/2" 
     JUJU_REMOTE_UNIT="TEST/1"
     CH_MASTER=0
-    if ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ ; then break ; fi
+    if ch_peer_scp -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/testfile" "$CH_TEMPDIR/destdir/" "$CH_TEMPDIR/sourcedir/testfile1" "$CH_TEMPDIR/destdir/" ; then break ; fi
     #master relation joined
     JUJU_UNIT_NAME="TEST/1" 
     JUJU_REMOTE_UNIT="TEST/2"
     CH_MASTER=1
-    if ch_peer_scp -p $CH_portnum -o "-q" $CH_TEMPDIR/sourcedir/testfile $CH_TEMPDIR/destdir/ ; then break ; fi
+    if ch_peer_scp -p $CH_portnum -o "-q" "$CH_TEMPDIR/sourcedir/testfile" "$CH_TEMPDIR/destdir/" "$CH_TEMPDIR/sourcedir/testfile1" "$CH_TEMPDIR/destdir/" ; then break ; fi
 done
-[ ! -e $CH_TEMPDIR/destdir/testfile ] && output"file not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
 CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile | cut -d" " -f1`
 CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile | cut -d" " -f1`
 [ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
 rm -rf $CH_TEMPDIR/destdir/*
+echo PASS
+
+start_test "ch_peer_copy_replay..."
+CH_scp_hostname=""
+CH_scp_ssh_key_saved=""
+CH_scp_ssh_key=""
+CH_scp_copy_done=""
+#We are not in a relation, we are on master
+JUJU_UNIT_NAME="TEST/1" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+if ! ch_peer_copy_replay ; then
+    output "should not have returned not copied (1)"
+    exit 1
+fi
+#We are not in a relation, we are on slave
+JUJU_UNIT_NAME="TEST/2" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+if ch_peer_copy_replay ; then
+    output "should not have returned copied (0)"
+    exit 1
+fi
+[ ! -e $CH_TEMPDIR/destdir/testfile ] && output "file not copied" && exit 1
+CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile | cut -d" " -f1`
+CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile | cut -d" " -f1`
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
+CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
+CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
+rm -rf $CH_TEMPDIR/destdir/*
+echo PASS
+
+start_test "ch_peer_rsync (out of relation)..."
+CH_scp_hostname=""
+CH_scp_ssh_key_saved=""
+CH_scp_ssh_key=""
+CH_scp_copy_done=""
+#We are not in a relation, we are on master
+JUJU_UNIT_NAME="TEST/1" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" && chres=0 || chres=$?
+if [ $chres -ne 101 ] ; then
+    output "should not have returned not copied (received $chres, 101 expected)"
+    exit 1
+fi
+#We are not in a relation, we are on slave
+JUJU_UNIT_NAME="TEST/2" 
+JUJU_REMOTE_UNIT=""
+CH_MASTER=-1
+ch_peer_rsync -p $CH_portnum -o "-azq" "$CH_TEMPDIR/sourcedir/*" "$CH_TEMPDIR/destdir/" && chres=0 || chres=$?
+if [ $chres -ne 100 ] ; then
+    output "should not have returned copied (received $chres, 100 expected)"
+    exit 1
+fi
+[ ! -e $CH_TEMPDIR/destdir/ ] && output "dir not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile0 ] && output "file1 not copied" && exit 1
+[ ! -e $CH_TEMPDIR/destdir/testfile1 ] && output "file2 not copied" && exit 1
+CH_t1=`md5sum $CH_TEMPDIR/sourcedir/testfile0 | cut -d" " -f1`
+CH_t2=`md5sum $CH_TEMPDIR/destdir/testfile0 | cut -d" " -f1`
+[ ! "$CH_t1" = "$CH_t2" ] && output "md5sum differ" && exit 1
+rm -rf $CH_TEMPDIR/destdir/*
+#restore authorized_keys & known_hosts
+echo PASS
+
+start_test "ch_peer_copy_cleanup..."
+# as a leader
+JUJU_UNIT_NAME="TEST/1" 
+JUJU_REMOTE_UNIT="TEST/2"
+CH_MASTER=-1
+ch_peer_copy_cleanup "$JUJU_REMOTE_UNIT"
+unitname=`echo $JUJU_UNIT_NAME | sed 's/\//-/g'`
+[ `grep -F "$JUJU_REMOTE_UNIT" $HOME/ch_test/$unitname` ] && output "not cleaned up" && exit 1
+# as a slave
+JUJU_UNIT_NAME="TEST/2" 
+JUJU_REMOTE_UNIT="TEST/1"
+CH_MASTER=-1
+ch_peer_copy_cleanup "$JUJU_REMOTE_UNIT"
+#nothing to check here other than if we did not choke on cleaning up something that does not exist
 echo PASS
 
 trap - EXIT
