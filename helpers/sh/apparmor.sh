@@ -24,7 +24,7 @@ ch_apparmor_load() {
     [ -n "$CHARM_DIR" ] || return 1
     [ -d "$CHARM_DIR" ] || return 1
     [ -d "$CHARM_DIR/apparmor/profiles.d" ] || return 0
-    cp -f $CHARM_DIR/apparmor/profiles.d/* $ddir/etc/apparmor/profiles.d || return 1
+    cp -f $CHARM_DIR/apparmor/profiles.d/* $ddir/etc/apparmor.d || return 1
     service apparmor reload || return 0
     return 0
 }

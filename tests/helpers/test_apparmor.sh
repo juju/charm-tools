@@ -39,7 +39,7 @@ CH_APPARMOR_DESTDIR=`mktemp -d /tmp/ch_apparmor_root.XXXXXX`
 SERVICE_LOG=`mktemp /tmp/service_log.XXXXXX`
 
 mkdir -p $CHARM_DIR/apparmor/profiles.d
-mkdir -p $CH_APPARMOR_DESTDIR/etc/apparmor/profiles.d
+mkdir -p $CH_APPARMOR_DESTDIR/etc/apparmor.d
 cat > $CHARM_DIR/apparmor/profiles.d/usr.bin.foo <<EOF
 /usr/lib/telepathy/telepathy-* {
     #include <abstractions/base>
@@ -48,8 +48,8 @@ EOF
 
 start_test ch_apparmor_load...
 ch_apparmor_load
-[ -f $CH_APPARMOR_DESTDIR/etc/apparmor/profiles.d/usr.bin.foo ]
-cmp $CH_APPARMOR_DESTDIR/etc/apparmor/profiles.d/usr.bin.foo $CHARM_DIR/apparmor/profiles.d/usr.bin.foo
+[ -f $CH_APPARMOR_DESTDIR/etc/apparmor.d/usr.bin.foo ]
+cmp $CH_APPARMOR_DESTDIR/etc/apparmor.d/usr.bin.foo $CHARM_DIR/apparmor/profiles.d/usr.bin.foo
 grep -q "apparmor reload" $SERVICE_LOG
 cp /dev/null $SERVICE_LOG
 echo PASS
