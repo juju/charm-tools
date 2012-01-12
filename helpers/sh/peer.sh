@@ -356,8 +356,10 @@ _ch_peer_copy_set_paths() {
   unitname=`echo $JUJU_UNIT_NAME | sed 's/\//-/g'`
   CH_PEER_COPY_P="/var/lib/juju/$unitname"
   if [ ! `mkdir -p $CH_PEER_COPY_P 2>/dev/null` ] ; then
-    CH_PEER_COPY_P="$HOME/ch_test/$unitname"
-    mkdir -p $CH_PEER_COPY_P
+    if [ ! -e $CH_PEER_COPY_P ]; then
+      CH_PEER_COPY_P="${HOME:-/root}/ch_test/$unitname"
+      mkdir -p $CH_PEER_COPY_P
+    fi
   fi
   CH_PEER_COPY_HOST_F="$CH_PEER_COPY_P/ch_peer_copy_hosts"
   CH_PEER_COPY_PATHS_F="$CH_PEER_COPY_P/ch_peer_copy_paths"
