@@ -3,11 +3,17 @@
 from launchpadlib.launchpad import Launchpad
 
 lp = Launchpad.login_anonymously('charm-tools', 'production', version='devel')
-
 charm = lp.distributions['charm']
-
+current_series = str(charm.current_series).split('/').pop()
 branches = charm.getBranchTips()
 
 for branch in branches:
-   print "lp:%s" % branch[0]
-
+    try:
+        branch_series = str(branch[2][0]).split('/')[0]
+        charm_name = str(branch[0]).split('/')[3]
+    except IndexError:
+        branch_series = ''
+    if branch_series == current_series:
+        print "lp:charm/%s" % charm_name
+    else:
+        print "lp:%s" % branch[0]
