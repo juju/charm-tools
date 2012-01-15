@@ -315,6 +315,7 @@ USAGE: ch_peer_rsync [-p <port>][-o \"<opt>\"] sourcepath1 destpath1 [... source
         chmod 600 "$ssh_key_p/authorized_keys"
       else
         juju-log -l DEBUG "ch_peer_copy: ssh_keys not set yet, later"
+        relation-set scp-ssh-key-saved=0 #we can't count on this being initialized correctly
       fi 
     fi 
   fi 
