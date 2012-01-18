@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+echo WARNING: peer functions are untested, and may provide unreliable
+echo services. Their use is experimental.
+
 ##
 # ch_peer_i_am_leader
 # Returns 1 if the current unit is the leader
