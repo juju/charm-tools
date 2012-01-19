@@ -10,7 +10,7 @@ dest=$2
 
 home=`dirname $0`
 
-CHARM_BRANCH=`$home/search $1 | grep ^lp:charm/$1`
+CHARM_BRANCH=`$home/search $1 | grep ^lp:charms/$1`
 
 if [ -z "$CHARM_BRANCH" ] ; then
     echo "$1 does not exist in official charm store." >&2

@@ -34,7 +34,7 @@ import yaml
 
 import logging
 
-DISTRIBUTION = 'charm'
+DISTRIBUTION = 'charms'
 REVIEW_TEAM_NAME = 'charmers'
 OFFICIAL_BRANCH_POCKET = 'Release'
 OFFICAL_BRANCH_STATUS = 'Mature'
