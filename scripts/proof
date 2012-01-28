@@ -48,7 +48,7 @@ exit_code = 0
 hook_warnings = [{'re' : re.compile("http://169\.254\.169\.254/"), 
                   'msg': "hook accesses EC2 metadata service directly"}]
 
-def check_hook(hook, required=True):
+def check_hook(hook, required=True, recommended=False):
   global hooks_path
 
   hook_path = path.join(hooks_path,hook)
@@ -67,6 +67,8 @@ def check_hook(hook, required=True):
   except OSError as e:
     if required:
         err("missing hook "+hook)
+    elif recommended:
+        warn("missing recommended hook "+hook)
     return False
 
 def check_relation_hooks(relations):
@@ -163,8 +165,8 @@ try:
       warn("revision should be a positive integer")
 
   check_hook('install')
-  check_hook('start', required=False)
-  check_hook('stop', required=False)
+  check_hook('start', required=False, recommended=True)
+  check_hook('stop', required=False, recommended=True)
 except IOError:
   err("could not find metadata file for " + charm_name)
   exit_code = -1
