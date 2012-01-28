@@ -25,25 +25,37 @@ from stat import *
 import yaml
 import re
 
-try:
-    charm_name = sys.argv[1]
-except:
-    print "usage: proof [ charm_name | path/to/charm ]"
-    print ""
-    print "Note that if no path is specfied, charms will be searched for in the"
-    print "current dir, or the dir specified in the environment var CHARM_HOME"
-    sys.exit(1)
+exit_code = 0
 
-if '/' in charm_name:
-  charm_path = charm_name
+def crit(msg):
+  """ Called when checking cannot continue """
+  global exit_code
+  err("FATAL: " + msg)
+  sys.exit(exit_code)
+
+def err(msg):
+  global exit_code
+  print "E: " + msg
+  if exit_code < 200:
+    exit_code = 200
+
+if len(sys.argv) >= 2:
+    charm_name = sys.argv[1]
 else:
-  charm_home = os.getenv('CHARM_HOME','.')
-  charm_path = path.join(charm_home,'charms',charm_name)
+    charm_name = os.getcwd()
+
+if os.path.isdir(charm_name):
+    charm_path = charm_name
+else:
+    charm_home = os.getenv('CHARM_HOME','.')
+    charm_path = path.join(charm_home,charm_name)
+
+if not os.path.isdir(charm_path):
+    crit("%s is not a directory, Aborting" % charm_path)
+    sys.exit(1)
 
 yaml_path = path.join(charm_path, 'metadata.yaml')
 hooks_path = path.join(charm_path, 'hooks')
-
-exit_code = 0
 
 hook_warnings = [{'re' : re.compile("http://169\.254\.169\.254/"), 
                   'msg': "hook accesses EC2 metadata service directly"}]
@@ -100,18 +112,6 @@ def warn(msg):
   print "W: " + msg
   if exit_code < 100:
     exit_code = 100 
-
-def err(msg):
-  global exit_code
-  print "E: " + msg
-  if exit_code < 200:
-    exit_code = 200
-
-def crit(msg):
-  """ Called when checking cannot continue """
-  global exit_code
-  err("FATAL: " + msg)
-  sys.exit(exit_code)
 
 try:
   yamlfile= open(yaml_path,'r')
