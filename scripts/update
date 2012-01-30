@@ -19,6 +19,8 @@ checkout = bzr branch lp:charms/$s $s
 EOF
 done
 
+ondisk_charms=`ls $charm_home|wc -l`
+echo Checking bzr trees of $ondisk_charms charms in $charm_home >&2
 for i in $charm_home/* ; do
     for x in parent push ; do
         location=`(cd $i && bzr config ${x}_location 2>/dev/null)`
