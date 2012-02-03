@@ -39,6 +39,10 @@ def err(msg):
   if exit_code < 200:
     exit_code = 200
 
+def info(msg):
+  """ Ignorable but sometimes useful """
+  print "I: " + msg
+
 if len(sys.argv) >= 2:
     charm_name = sys.argv[1]
 else:
@@ -98,7 +102,7 @@ def check_relation_hooks(relations):
     has_one = has_one or check_hook(r+'-relation-broken', required=False)
 
     if not has_one:
-        warn("relation "+r+" has no hooks")
+        info("relation "+r+" has no hooks")
 
     try:
       interface = relations[r]['interface']
