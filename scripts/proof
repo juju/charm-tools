@@ -139,6 +139,21 @@ try:
   if not path.exists(path.join(charm_path,'copyright')):
     err("no copyright file")
 
+  # should have a readme
+  root_files = os.listdir(charm_path)
+  found_readmes = set()
+  for filename in root_files:
+    if filename.upper().find('README') != -1:
+      found_readmes.add(filename)
+  if len(found_readmes):
+    if 'README.ex' in found_readmes:
+      err("Includes template README.ex file")
+  else:
+    warn("no README file")
+  
+
+  
+
   # All charms should provide at least one thing
   try:
     provides = charm['provides']  
