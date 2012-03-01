@@ -8,7 +8,7 @@ import ez_setup
 
 ez_setup.use_setuptools()
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 __version__ = '0.0.1'
 
@@ -16,7 +16,8 @@ __version__ = '0.0.1'
 setup(
     name='charmhelpers',
     version=__version__,
-    packages=['charmhelpers'],
+    packages=find_packages('helpers/python'),
+    package_dir={'': 'helpers/python'},
     include_package_data=True,
     zip_safe=False,
     maintainer='Launchpad Yellow',
