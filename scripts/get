@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ -z "$1" ] ; then
+    echo "Retrieves official charm branches from https://launchpad.net/charm" >&2
+    echo "usage: charm get name_of_charm [ local_charm_repo ]" >&2
+    exit 1
+fi
+
+dest=$2
+
+home=`dirname $0`
+
+CHARM_BRANCH=`$home/search $1 | grep ^lp:charms/$1`
+
+if [ -z "$CHARM_BRANCH" ] ; then
+    echo "$1 does not exist in official charm store." >&2
+    exit 1
+fi
+
+bzr branch $CHARM_BRANCH $dest

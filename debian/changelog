@@ -1,0 +1,33 @@
+charm-tools (0.3+bzr128-1~precise1) precise; urgency=low
+
+  * Auto build.
+
+ -- Launchpad Package Builder <noreply@launchpad.net>  Thu, 09 Feb 2012 03:54:44 +0000
+
+charm-tools (0.3+121-0ubuntu1) precise; urgency=low
+
+  * New upstream release.
+  * Build-Depend on pwgen, openssh, and rsync for tests.
+
+ -- Clint Byrum <clint@ubuntu.com>  Thu, 19 Jan 2012 12:52:59 -0800
+
+charm-tools (0.3+92-0ubuntu1) precise; urgency=low
+
+  * New upstream release.
+  * d/control: adding python as build-dep to fix FTBFS
+  * d/control: removing bash build-dep as its part of build-essential
+
+ -- Clint Byrum <clint@ubuntu.com>  Tue, 13 Dec 2011 12:55:09 -0800
+
+charm-tools (0.3+91-0ubuntu1) precise; urgency=low
+
+  * New upstream release.
+  * d/control: adding wget and bash as build-deps to run tests.
+
+ -- Clint Byrum <clint@ubuntu.com>  Tue, 13 Dec 2011 09:46:23 -0800
+
+charm-tools (0.3+85-0ubuntu1) precise; urgency=low
+
+  * Initial release
+
+ -- Clint Byrum <clint@ubuntu.com>  Thu, 02 Jun 2011 12:12:39 -0700

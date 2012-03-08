@@ -1,0 +1,43 @@
+#!/bin/sh
+# Simple wrapper to call charm tools scripts. Meant to
+# be placed in user's path.
+set -ue
+
+script_home=`readlink -f $0`
+script_home=`dirname $script_home`
+script_home=`readlink -f $script_home`/scripts
+
+usage()
+{
+  echo usage: $1 [ script_name ] >&2
+  echo script choices are: >&2
+  exec ls $script_home >&2
+  exit $2
+}
+
+options=$(getopt -o h -l help -- "$@")
+if [ $? -ne 0 ]; then
+    usage $(basename $0) 1
+fi
+eval set -- "$options"
+
+while true
+do
+    case "$1" in
+    -h|--help)  usage $(basename $0) 0;;
+    --) shift 1; break;;
+    *)  break;;
+    esac
+done
+
+script=${1:-""}
+
+if [ -z "$script" ] ; then
+    usage $(basename $0) 0
+fi
+if [ -x $script_home/$script ] ; then
+  shift
+  exec $script_home/$script $*
+fi
+echo "abort: Unknown script $script" >&2
+usage $(basename $0) 2

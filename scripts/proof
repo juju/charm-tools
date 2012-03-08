@@ -1,0 +1,204 @@
+#!/usr/bin/python
+#
+#    proof - makes sure charms follow conventions
+#
+#    Copyright (C) 2011  Canonical Ltd.
+#    Author: Clint Byrum <clint.byrum@canonical.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import os.path as path
+import os,sys
+from stat import *
+import yaml
+import re
+
+exit_code = 0
+
+def crit(msg):
+  """ Called when checking cannot continue """
+  global exit_code
+  err("FATAL: " + msg)
+  sys.exit(exit_code)
+
+def err(msg):
+  global exit_code
+  print "E: " + msg
+  if exit_code < 200:
+    exit_code = 200
+
+def info(msg):
+  """ Ignorable but sometimes useful """
+  print "I: " + msg
+
+if len(sys.argv) >= 2:
+    charm_name = sys.argv[1]
+else:
+    charm_name = os.getcwd()
+
+if os.path.isdir(charm_name):
+    charm_path = charm_name
+else:
+    charm_home = os.getenv('CHARM_HOME','.')
+    charm_path = path.join(charm_home,charm_name)
+
+if not os.path.isdir(charm_path):
+    crit("%s is not a directory, Aborting" % charm_path)
+    sys.exit(1)
+
+yaml_path = path.join(charm_path, 'metadata.yaml')
+hooks_path = path.join(charm_path, 'hooks')
+
+hook_warnings = [{'re' : re.compile("http://169\.254\.169\.254/"), 
+                  'msg': "hook accesses EC2 metadata service directly"}]
+
+def check_hook(hook, required=True, recommended=False):
+  global hooks_path
+
+  hook_path = path.join(hooks_path,hook)
+  try:
+    mode = os.stat(hook_path)[ST_MODE]
+    if not mode & S_IXUSR:
+      warn(hook + " not executable")
+    with open(hook_path, 'r') as hook_file:
+      count = 0
+      for line in hook_file:
+        count += 1
+        for warning in hook_warnings:
+          if warning['re'].search(line):
+            warn("(%s:%d) - %s" % (hook,count,warning['msg']))
+    return True
+  except OSError as e:
+    if required:
+        err("missing hook "+hook)
+    elif recommended:
+        warn("missing recommended hook "+hook)
+    return False
+
+def check_relation_hooks(relations):
+  template_interfaces = ('interface-name')
+  template_relations = ('relation-name')
+
+  for r in relations:
+    if r in template_relations:
+      err("template relations should be renamed to fit charm: "+r)
+
+    has_one = False
+    has_one = has_one or check_hook(r+'-relation-changed', required=False)
+    has_one = has_one or check_hook(r+'-relation-departed', required=False)
+    has_one = has_one or check_hook(r+'-relation-joined', required=False)
+    has_one = has_one or check_hook(r+'-relation-broken', required=False)
+
+    if not has_one:
+        info("relation "+r+" has no hooks")
+
+    try:
+      interface = relations[r]['interface']
+      if interface in template_interfaces:
+        err("template interface names should be changed: "+interface)
+    except KeyError:
+      err("relation missing interface")
+
+def warn(msg):
+  global exit_code
+  print "W: " + msg
+  if exit_code < 100:
+    exit_code = 100 
+
+try:
+  yamlfile= open(yaml_path,'r')
+  try:
+    charm = yaml.load(yamlfile)
+  except Exception as e:
+    crit('cannot parse ' + yaml_path + ":" + str(e))
+
+  yamlfile.close()
+
+  # summary should be short
+  if len(charm['summary']) > 72:
+    warn('summary sould be less than 72') 
+
+
+  # Must have a hooks dir
+  if not path.exists(hooks_path):
+    err("no hooks directory")
+
+  # Must have a copyright file
+  if not path.exists(path.join(charm_path,'copyright')):
+    err("no copyright file")
+
+  # should have a readme
+  root_files = os.listdir(charm_path)
+  found_readmes = set()
+  for filename in root_files:
+    if filename.upper().find('README') != -1:
+      found_readmes.add(filename)
+  if len(found_readmes):
+    if 'README.ex' in found_readmes:
+      err("Includes template README.ex file")
+  else:
+    warn("no README file")
+  
+
+  
+
+  # All charms should provide at least one thing
+  try:
+    provides = charm['provides']  
+    check_relation_hooks(provides)
+  except KeyError:
+    warn("all charms should provide at least one thing")
+
+  try:
+    requires = charm['requires']
+    check_relation_hooks(requires)
+  except KeyError:
+    pass
+
+  try:
+    peers = charm['peers']
+    check_relation_hooks(peers)
+  except KeyError:
+    pass
+
+  if 'revision' in charm:
+    warn("Revision should not be stored in metadata.yaml anymore. Move it to the revision file")
+    # revision must be an integer
+    try:
+      x = int(charm['revision'])
+      if x < 0:
+        raise ValueError
+    except (TypeError, ValueError):
+      warn("revision should be a positive integer")
+
+  check_hook('install')
+  check_hook('start', required=False, recommended=True)
+  check_hook('stop', required=False, recommended=True)
+except IOError:
+  err("could not find metadata file for " + charm_name)
+  exit_code = -1
+
+rev_path = os.path.join(charm_path, 'revision')
+if not path.exists(rev_path):
+  err("revision file in root of charm is required")
+else:
+  with open(rev_path, 'r') as rev_file:
+      content = rev_file.read().rstrip()
+      try:
+          rev = int(content)
+      except ValueError:
+          err("revision file contains non-numeric data")
+
+sys.exit(exit_code)

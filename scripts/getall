@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+usage()
+{
+    echo "usage: getall path_to_charms" >&2
+    exit $1
+}
+
+if [ -z "$1" ] ; then
+    usage 1
+fi
+charm_home=$1
+
+if [ "$1" = "--help" -o "$1" = "-h" ] ; then
+    usage 0
+fi
+
+home=`dirname $0`
+home=`readlink -f $home`
+
+if ! [ -d "$charm_home/.bzr" ] ; then
+  echo initializing $charm_home as bzr repository
+  bzr init-repo $charm_home
+  $home/update $charm_home
+  echo checking out all charms
+  mr -c $charm_home/.mrconfig -d $charm_home --trust-all checkout
+  echo "In order to update charms, run this script again."
+else
+  mr -c $charm_home/.mrconfig -d $charm_home --trust-all update
+fi

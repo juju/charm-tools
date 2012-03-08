@@ -1,0 +1,42 @@
+#!/bin/sh
+home=`dirname $0`
+charm_home=$1
+opt=$2
+
+if [ -z "$charm_home" ] ; then
+    echo "usage: update charm_directory [ --fix ]" >&2
+    exit 1
+fi
+
+echo Pulling charm list from launchpad >&2
+newfile=`mktemp $charm_home/.mrconfig.XXXXXXXX`
+cp /dev/null $newfile
+for s in `$home/list | awk -F\/ '/^lp:charms\// { print $2 }'` ; do
+    cat >> $newfile <<EOF
+[$s]
+checkout = bzr branch lp:charms/$s $s
+
+EOF
+done
+
+ondisk_charms=`ls $charm_home|wc -l`
+echo Checking bzr trees of $ondisk_charms charms in $charm_home >&2
+for i in $charm_home/* ; do
+    for x in parent push ; do
+        location=`(cd $i && bzr config ${x}_location 2>/dev/null)`
+        [ -n "$location" ] || continue
+        if echo $location | grep -q '/charm/' ; then
+            new=`echo $location | sed -e 's,/charm/,/charms/,'`
+            if [ "$opt" = "--fix" ] ; then
+                echo UPDATING: $i, ${x}_location >&2
+                (cd $i && bzr config ${x}_location=$new) || echo FAILED >&2
+            else
+                echo WARNING: $i\'s ${x}_location must be redirected to lp:charms, or re-run update with --fix >&2
+                echo cd $i '&&' bzr config ${x}_location=$new
+            fi
+        fi
+    done
+done
+
+echo updating $charm_home/.mrconfig >&2
+mv -f $newfile $charm_home/.mrconfig

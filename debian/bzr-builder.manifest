@@ -1,0 +1,3 @@
+# bzr-builder format 0.3 deb-version 0.3+bzr128-1
+lp:charm-tools revid:clint@ubuntu.com-20120208233752-dnzyse834mu05d77
+nest-part packaging lp:ubuntu/charm-tools debian debian revid:clint@ubuntu.com-20120119205311-farsam12qwqfpeht

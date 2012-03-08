@@ -1,0 +1,7 @@
+#!/bin/sh
+# This must be renamed to the name of the relation. The goal here is to
+# affect any change needed by relationships being formed
+# This script should be idempotent.
+#raw
+juju-log $JUJU_REMOTE_UNIT joined
+#end raw

@@ -1,0 +1,34 @@
+Source: charm-tools
+Section: net
+Priority: optional
+Maintainer: Clint Byrum <clint@ubuntu.com>
+Build-Depends: debhelper (>= 7.0.50~), wget, python, pwgen, openssh-server, openssh-client, rsync
+Standards-Version: 3.9.2
+Homepage: https://launchpad.net/charm-tools
+
+Package: charm-tools
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, bzr, mr, python, python-apt, python-cheetah, python-launchpadlib, curl
+Breaks: principia-tools
+Replaces: principia-tools
+Recommends: juju
+Description: tools for maintaining Juju charms
+ This project is a set of tools for authoring and maintaining charms in
+ the Juju charms distribution.
+ .
+ This package contains specific tools for charm development.
+ .
+ Note that juju was formerly called "Ensemble" and charms were called
+ "formulas".
+
+Package: charm-helper-sh
+Architecture: all
+Depends: wget, bind9-host, ${misc:Depends}
+Suggests: juju
+Provides: charm-helper-bash
+Description: shell script helpers for use in juju charms
+ This project is a set of tools for authoring and maintaining charms in
+ the Juju charms distribution.
+ .
+ This package contains helper scripts for use in simplifying charms
+ written using sh/bash scripts. 

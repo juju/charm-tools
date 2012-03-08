@@ -1,0 +1,5 @@
+#!/bin/bash
+
+[ -z "${1}" ] && echo "Search parameter required" && exit 1
+
+charm list | grep "${1}"

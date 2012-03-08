@@ -1,0 +1,4 @@
+usr/share/charm-tools
+usr/bin/charm
+usr/share/man/man1/charm.*
+tests /usr/share/charm-tools
