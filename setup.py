@@ -16,7 +16,7 @@ __version__ = '0.0.1'
 setup(
     name='charmhelpers',
     version=__version__,
-    packages=find_packages('helpers/python'),
+    packages=['charmhelpers'],
     package_dir={'': 'helpers/python'},
     include_package_data=True,
     zip_safe=False,

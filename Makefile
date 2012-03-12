@@ -20,6 +20,8 @@ install:
 	gzip $(mandir)/charm.1
 	cp -rf scripts templates $(datadir)
 	cp -rf helpers/* $(helperdir)
+	mkdir /tmp/nudir
+	python setup.py install
 
 check:
 	tests/helpers/helpers.sh || sh -x tests/helpers/helpers.sh timeout
