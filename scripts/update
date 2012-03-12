@@ -1,7 +1,29 @@
 #!/bin/sh
 home=`dirname $0`
+
+usage() {
+    echo "usage: $1 [ --fix ] charm_directory" >&2
+    exit $2
+}
+
+options=$(getopt -o hf -l help,fix -- "$@")
+if [ $? -ne 0 ]; then
+    usage $(basename $0) 1
+fi
+eval set -- "$options"
+
+fixmode=0
+
+while true
+do
+    case "$1" in
+    -h|--help)  usage $(basename $0) 0;;
+    -f|--fix) shift 1; fixmode=1 ;;
+    --) shift 1; break;;
+    *)  break;;
+    esac
+done
 charm_home=$1
-opt=$2
 
 if [ -z "$charm_home" ] ; then
     echo "usage: update charm_directory [ --fix ]" >&2
@@ -17,6 +39,14 @@ for s in `$home/list | awk -F\/ '/^lp:charms\// { print $2 }'` ; do
 checkout = bzr branch lp:charms/$s $s
 
 EOF
+    if [ $fixmode -eq 1 ] ; then
+        if [ -d $charm_home/$s ] ; then
+            echo FIX: fixing existing charm $s
+            if !(cd $charm_home/$s && bzr pull --remember lp:charms/$s) ; then
+                echo WARNING: problem with local copy in $charm_home/$s, investigate o get the official charm at lp:charms/$s >&2
+            fi
+        fi
+    fi
 done
 
 ondisk_charms=`ls $charm_home|wc -l`
@@ -24,10 +54,9 @@ echo Checking bzr trees of $ondisk_charms charms in $charm_home >&2
 for i in $charm_home/* ; do
     for x in parent push ; do
         location=`(cd $i && bzr config ${x}_location 2>/dev/null)`
-        [ -n "$location" ] || continue
         if echo $location | grep -q '/charm/' ; then
             new=`echo $location | sed -e 's,/charm/,/charms/,'`
-            if [ "$opt" = "--fix" ] ; then
+            if [ $fixmode -eq 1 ] ; then
                 echo UPDATING: $i, ${x}_location >&2
                 (cd $i && bzr config ${x}_location=$new) || echo FAILED >&2
             else
