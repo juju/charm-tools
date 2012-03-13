@@ -20,7 +20,6 @@ install:
 	gzip $(mandir)/charm.1
 	cp -rf scripts templates $(datadir)
 	cp -rf helpers/* $(helperdir)
-	mkdir /tmp/nudir
 	python setup.py install
 
 check:
