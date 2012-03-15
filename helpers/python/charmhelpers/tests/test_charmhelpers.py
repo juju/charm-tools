@@ -6,6 +6,7 @@ import yaml
 
 from simplejson import dumps
 from testtools import TestCase
+from textwrap import dedent
 
 
 class CharmHelpersTestCase(TestCase):
@@ -68,6 +69,35 @@ class CharmHelpersTestCase(TestCase):
         with open(charm_config_file.name) as config_in:
             written_config = config_in.read()
         self.assertEqual(yaml.dump(charm_config), written_config)
+
+    def test_unit_info(self):
+        # unit_info returns requested data about a given service.
+        juju_yaml = dedent("""
+            services:
+              test-service:
+                charm: local:oneiric/test-service-1
+                relations: {}
+                units:
+                  test-service/0:
+                    machine: 1
+                    public-address: null
+                    relations: {}
+                    state: pending
+            """)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        self.assertEqual(
+            'pending',
+            charmhelpers.unit_info('test-service', 'state'))
+
+    def test_unit_info_returns_empty_for_nonexistant_service(self):
+        # If the service passed to unit_info() has not yet started (or
+        # otherwise doesn't exist), unit_info() will return an empty string.
+        juju_yaml = "services: {}"
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        self.assertEqual(
+            '', charmhelpers.unit_info('test-service', 'state'))
 
 
 if __name__ == '__main__':

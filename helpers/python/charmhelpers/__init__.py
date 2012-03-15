@@ -29,8 +29,10 @@ import yaml
 
 
 Env = namedtuple('Env', 'uid gid home')
-
 log = command('juju-log')
+# We create a juju_status Command here because it makes testing much,
+# much easier.
+juju_status = lambda: command('juju')('status')
 
 
 def log_entry():
@@ -69,7 +71,7 @@ def make_charm_config_file(charm_config):
 
 def unit_info(service_name, item_name, data=None):
     if data is None:
-        data = yaml.safe_load(run('juju', 'status'))
+        data = yaml.safe_load(juju_status())
     service = data['services'].get(service_name)
     if service is None:
         # XXX 2012-02-08 gmb:
@@ -84,7 +86,7 @@ def unit_info(service_name, item_name, data=None):
 
 
 def get_machine_data():
-    return yaml.safe_load(run('juju', 'status'))['machines']
+    return yaml.safe_load(juju_status())['machines']
 
 
 def wait_for_machine(num_machines=1, timeout=300):
