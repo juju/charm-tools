@@ -1,14 +1,24 @@
 # Tests for Python charm helpers.
 
+import charmhelpers
+import unittest
+import yaml
+
 from simplejson import dumps
 from testtools import TestCase
-
-import charmhelpers
 
 
 class CharmHelpersTestCase(TestCase):
     """A basic test case for Python charm helpers."""
 
+    def _patch_command(self, replacement_command):
+        """Monkeypatch charmhelpers.command for testing purposes.
+
+        :param replacement_command: The replacement Callable for
+                                    command().
+        """
+        new_command = lambda *args: replacement_command
+        self.patch(charmhelpers, 'command', new_command)
 
     def test_get_config(self):
         # get_config returns the contents of the current charm
@@ -16,11 +26,49 @@ class CharmHelpersTestCase(TestCase):
         mock_config = {'key': 'value'}
 
         # Monkey-patch shelltoolbox.command to avoid having to call out
-        # to config-get. This nesting of lambdas is a bit horrible
-        # because get_config() defines its own config_get() command, but
-        # since it's not used anywhere else this is preferable to making
-        # config_get() a global.
-        config_get_cmd = lambda *args: lambda: dumps(mock_config)
-        self.patch(charmhelpers, 'command', config_get_cmd)
-
+        # to config-get. 
+        self._patch_command(lambda: dumps(mock_config))
         self.assertEqual(mock_config, charmhelpers.get_config())
+
+    def test_relation_get(self):
+        # relation_get returns the value of a given relation variable,
+        # as returned by relation-get $VAR.
+        mock_relation_values = {
+            'foo': 'bar',
+            'spam': 'eggs',
+            }
+        self._patch_command(lambda *args: mock_relation_values[args[0]])
+        self.assertEqual('bar', charmhelpers.relation_get('foo'))
+        self.assertEqual('eggs', charmhelpers.relation_get('spam'))
+
+    def test_relation_set(self):
+        # relation_set calls out to relation-set and passes key=value
+        # pairs to it.
+        items_set = {}
+        def mock_relation_set(*args):
+            for arg in args:
+                key, value = arg.split("=")
+                items_set[key] = value
+        self._patch_command(mock_relation_set)
+        charmhelpers.relation_set(foo='bar', spam='eggs')
+        self.assertEqual('bar', items_set.get('foo'))
+        self.assertEqual('eggs', items_set.get('spam'))
+
+    def test_make_charm_config_file(self):
+        # make_charm_config_file() writes the passed configuration to a
+        # temporary file as YAML.
+        charm_config = {
+            'foo': 'bar',
+            'spam': 'eggs',
+            'ham': 'jam',
+            }
+        # make_charm_config_file() returns the file object so that it
+        # can be garbage collected properly.
+        charm_config_file = charmhelpers.make_charm_config_file(charm_config)
+        with open(charm_config_file.name) as config_in:
+            written_config = config_in.read()
+        self.assertEqual(yaml.dump(charm_config), written_config)
+
+
+if __name__ == '__main__':
+    unittest.main()
