@@ -21,9 +21,9 @@ class CharmHelpersTestCase(TestCase):
         new_command = lambda *args: replacement_command
         self.patch(charmhelpers, 'command', new_command)
 
-    def _make_juju_status_yaml(self, num_units=1,
+    def _make_juju_status_dict(self, num_units=1,
                                service_name='test-service'):
-        """Generate valid juju status YAML and return it."""
+        """Generate valid juju status dict and return it."""
         machine_data = {}
         # The 0th machine is the Zookeeper.
         machine_data[0] = {
@@ -44,6 +44,7 @@ class CharmHelpersTestCase(TestCase):
                 'dns-name': 'machine{}.example.com'.format(machine_number),
                 'instance-id': 'machine{}'.format(machine_number),
                 'state': 'pending',
+                'instance-state': 'pending',
                 }
             machine_data[machine_number] = unit_machine_data
             unit_data = {
@@ -59,7 +60,12 @@ class CharmHelpersTestCase(TestCase):
             'machines': machine_data,
             'services': {service_name: service_data},
             }
-        return yaml.dump(juju_status_data)
+        return juju_status_data
+
+    def _make_juju_status_yaml(self, num_units=1,
+                               service_name='test-service'):
+        """Convert the dict returned by `_make_juju_status_dict` to YAML."""
+        return yaml.dump(self._make_juju_status_dict(num_units, service_name))
 
     def test_get_config(self):
         # get_config returns the contents of the current charm
@@ -67,7 +73,7 @@ class CharmHelpersTestCase(TestCase):
         mock_config = {'key': 'value'}
 
         # Monkey-patch shelltoolbox.command to avoid having to call out
-        # to config-get. 
+        # to config-get.
         self._patch_command(lambda: dumps(mock_config))
         self.assertEqual(mock_config, charmhelpers.get_config())
 
@@ -172,6 +178,55 @@ class CharmHelpersTestCase(TestCase):
         machine_0_data = charmhelpers.get_machine_data()[0]
         self.assertEqual('zookeeper.example.com', machine_0_data['dns-name'])
 
+    def test_wait_for_machine_returns_if_machine_up(self):
+        # If wait_for_machine() is called and the machine(s) it is
+        # waiting for are already up, it will return.
+        juju_status_dict = self._make_juju_status_dict()
+        # We'll update machine #1 so that it's 'running'.
+        juju_status_dict['machines'][1]['instance-state'] = 'running'
+        juju_yaml = yaml.dump(juju_status_dict)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        machines, time_taken = charmhelpers.wait_for_machine(timeout=1)
+        self.assertEqual(1, machines)
+
+    def test_wait_for_machine_times_out(self):
+        # If the machine that wait_for_machine is waiting for isn't
+        # 'running' before the passed timeout is reached,
+        # wait_for_machine will raise an error.
+        juju_yaml = self._make_juju_status_yaml()
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        self.assertRaises(
+            RuntimeError, charmhelpers.wait_for_machine, timeout=0)
+
+    def test_wait_for_machine_always_returns_if_running_locally(self):
+        # If juju is actually running against a local LXC container,
+        # wait_for_machine will always return.
+        juju_status_dict = self._make_juju_status_dict()
+        # We'll update the 0th machine to make it look like it's an LXC
+        # container.
+        juju_status_dict['machines'][0]['dns-name'] = 'localhost'
+        juju_yaml = yaml.dump(juju_status_dict)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        machines, time_taken = charmhelpers.wait_for_machine(timeout=1)
+        # wait_for_machine will always return 1 machine started here,
+        # since there's only one machine to start.
+        self.assertEqual(1, machines)
+        # time_taken will be 0, since no actual waiting happened.
+        self.assertEqual(0, time_taken)
+
+    def test_wait_for_machine_waits_for_multiple_machines(self):
+        # Wait for machine can be told to wait for multiple machines.
+        juju_status_dict = self._make_juju_status_dict(num_units=2)
+        juju_status_dict['machines'][1]['instance-state'] = 'running'
+        juju_status_dict['machines'][2]['instance-state'] = 'running'
+        juju_yaml = yaml.dump(juju_status_dict)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        machines, time_taken = charmhelpers.wait_for_machine(num_machines=2)
+        self.assertEqual(2, machines)
 
 if __name__ == '__main__':
     unittest.main()

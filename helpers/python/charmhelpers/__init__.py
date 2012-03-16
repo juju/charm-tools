@@ -103,13 +103,16 @@ def wait_for_machine(num_machines=1, timeout=300):
     This wait_for... function can be called by other wait_for functions
     whose timeouts might be too short in situations where only a bare
     Juju setup has been bootstrapped.
+
+    :return: A tuple of (num_machines, time_taken). This is used for
+             testing.
     """
     # You may think this is a hack, and you'd be right. The easiest way
     # to tell what environment we're working in (LXC vs EC2) is to check
     # the dns-name of the first machine. If it's localhost we're in LXC
     # and we can just return here.
     if get_machine_data()[0]['dns-name'] == 'localhost':
-        return
+        return 1, 0
     start_time = time.time()
     while True:
         # Drop the first machine, since it's the Zookeeper and that's
@@ -130,6 +133,7 @@ def wait_for_machine(num_machines=1, timeout=300):
         if time.time() - start_time >= timeout:
             raise RuntimeError('timeout waiting for service to start')
         time.sleep(0.1)
+    return num_machines, time.time() - start_time
 
 
 def wait_for_unit(service_name, timeout=480):
