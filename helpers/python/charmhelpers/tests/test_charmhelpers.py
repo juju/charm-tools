@@ -24,26 +24,30 @@ class CharmHelpersTestCase(TestCase):
     def _make_juju_status_yaml(self, num_units=1,
                                service_name='test-service'):
         """Generate valid juju status YAML and return it."""
-        juju_yaml = dedent("""
-            services:
-              test-service:
-                charm: local:oneiric/test-service-1
-                relations: {}
-                units:
-                  test-service/0:
-                    machine: 1
-                    public-address: null
-                    relations: {}
-                    state: pending
-            """)
+        machine_data = {}
+        # The 0th machine is the Zookeeper.
+        machine_data[0] = {
+            'dns-name': 'zookeeper.example.com',
+            'instance-id': 'machine0',
+            'state': 'not-started',
+            }
         service_data = {
             'charm': 'local:precise/{}-1'.format(service_name),
             'relations': {},
             'units': {},
             }
         for i in range(num_units):
+            # The machine is always going to be i+1 because there
+            # will always be num_units+1 machines.
+            machine_number = i+1
+            unit_machine_data = {
+                'dns-name': 'machine{}.example.com'.format(machine_number),
+                'instance-id': 'machine{}'.format(machine_number),
+                'state': 'pending',
+                }
+            machine_data[machine_number] = unit_machine_data
             unit_data = {
-                'machine': i,
+                'machine': machine_number,
                 'public-address':
                     '{}-{}.example.com'.format(service_name, i),
                 'relations': {},
@@ -51,7 +55,10 @@ class CharmHelpersTestCase(TestCase):
                 }
             service_data['units']['{}/{}'.format(service_name, i)] = (
                 unit_data)
-        juju_status_data = {'services': {service_name: service_data}}
+        juju_status_data = {
+            'machines': machine_data,
+            'services': {service_name: service_data},
+            }
         return yaml.dump(juju_status_data)
 
     def test_get_config(self):
@@ -135,6 +142,16 @@ class CharmHelpersTestCase(TestCase):
                 'test-service', key, data=juju_status_data)
             self.assertEqual(value, item_info)
 
+    def test_unit_info_returns_first_unit_by_default(self):
+        # By default, unit_info() just returns the value of the
+        # requested item for the first unit in a service.
+        juju_yaml = self._make_juju_status_yaml(num_units=2)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        unit_address = charmhelpers.unit_info(
+            'test-service', 'public-address')
+        self.assertEqual('test-service-0.example.com', unit_address)
+
     def test_unit_info_accepts_unit_name(self):
         # By default, unit_info() just returns the value of the
         # requested item for the first unit in a service. However, it's
@@ -145,6 +162,15 @@ class CharmHelpersTestCase(TestCase):
         unit_address = charmhelpers.unit_info(
             'test-service', 'public-address', unit='test-service/1')
         self.assertEqual('test-service-1.example.com', unit_address)
+
+    def test_get_machine_data(self):
+        # get_machine_data() returns a dict containing the machine data
+        # parsed from juju status.
+        juju_yaml = self._make_juju_status_yaml()
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        machine_0_data = charmhelpers.get_machine_data()[0]
+        self.assertEqual('zookeeper.example.com', machine_0_data['dns-name'])
 
 
 if __name__ == '__main__':
