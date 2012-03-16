@@ -22,7 +22,9 @@ class CharmHelpersTestCase(TestCase):
         self.patch(charmhelpers, 'command', new_command)
 
     def _make_juju_status_dict(self, num_units=1,
-                               service_name='test-service'):
+                               service_name='test-service',
+                               unit_state='pending',
+                               machine_state='not-started'):
         """Generate valid juju status dict and return it."""
         machine_data = {}
         # The 0th machine is the Zookeeper.
@@ -43,8 +45,8 @@ class CharmHelpersTestCase(TestCase):
             unit_machine_data = {
                 'dns-name': 'machine{}.example.com'.format(machine_number),
                 'instance-id': 'machine{}'.format(machine_number),
-                'state': 'pending',
-                'instance-state': 'pending',
+                'state': machine_state,
+                'instance-state': machine_state,
                 }
             machine_data[machine_number] = unit_machine_data
             unit_data = {
@@ -52,7 +54,7 @@ class CharmHelpersTestCase(TestCase):
                 'public-address':
                     '{}-{}.example.com'.format(service_name, i),
                 'relations': {},
-                'state': 'pending',
+                'state': unit_state,
                 }
             service_data['units']['{}/{}'.format(service_name, i)] = (
                 unit_data)
@@ -63,9 +65,13 @@ class CharmHelpersTestCase(TestCase):
         return juju_status_data
 
     def _make_juju_status_yaml(self, num_units=1,
-                               service_name='test-service'):
+                               service_name='test-service',
+                               unit_state='pending',
+                               machine_state='not-started'):
         """Convert the dict returned by `_make_juju_status_dict` to YAML."""
-        return yaml.dump(self._make_juju_status_dict(num_units, service_name))
+        return yaml.dump(
+            self._make_juju_status_dict(
+                num_units, service_name, unit_state, machine_state))
 
     def test_get_config(self):
         # get_config returns the contents of the current charm
@@ -181,10 +187,7 @@ class CharmHelpersTestCase(TestCase):
     def test_wait_for_machine_returns_if_machine_up(self):
         # If wait_for_machine() is called and the machine(s) it is
         # waiting for are already up, it will return.
-        juju_status_dict = self._make_juju_status_dict()
-        # We'll update machine #1 so that it's 'running'.
-        juju_status_dict['machines'][1]['instance-state'] = 'running'
-        juju_yaml = yaml.dump(juju_status_dict)
+        juju_yaml = self._make_juju_status_yaml(machine_state='running')
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         machines, time_taken = charmhelpers.wait_for_machine(timeout=1)
@@ -218,15 +221,43 @@ class CharmHelpersTestCase(TestCase):
         self.assertEqual(0, time_taken)
 
     def test_wait_for_machine_waits_for_multiple_machines(self):
-        # Wait for machine can be told to wait for multiple machines.
-        juju_status_dict = self._make_juju_status_dict(num_units=2)
-        juju_status_dict['machines'][1]['instance-state'] = 'running'
-        juju_status_dict['machines'][2]['instance-state'] = 'running'
-        juju_yaml = yaml.dump(juju_status_dict)
+        # wait_for_machine can be told to wait for multiple machines.
+        juju_yaml = self._make_juju_status_yaml(
+            num_units=2, machine_state='running')
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         machines, time_taken = charmhelpers.wait_for_machine(num_machines=2)
         self.assertEqual(2, machines)
+
+    def test_wait_for_unit_returns_if_unit_started(self):
+        # wait_for_unit() will return if the service it's waiting for is
+        # already up.
+        juju_yaml = self._make_juju_status_yaml(
+            unit_state='started', machine_state='running')
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        charmhelpers.wait_for_unit('test-service', timeout=0)
+
+    def test_wait_for_unit_raises_error_on_error_state(self):
+        # If the unit is in some kind of error state, wait_for_unit will
+        # raise a RuntimeError.
+        juju_yaml = self._make_juju_status_yaml(
+            unit_state='start-error', machine_state='running')
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        self.assertRaises(
+            RuntimeError, charmhelpers.wait_for_unit, 'test-service', timeout=0)
+
+    def test_wait_for_unit_raises_error_on_timeout(self):
+        # If the unit does not start before the timeout is reached,
+        # wait_for_unit will raise a RuntimeError.
+        juju_yaml = self._make_juju_status_yaml(
+            unit_state='pending', machine_state='running')
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        self.assertRaises(
+            RuntimeError, charmhelpers.wait_for_unit, 'test-service', timeout=0)
+
 
 if __name__ == '__main__':
     unittest.main()
