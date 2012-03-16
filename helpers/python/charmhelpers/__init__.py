@@ -69,7 +69,7 @@ def make_charm_config_file(charm_config):
     return charm_config_file
 
 
-def unit_info(service_name, item_name, data=None):
+def unit_info(service_name, item_name, data=None, unit=None):
     if data is None:
         data = yaml.safe_load(juju_status())
     service = data['services'].get(service_name)
@@ -81,7 +81,15 @@ def unit_info(service_name, item_name, data=None):
         #     that it fails a bit more noisily after a while.
         return ''
     units = service['units']
-    item = units.items()[0][1][item_name]
+    if unit is not None:
+        item = units[unit][item_name]
+    else:
+        # It might seem odd to sort the units here, but we do it to
+        # ensure that when no unit is specified, the first unit for the
+        # service (or at least the one with the lowest number) is the
+        # one whose data gets returned.
+        sorted_unit_names = sorted(units.keys())
+        item = units[sorted_unit_names[0]][item_name]
     return item
 
 

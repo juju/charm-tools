@@ -21,6 +21,39 @@ class CharmHelpersTestCase(TestCase):
         new_command = lambda *args: replacement_command
         self.patch(charmhelpers, 'command', new_command)
 
+    def _make_juju_status_yaml(self, num_units=1,
+                               service_name='test-service'):
+        """Generate valid juju status YAML and return it."""
+        juju_yaml = dedent("""
+            services:
+              test-service:
+                charm: local:oneiric/test-service-1
+                relations: {}
+                units:
+                  test-service/0:
+                    machine: 1
+                    public-address: null
+                    relations: {}
+                    state: pending
+            """)
+        service_data = {
+            'charm': 'local:precise/{}-1'.format(service_name),
+            'relations': {},
+            'units': {},
+            }
+        for i in range(num_units):
+            unit_data = {
+                'machine': i,
+                'public-address':
+                    '{}-{}.example.com'.format(service_name, i),
+                'relations': {},
+                'state': 'pending',
+                }
+            service_data['units']['{}/{}'.format(service_name, i)] = (
+                unit_data)
+        juju_status_data = {'services': {service_name: service_data}}
+        return yaml.dump(juju_status_data)
+
     def test_get_config(self):
         # get_config returns the contents of the current charm
         # configuration, as returned by config-get --format=json.
@@ -72,18 +105,7 @@ class CharmHelpersTestCase(TestCase):
 
     def test_unit_info(self):
         # unit_info returns requested data about a given service.
-        juju_yaml = dedent("""
-            services:
-              test-service:
-                charm: local:oneiric/test-service-1
-                relations: {}
-                units:
-                  test-service/0:
-                    machine: 1
-                    public-address: null
-                    relations: {}
-                    state: pending
-            """)
+        juju_yaml = self._make_juju_status_yaml()
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         self.assertEqual(
@@ -92,12 +114,37 @@ class CharmHelpersTestCase(TestCase):
 
     def test_unit_info_returns_empty_for_nonexistant_service(self):
         # If the service passed to unit_info() has not yet started (or
-        # otherwise doesn't exist), unit_info() will return an empty string.
+        # otherwise doesn't exist), unit_info() will return an empty
+        # string.
         juju_yaml = "services: {}"
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         self.assertEqual(
             '', charmhelpers.unit_info('test-service', 'state'))
+
+    def test_unit_info_accepts_data(self):
+        # It's possible to pass a `data` dict, containing the parsed
+        # result of juju status, to unit_info().
+        juju_status_data = yaml.safe_load(
+            self._make_juju_status_yaml())
+        self.patch(charmhelpers, 'juju_status', lambda: None)
+        service_data = juju_status_data['services']['test-service']
+        unit_info_dict = service_data['units']['test-service/0']
+        for key, value in unit_info_dict.items():
+            item_info = charmhelpers.unit_info(
+                'test-service', key, data=juju_status_data)
+            self.assertEqual(value, item_info)
+
+    def test_unit_info_accepts_unit_name(self):
+        # By default, unit_info() just returns the value of the
+        # requested item for the first unit in a service. However, it's
+        # possible to pass a unit name to it, too.
+        juju_yaml = self._make_juju_status_yaml(num_units=2)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        unit_address = charmhelpers.unit_info(
+            'test-service', 'public-address', unit='test-service/1')
+        self.assertEqual('test-service-1.example.com', unit_address)
 
 
 if __name__ == '__main__':
