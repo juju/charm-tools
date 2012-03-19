@@ -25,3 +25,4 @@ check:
 	tests/helpers/helpers.sh || sh -x tests/helpers/helpers.sh timeout
 	@echo Test shell helpers with bash
 	bash tests/helpers/helpers.sh || bash -x tests/helpers/helpers.sh timeout
+	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
