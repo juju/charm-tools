@@ -53,7 +53,9 @@ class CharmHelpersTestCase(TestCase):
                 'machine': machine_number,
                 'public-address':
                     '{}-{}.example.com'.format(service_name, i),
-                'relations': {},
+                'relations': {
+                    'db': {'state': 'up'},
+                    },
                 'state': unit_state,
                 }
             service_data['units']['{}/{}'.format(service_name, i)] = (
@@ -257,6 +259,48 @@ class CharmHelpersTestCase(TestCase):
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         self.assertRaises(
             RuntimeError, charmhelpers.wait_for_unit, 'test-service', timeout=0)
+
+    def test_wait_for_relation_returns_if_relation_up(self):
+        # wait_for_relation() waits for relations to come up. If a
+        # relation is already 'up', wait_for_relation() will return
+        # immediately.
+        juju_yaml = self._make_juju_status_yaml(
+            unit_state='started', machine_state='running')
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        charmhelpers.wait_for_relation('test-service', 'db', timeout=0)
+
+    def test_wait_for_relation_times_out_if_relation_not_present(self):
+        # If a relation does not exist at all before a timeout is
+        # reached, wait_for_relation() will raise a RuntimeError.
+        juju_dict = self._make_juju_status_dict(
+            unit_state='started', machine_state='running')
+        units = juju_dict['services']['test-service']['units']
+        # We'll remove all the relations for test-service for this test.
+        units['test-service/0']['relations'] = {}
+        juju_dict['services']['test-service']['units'] = units
+        juju_yaml = yaml.dump(juju_dict)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        self.assertRaises(
+            RuntimeError, charmhelpers.wait_for_relation, 'test-service',
+            'db', timeout=0)
+
+    def test_wait_for_relation_times_out_if_relation_not_up(self):
+        # If a relation does not transition to an 'up' state, before a
+        # timeout is reached, wait_for_relation() will raise a
+        # RuntimeError.
+        juju_dict = self._make_juju_status_dict(
+            unit_state='started', machine_state='running')
+        units = juju_dict['services']['test-service']['units']
+        units['test-service/0']['relations']['db']['state'] = 'down'
+        juju_dict['services']['test-service']['units'] = units
+        juju_yaml = yaml.dump(juju_dict)
+        mock_juju_status = lambda: juju_yaml
+        self.patch(charmhelpers, 'juju_status', mock_juju_status)
+        self.assertRaises(
+            RuntimeError, charmhelpers.wait_for_relation, 'test-service',
+            'db', timeout=0)
 
 
 if __name__ == '__main__':
