@@ -5,8 +5,8 @@ import unittest
 import yaml
 
 from simplejson import dumps
+from StringIO import StringIO
 from testtools import TestCase
-from textwrap import dedent
 
 
 class CharmHelpersTestCase(TestCase):
@@ -301,6 +301,30 @@ class CharmHelpersTestCase(TestCase):
         self.assertRaises(
             RuntimeError, charmhelpers.wait_for_relation, 'test-service',
             'db', timeout=0)
+
+    def test_wait_for_page_contents_returns_if_contents_available(self):
+        # wait_for_page_contents() will wait until a given string is
+        # contained within the results of a given url and will return
+        # once it does.
+        # We need to patch the charmhelpers instance of urllib2 so that
+        # it doesn't try to connect out.
+        test_content = "Hello, world."
+        new_urlopen = lambda *args: StringIO(test_content)
+        self.patch(charmhelpers.urllib2, 'urlopen', new_urlopen)
+        charmhelpers.wait_for_page_contents(
+            'http://example.com', test_content, timeout=0)
+
+    def test_wait_for_page_contents_times_out(self):
+        # If the desired contents do not appear within the page before
+        # the specified timeout, wait_for_page_contents() will raise a
+        # RuntimeError.
+        # We need to patch the charmhelpers instance of urllib2 so that
+        # it doesn't try to connect out.
+        new_urlopen = lambda *args: StringIO("This won't work.")
+        self.patch(charmhelpers.urllib2, 'urlopen', new_urlopen)
+        self.assertRaises(
+            RuntimeError, charmhelpers.wait_for_page_contents,
+            'http://example.com', "This will error", timeout=0)
 
 
 if __name__ == '__main__':
