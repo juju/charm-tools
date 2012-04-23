@@ -1,0 +1,26 @@
+#!/bin/bash
+# Here do anything needed to install the service
+# i.e. apt-get install -y foo  or  bzr branch http://myserver/mycode /srv/webroot
+
+apt-get install -y wget
+
+arch=`uname -m`
+if [ "$arch" = "x86_64" ] ; then
+    arch=amd64
+elif ["$arch" = "i686" ] ; then
+    arch=i386
+fi
+if [ ! -f mod-spdy-beta_current_$arch.deb ] ; then
+    wget https://dl-ssl.google.com/dl/linux/direct/mod-spdy-beta_current_$arch.deb
+    dpkg -i mod-spdy-beta_current_$arch.deb || :
+    apt-get -f install
+fi
+
+a2enmod ssl
+open-port 443 # Bug in juju prevents this from being useful
+
+install -m 0644 files/all-ssl /etc/apache2/sites-available/all-ssl
+a2enmod proxy proxy_http
+a2ensite all-ssl
+
+service apache2 restart

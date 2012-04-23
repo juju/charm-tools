@@ -1,0 +1,5 @@
+name: broken-subordinate
+subordinate: true
+summary: <Fill in summary here>
+description: |
+  <Multi-line description here>

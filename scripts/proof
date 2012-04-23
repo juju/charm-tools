@@ -27,6 +27,9 @@ import re
 
 exit_code = 0
 
+class RelationError(Exception):
+    pass
+
 def crit(msg):
   """ Called when checking cannot continue """
   global exit_code
@@ -87,7 +90,7 @@ def check_hook(hook, required=True, recommended=False):
         warn("missing recommended hook "+hook)
     return False
 
-def check_relation_hooks(relations):
+def check_relation_hooks(relations, subordinate):
   template_interfaces = ('interface-name')
   template_relations = ('relation-name')
 
@@ -101,7 +104,7 @@ def check_relation_hooks(relations):
     has_one = has_one or check_hook(r+'-relation-joined', required=False)
     has_one = has_one or check_hook(r+'-relation-broken', required=False)
 
-    if not has_one:
+    if not has_one and not subordinate:
         info("relation "+r+" has no hooks")
 
     try:
@@ -150,26 +153,45 @@ try:
       err("Includes template README.ex file")
   else:
     warn("no README file")
-  
 
+  subordinate = charm.get('subordinate', False)
+  if type(subordinate) != bool:
+    err("subordinate must be a boolean value")
   
-
   # All charms should provide at least one thing
   try:
     provides = charm['provides']  
-    check_relation_hooks(provides)
+    check_relation_hooks(provides, subordinate)
   except KeyError:
-    warn("all charms should provide at least one thing")
+    if not subordinate:
+        warn("all charms should provide at least one thing")
 
-  try:
-    requires = charm['requires']
-    check_relation_hooks(requires)
-  except KeyError:
-    pass
+  if subordinate:
+    try:
+        if 'requires' in charm:
+            requires = charm['requires']
+            found_scope_container = False
+            for rel_name, rel in requires.iteritems():
+                if 'scope' in rel:
+                    if rel['scope'] == 'container':
+                        found_scope_container = True
+                        break
+            if not found_scope_container:
+                raise RelationError
+        else:
+            raise RelationError
+    except RelationError:
+        err("subordinates must have at least one scope: container relation")
+  else:
+      try:
+        requires = charm['requires']
+        check_relation_hooks(requires, subordinate)
+      except KeyError:
+            pass
 
   try:
     peers = charm['peers']
-    check_relation_hooks(peers)
+    check_relation_hooks(peers, subordinate)
   except KeyError:
     pass
 
