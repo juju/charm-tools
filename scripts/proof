@@ -87,7 +87,7 @@ def check_hook(hook, required=True, recommended=False):
         warn("missing recommended hook "+hook)
     return False
 
-def check_relation_hooks(relations):
+def check_relation_hooks(relations, subordinate):
   template_interfaces = ('interface-name')
   template_relations = ('relation-name')
 
@@ -101,7 +101,7 @@ def check_relation_hooks(relations):
     has_one = has_one or check_hook(r+'-relation-joined', required=False)
     has_one = has_one or check_hook(r+'-relation-broken', required=False)
 
-    if not has_one:
+    if not has_one and not subordinate:
         info("relation "+r+" has no hooks")
 
     try:
@@ -150,20 +150,20 @@ try:
       err("Includes template README.ex file")
   else:
     warn("no README file")
-  
 
+  subordinate = charm.get('subordinate', False)
   
-
   # All charms should provide at least one thing
   try:
     provides = charm['provides']  
-    check_relation_hooks(provides)
+    check_relation_hooks(provides, subordinate)
   except KeyError:
-    warn("all charms should provide at least one thing")
+    if not subordinate:
+        warn("all charms should provide at least one thing")
 
   try:
     requires = charm['requires']
-    check_relation_hooks(requires)
+    check_relation_hooks(requires, subordinate)
   except KeyError:
     pass
 
