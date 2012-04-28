@@ -129,6 +129,10 @@ try:
 
   yamlfile.close()
 
+  charm_basename = path.basename(charm_path)
+  if charm['name'] != charm_basename:
+    warn("metadata name (%s) must match directory name (%s) exactly for local deployment." % (charm['name'], charm_basename))
+
   # summary should be short
   if len(charm['summary']) > 72:
     warn('summary sould be less than 72') 
