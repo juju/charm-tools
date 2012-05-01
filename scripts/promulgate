@@ -56,6 +56,9 @@ def main(argv):
     parser.add_option(
         '-v', '--verbose', dest='verbose', action='count', default=0,
         help='Increase verbosity level.')
+    parser.add_option(
+        '-u', '--unpromulgate', dest='unpromulgate', action='store_true', default=False,
+        help='Un-promulgate this branch instead of promulgating it')
     options, args = parser.parse_args()
 
     if options.verbose >= 2:
@@ -98,15 +101,17 @@ def main(argv):
             logging.error("can't find branch on Launchpad: %s", options.branch)
             return 1
 
-    logging.info(
-        "Setting status of %s to %s", charm_branch.bzr_identity,
-        OFFICAL_BRANCH_STATUS)
-    charm_branch.lifecycle_status = OFFICAL_BRANCH_STATUS
-    logging.info(
-        "Setting reviewer of %s to %s", charm_branch.bzr_identity,
-        REVIEW_TEAM_NAME)
-    charm_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
-    charm_branch.lp_save()
+    if not options.unpromulgate:
+        logging.info(
+            "Setting status of %s to %s", charm_branch.bzr_identity,
+            OFFICAL_BRANCH_STATUS)
+        charm_branch.lifecycle_status = OFFICAL_BRANCH_STATUS
+    if not options.unpromulgate:
+        logging.info(
+            "Setting reviewer of %s to %s", charm_branch.bzr_identity,
+            REVIEW_TEAM_NAME)
+        charm_branch.reviewer = lp.people[REVIEW_TEAM_NAME]
+        charm_branch.lp_save()
 
     charm_distro = lp.distributions[DISTRIBUTION]
     if options.series is None:
@@ -125,9 +130,15 @@ def main(argv):
                 raise
 
     lp_charm = charm_series.getSourcePackage(name=charm['name'])
-    logging.info(
-        'Setting %s as the official branch for %s',
-        charm_branch.bzr_identity, lp_charm.name)
+    if options.unpromulgate:
+        logging.info('Removing official branch for %s', lp_charm.name)
+        # None translates to 'null' in the args, which makes LP delete
+        # the source package.
+        charm_branch = None
+    else:
+        logging.info(
+            'Setting %s as the official branch for %s',
+            charm_branch.bzr_identity, lp_charm.name)
     lp_charm.setBranch(branch=charm_branch, pocket=OFFICIAL_BRANCH_POCKET)
 
     return 0

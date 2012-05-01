@@ -1,0 +1,3 @@
+#!/bin/sh
+# Alias for convenience/sanity
+exec `dirname $0`/promulgate --unpromulgate $@
