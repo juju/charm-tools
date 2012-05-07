@@ -1,22 +1,23 @@
 #!/bin/sh
 
 ##
-# Copyright 2012 Marco Ceppi <marco@ceppi.net>
+# Copyright: 2012 Marco Ceppi <marco@ceppi.net>
+# Copyright: Copyright 2011, Canonical Ltd., All Rights Reserved.
 #
 # This file is part of Charm Helpers.
 #
-# Charm Helpers is free software: you can redistribute it and/or modify
+# This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Charm Helpers is distributed in the hope that it will be useful,
+# This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Charm Helpers.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
 ##
@@ -28,7 +29,7 @@
 # returns <service> | FALSE
 ch_unit_name()
 {
-	return "${1%%/*}"
+	echo "${1%%/*}"
 }
 
 ##
@@ -38,5 +39,29 @@ ch_unit_name()
 # returns <service> | FALSE
 ch_service_name()
 {
-	return ch_unit_name "$1"
+	echo ch_unit_name "$1"
+}
+
+##
+# ch_unit_id <unit-name>
+# Returns the unit id
+#
+# Param <unit-name> is the name of the unit
+#
+# returns <unit-d> | FALSE
+ch_unit_id()
+{
+    echo "${1##*/}"
+}
+
+##
+# ch_my_unit_id
+# Returns the unit id of the current unit
+#
+# param none
+#
+# returns <unit-id> | FALSE
+ch_my_unit_id()
+{
+    echo "`ch_unit_id $JUJU_UNIT_NAME`"
 }

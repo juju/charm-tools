@@ -18,6 +18,8 @@
 echo WARNING: peer functions are untested, and may provide unreliable
 echo services. Their use is experimental.
 
+. "/usr/share/charm-helper/sh/unit.sh"
+
 ##
 # ch_peer_i_am_leader
 # Returns 1 if the current unit is the leader
@@ -74,30 +76,6 @@ ch_peer_leader()
     else
         echo $leader_name
     fi
-}
-
-##
-# ch_unit_id <unit-name>
-# Returns the unit id
-#
-# Param <unit-name> is the name of the unit
-#
-# returns <unit-d> | FALSE
-ch_unit_id()
-{
-    echo "${1##*/}"
-}
-
-##
-# ch_my_unit_id
-# Returns the unit id of the current unit
-#
-# param none
-#
-# returns <unit-id> | FALSE
-ch_my_unit_id()
-{
-    echo "`ch_unit_id $JUJU_UNIT_NAME`"
 }
 
 
