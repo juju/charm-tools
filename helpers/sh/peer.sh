@@ -18,7 +18,7 @@
 echo WARNING: peer functions are untested, and may provide unreliable
 echo services. Their use is experimental.
 
-. "/usr/share/charm-helper/sh/unit.sh"
+. "${HELPERS_HOME:-/usr/share/charm-helper/sh}/unit.sh"
 
 ##
 # ch_peer_i_am_leader
