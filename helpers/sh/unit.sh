@@ -39,7 +39,7 @@ ch_unit_name()
 # returns <service> | FALSE
 ch_service_name()
 {
-	echo ch_unit_name "$1"
+	echo "`ch_unit_name $1`"
 }
 
 ##
