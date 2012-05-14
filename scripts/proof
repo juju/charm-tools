@@ -24,6 +24,7 @@ import os,sys
 from stat import *
 import yaml
 import re
+import email.utils
 
 exit_code = 0
 
@@ -137,6 +138,14 @@ try:
   if len(charm['summary']) > 72:
     warn('summary sould be less than 72') 
 
+  # need a maintainer field
+  if 'maintainer' not in charm:
+    err('Charms need a maintainer (See RFC2822) - Name <email>')
+  else:
+    (name, address) = email.utils.parseaddr(charm['maintainer'])
+    formatted = email.utils.formataddr((name, address))
+    if formatted != charm['maintainer']:
+        warn("Maintainer address should contain a real-name and email only. [%s]" % (formatted))
 
   # Must have a hooks dir
   if not path.exists(hooks_path):
