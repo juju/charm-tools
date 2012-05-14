@@ -27,3 +27,4 @@ check:
 	bash tests/helpers/helpers.sh || bash -x tests/helpers/helpers.sh timeout
 	@echo Test charm proof
 	tests/proof/test.sh
+	tests/create/test.sh
