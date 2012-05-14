@@ -1,8 +1,8 @@
-name: $package
-summary: $summary
-maintainer: $maintainer
+name: no-package-exists
+summary: <Fill in summary here>
+maintainer: tester <test@testhost>
 description: |
-  $description
+  <Multi-line description here>
 provides:
   relation-name:
     interface: interface-name
