@@ -1,5 +1,6 @@
 name: mod-spdy
 subordinate: true
+maintainer: Clint Byrum <clint@ubuntu.com>
 summary: mod_spdy is a SPDY module for Apache 2.2
 description: |
   mod_spdy is a SPDY module for Apache 2.2 that allows your web server
