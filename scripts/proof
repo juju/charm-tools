@@ -221,6 +221,7 @@ try:
   check_hook('install')
   check_hook('start', required=False, recommended=True)
   check_hook('stop', required=False, recommended=True)
+  check_hook('config-changed', required=False)
 except IOError:
   err("could not find metadata file for " + charm_name)
   exit_code = -1
