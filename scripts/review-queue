@@ -7,7 +7,7 @@ import datetime
 def calculate_age(from_date = None):
 	if not from_date:
 		return None
-	
+
 
 def format_as_table(data,
                     keys,
@@ -71,10 +71,13 @@ def format_as_table(data,
 
 
 def charm_review_queue():
-	lp = Launchpad.login_anonymously('charm-tools', 'production', version='devel')
+        print "Connecting to launchpad..."
+	lp = Launchpad.login_anonymously('charm-tools', 'production', version='devel', launchpadlib_dir='~/.cache/launchpadlib')
 	charm = lp.distributions['charms']
+        print "Querying launchpad for bugs ..."
 	bugs = charm.searchTasks(tags=['new-formula', 'new-charm'], tags_combinator="Any", status=['New', 'Confirmed', 'Triaged', 'In Progress', 'Fix Committed'])
 	charmers = lp.people['charmers']
+        print "Querying launchpad for proposals ..."
 	proposals = charmers.getRequestedReviews(status="Needs review")
 	queue = list()
 	max_summary_length = 50
