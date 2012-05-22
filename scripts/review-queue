@@ -3,6 +3,7 @@
 from launchpadlib.launchpad import Launchpad
 from operator import itemgetter
 import datetime
+import itertools
 
 def calculate_age(from_date = None):
     if not from_date:
@@ -89,8 +90,8 @@ def charm_review_queue():
     queue = list()
     max_summary_length = 50
     
-    # Bugs in charms distribution
-    for bug in bugs.entries:
+    # Bugs in charms distribution and charmers group
+    for bug in itertools.chain( bugs.entries, charmers_bugs.entries ):
         entry_summary = bug['title'].split('"')[1].strip()
         entry_age = datetime.datetime.utcnow() - datetime.datetime.strptime(bug['date_created'].split('+')[0], "%Y-%m-%dT%H:%M:%S.%f")
         entry = {
@@ -102,21 +103,8 @@ def charm_review_queue():
         }
         queue.append(entry)
         
-    # Bugs in charmers group
-    for bug in charmers_bugs.entries:
-        entry_summary = bug['title'].split('"')[1].strip()
-        entry_age = datetime.datetime.utcnow() - datetime.datetime.strptime(bug['date_created'].split('+')[0], "%Y-%m-%dT%H:%M:%S.%f")
-        entry = {
-        'date_created' : bug['date_created'].split("T")[0],
-        'age' : str(entry_age).split('.')[0],
-        'summary' : (entry_summary[:max_summary_length] + '...') if len(entry_summary) > max_summary_length else entry_summary,
-        'item' : bug['web_link'],
-        'status' : bug['status'],
-        }
-        queue.append(entry)
-
     # Merge proposals in charmers group
-    for proposal in proposals.entries:
+    for proposal in itertools.chain(proposals.entries, charm_contributors_proposals.entries):
         proposal_summary = proposal['description']
         proposal_age = datetime.datetime.utcnow() - datetime.datetime.strptime(proposal['date_created'].split('+')[0], "%Y-%m-%dT%H:%M:%S.%f")
         if proposal_summary is None:
@@ -130,20 +118,6 @@ def charm_review_queue():
         }
         queue.append(entry)
 
-    # Merge proposals in charm-contributors group ( for lp:juju/docs )
-    for proposal in charm_contributors_proposals.entries:
-        proposal_summary = proposal['description']
-        proposal_age = datetime.datetime.utcnow() - datetime.datetime.strptime(proposal['date_created'].split('+')[0], "%Y-%m-%dT%H:%M:%S.%f")
-        if proposal_summary is None:
-            proposal_summary = "Proposal"
-        entry = {
-        'date_created' : proposal['date_created'].split("T")[0],
-        'age' : str(proposal_age).split('.')[0],
-        'summary' : (proposal_summary[:max_summary_length] + '...') if len(proposal_summary) > max_summary_length else proposal_summary,
-        'item' : proposal['web_link'],
-        'status' : proposal['queue_status'],
-        }
-        queue.append(entry)
     return(sorted(queue, key=lambda k: k['date_created']))
 
 def main():
