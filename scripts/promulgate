@@ -34,6 +34,8 @@ import yaml
 
 import logging
 
+import subprocess
+
 DISTRIBUTION = 'charms'
 REVIEW_TEAM_NAME = 'charmers'
 OFFICIAL_BRANCH_POCKET = 'Release'
@@ -59,6 +61,9 @@ def main(argv):
     parser.add_option(
         '-u', '--unpromulgate', dest='unpromulgate', action='store_true', default=False,
         help='Un-promulgate this branch instead of promulgating it')
+    parser.add_option(
+        '-f', '--force', dest='force', action='store_true', default=False,
+        help='Promulgate this branch even with warnings from charm proof')
     options, args = parser.parse_args()
 
     if options.verbose >= 2:
@@ -73,6 +78,16 @@ def main(argv):
         charm_dir = args[0]
     else:
         charm_dir = '.'
+
+    print "Running charm proof ... "
+    charm_proof = subprocess.call(['charm', 'proof', charm_dir])
+    if charm_proof == 1 or charm_proof == 200:
+        sys.exit(1)
+    if charm_proof == 100 and options.force == True:
+        print "force option enabled ... Continuing with warnings"
+    if charm_proof == 0:
+        print "Excellent ... charm proof passed with flying colors"
+    sys.exit(0)
 
     charm_metadata = os.path.join(charm_dir, 'metadata.yaml')
     if not os.access(charm_metadata, os.R_OK):
