@@ -1,0 +1,3 @@
+#!/bin/sh
+home=`dirname $0`
+$home/$1 --help
