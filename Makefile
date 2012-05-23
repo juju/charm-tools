@@ -5,7 +5,7 @@ bindir = $(DDIR)/bin
 mandir = $(DDIR)/share/man/man1
 datadir = $(DDIR)/share/charm-tools
 helperdir = $(DDIR)/share/charm-helper
-confdir = $(DDIR)/etc
+confdir = $(DESTDIR)/etc
 INSTALL = install
 
 all:
