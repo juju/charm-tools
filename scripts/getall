@@ -4,6 +4,7 @@ set -e
 usage()
 {
     echo "usage: getall path_to_charms" >&2
+    echo "retrieves all charms from launchpad using mr and bzr"
     exit $1
 }
 

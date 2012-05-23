@@ -25,6 +25,7 @@ from stat import *
 import yaml
 import re
 import email.utils
+import argparse
 
 exit_code = 0
 
@@ -47,8 +48,15 @@ def info(msg):
   """ Ignorable but sometimes useful """
   print "I: " + msg
 
-if len(sys.argv) >= 2:
-    charm_name = sys.argv[1]
+
+parser = argparse.ArgumentParser(
+        description='Performs static analysis on charms')
+parser.add_argument('charm_name', nargs='?',
+        help='path of charm dir to check. Defaults to PWD')
+args = parser.parse_args()
+
+if args.charm_name:
+    charm_name = args.charm_name
 else:
     charm_name = os.getcwd()
 
