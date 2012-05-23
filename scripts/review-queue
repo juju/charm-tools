@@ -124,6 +124,7 @@ def main():
     review_queue = charm_review_queue()
     keys = ['date_created', 'age', 'summary', 'item', 'status' ]
     headers = ['Date Created', 'Age', 'Summary', 'Item', 'Status']
+    print "Queue length: %d" % len(review_queue)
     if type(review_queue) == type([]) and len(review_queue) > 0:
         print format_as_table(review_queue, 
                               keys, 
