@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ "$1" = "--help" ] ; then
+  echo "usage: `basename $0` grep_pattern"
+  echo "greps the list of charms"
+  exit 0
+fi
+
 [ -z "${1}" ] && echo "Search parameter required" && exit 1
 
 charm list | grep "${1}"
