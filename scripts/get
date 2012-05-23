@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ -z "$1" ] ; then
+if [ -z "$1" -o "$1" = "--help" ] ; then
     echo "Retrieves official charm branches from https://launchpad.net/charm" >&2
-    echo "usage: charm get name_of_charm [ local_charm_repo ]" >&2
+    echo "usage: charm get [ --help ] name_of_charm [ local_charm_repo ]" >&2
     exit 1
 fi
 
