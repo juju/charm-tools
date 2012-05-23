@@ -1,5 +1,10 @@
 #!/bin/bash
 shopt -s progcomp
+
+_charm_official_charms() {
+    charm list | awk -Flp:charms/ '/^lp:charms/ { print $2 }'
+}
+
 _charm () {
     local cur cmds cmdIdx cmd cmdOpts fixedWords i globalOpts
     local curOpt optEnums
@@ -45,9 +50,18 @@ _charm () {
     fi
 
     cmdOpts=( )
+            cmdOpts=(--help)
     optEnums=( )
     fixedWords=( )
-    cmdOpts=(--help)
+    case "$cmd" in
+        get)
+            for charm in $(_charm_official_charms) ; do
+               cmdOpts+=($charm)
+            done 
+            ;;
+        *)
+            ;;
+    esac
 
     IFS=$'\n'
     if [[ "$cur" == = ]] && [[ ${#optEnums[@]} -gt 0 ]]; then
