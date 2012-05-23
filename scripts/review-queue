@@ -4,6 +4,7 @@ from launchpadlib.launchpad import Launchpad
 from operator import itemgetter
 import datetime
 import itertools
+import argparse
 
 def calculate_age(from_date = None):
     if not from_date:
@@ -121,6 +122,9 @@ def charm_review_queue():
     return(sorted(queue, key=lambda k: k['date_created']))
 
 def main():
+    parser = argparse.ArgumentParser(
+            description="Shows items needing the attention of ~charmers")
+    parser.parse_args()
     review_queue = charm_review_queue()
     keys = ['date_created', 'age', 'summary', 'item', 'status' ]
     headers = ['Date Created', 'Age', 'Summary', 'Item', 'Status']
