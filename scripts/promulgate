@@ -65,7 +65,7 @@ def main(argv):
         '-f', '--force', dest='force', action='store_true', default=False,
         help='Override warnings and errors.  USE WITH EXTREME CARE !!!!')
     parser.add_option(
-        '-w', '--ignore-warnings', dest='ignore-warnings', action='store_true', default=False,
+        '-w', '--ignore-warnings', dest='ignore_warnings', action='store_true', default=False,
         help='Promulgate this branch even with warnings from charm proof')
     options, args = parser.parse_args()
 
@@ -90,7 +90,7 @@ def main(argv):
         else:
             sys.exit(1)
     if charm_proof == 100:
-        if options.ignore-warnings == True:
+        if options.ignore_warnings == True:
             print "ignore-warnings enabled ... Continuing with warnings"
         elif options.force == True:
             print "force option enabled ... Continuing with warnings"
