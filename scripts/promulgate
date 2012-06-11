@@ -24,6 +24,7 @@ from lazr.restfulclient.errors import BadRequest, NotFound
 
 import os
 import sys
+import string
 
 from optparse import OptionParser
 
@@ -39,7 +40,7 @@ import subprocess
 DISTRIBUTION = 'charms'
 REVIEW_TEAM_NAME = 'charmers'
 OFFICIAL_BRANCH_POCKET = 'Release'
-OFFICAL_BRANCH_STATUS = 'Mature'
+OFFICIAL_BRANCH_STATUS = 'Mature'
 
 
 def parse_options():
@@ -77,7 +78,7 @@ def parse_options():
         help='Promulgate this branch even with warnings from charm proof')
 
     parser.add_option(
-        '-o', '--owner-branch', dest='promulgate_owner_branch', default=False,
+        '-o', '--owner-branch', dest='promulgate_owner_branch', action='store_true', default=False,
         help='Promulgate a branch owned by a someone/group other than ~charmers')
 
     return parser.parse_args()
@@ -160,17 +161,6 @@ def get_lp_charm_series(lp,series):
                 raise
     return charm_series
 
-def update_official_charm_branch(lp,series,charm_branch,charm_name):
-    charm_series = get_lp_charm_series(lp,series)
-    lp_charm = charm_series.getSourcePackage(name=charm_name)
-    if charm_branch:
-        logging.info( 'Setting %s as the official branch for %s',
-                      charm_branch.bzr_identity,
-                      lp_charm.name)
-    else:
-        logging.info('Removing official branch for %s', lp_charm.name)
-    lp_charm.setBranch(branch=charm_branch, pocket=OFFICIAL_BRANCH_POCKET)
-
 
 def update_branch_info(charm_branch, branch_status, branch_reviewer):
     logging.info( "Setting status of %s to %s", charm_branch.bzr_identity, branch_status)
@@ -180,6 +170,30 @@ def update_branch_info(charm_branch, branch_status, branch_reviewer):
     charm_branch.reviewer = branch_reviewer
 
     charm_branch.lp_save()
+
+
+def update_official_charm_branch(lp,series,charm_branch,charm_name):
+    charm_series = get_lp_charm_series(lp,series)
+    lp_charm = charm_series.getSourcePackage(name=charm_name)
+    if charm_branch:
+        logging.info( 'Setting %s as the official branch for %s',
+                      charm_branch.bzr_identity,
+                      lp_charm.name)
+        update_branch_info(charm_branch, OFFICIAL_BRANCH_STATUS, lp.people[REVIEW_TEAM_NAME])
+    else:
+        logging.info('Removing official branch for %s', lp_charm.name)
+    lp_charm.setBranch(branch=charm_branch, pocket=OFFICIAL_BRANCH_POCKET)
+
+
+def branch_owner(bzr_branch):
+    lp_url = bzr_branch.bzr_identity #TODO this really sucks... better way?
+    return lp_url.lstrip('lp:').split('/')[0]
+
+
+def is_valid_owner(charm_branch, promulgate_owner_branch):
+    if charm_branch is None:
+        return True
+    return promulgate_owner_branch or branch_owner(charm_branch) == '~charmers'
 
 
 def main(argv):
@@ -202,7 +216,13 @@ def main(argv):
     else:
         logging.info('promulgating...')
         charm_branch = find_branch_to_promulgate(lp,charm_dir,options.branch)
-        update_branch_info(charm_branch, OFFICIAL_BRANCH_STATUS, lp.people[REVIEW_TEAM_NAME])
+
+    if not is_valid_owner(charm_branch, options.promulgate_owner_branch):
+        logging.error(" Invalid branch owner: %s", branch_owner(charm_branch))
+        logging.error(" Branch push location must be owned by '~charmers'\n" +
+                      "       use `bzr push --remember lp:~charmers/charms/<series>/<charm-name>/trunk`\n" +
+                      "       or override this behavior using the '--owner-branch' option")
+        return 1
 
     update_official_charm_branch(lp, options.series, charm_branch, charm_name_from_metadata(charm_dir))
 
