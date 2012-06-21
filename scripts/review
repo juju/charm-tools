@@ -34,7 +34,7 @@ import logging
 
 def parse_options():
     parser = argparse.ArgumentParser(
-        description="review charm by adding comment to the charm bug")
+        description="Review a charm by adding a comment to the corresponding charm bug.  The review comment can be passed as a --message arg or via stdin")
 
     parser.add_argument('bug_id', 
         help='The launchpad bug for the charm being reviewed.')
@@ -48,8 +48,8 @@ def parse_options():
         help='do not prompt me... just do it.')
 
     parser.add_argument(
-        '--verbose', '-v', action='count', default=0,
-        help='Increase verbosity level.')
+        '--verbose', '-v', default=False, action='store_true',
+        help='show debug logging?')
 
     parser.add_argument(
         '--lp-instance', '-t', dest='lp_instance', default='production',
@@ -60,10 +60,8 @@ def parse_options():
 
 
 def log_level(verbose):
-    if verbose >= 2:
+    if verbose:
         return logging.DEBUG
-    elif verbose >= 1:
-        return logging.INFO
     else:
         return logging.WARNING
 
@@ -111,8 +109,7 @@ def main(argv):
 
         if args.skip_prompt or prompt_to_continue(bug_id):
             logging.debug('adding comment')
-            bug.newMessage(content=review_message)
-            #TODO check return or catch exception
+            bug.newMessage(content=review_message) #TODO check return or catch exception
         else:
             logging.debug('not adding comment')
 
