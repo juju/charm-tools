@@ -68,18 +68,6 @@ def log_level(verbose):
         return logging.WARNING
 
 
-#def bug_owner(bug):
-#    lp_url = bzr_branch.bzr_identity #TODO this really sucks... better way?
-#    return lp_url.lstrip('lp:').split('/')[0]
-#
-#def is_valid_owner(bug):
-#    if bug is None:
-#        return True
-#    return bug_owner(bug) == '~charmers'
-def is_valid_owner(bug):
-    return True
-
-
 def get_message_from_stdin():
     stream = sys.stdin
     text = stream.read()
