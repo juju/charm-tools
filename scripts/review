@@ -22,54 +22,37 @@
 from launchpadlib.launchpad import Launchpad
 from lazr.restfulclient.errors import BadRequest, NotFound
 
-import os
 import sys
 import string
 
-from optparse import OptionParser
+import argparse
 
-from bzrlib import bzrdir
 from bzrlib.plugins.launchpad import lp_api
-
-import yaml
 
 import logging
 
-import subprocess
-
-DISTRIBUTION = 'charms'
-REVIEW_TEAM_NAME = 'charmers'
-OFFICIAL_BRANCH_POCKET = 'Release'
-OFFICIAL_BRANCH_STATUS = 'Mature'
-
 
 def parse_options():
-    parser = OptionParser(usage='usage: %prog [options] <bug_id>')
+    parser = argparse.ArgumentParser(
+        description="review charm by adding comment to the charm bug")
 
-    parser.add_option(
-        '-b', '--bug', dest='bug_id', default=None,
+    parser.add_argument('bug_id', 
         help='The launchpad bug for the charm being reviewed.')
-    #parser.add_argument("service", default=False,
-    #                    help="Service to watch")
 
-    parser.add_option(
-        '-m', '--message', dest='message', default=None,
+    parser.add_argument(
+        '--message', '-m',
         help='The review text to add as a comment to the bug.')
 
-    #parser.add_option(
-    #    '-f', '--file', dest='message_file', default=None,
-    #    help='A File containing the review text to add as a comment to the bug.')
-
-    parser.add_option(
-        '-y', '--yes', dest='skip_prompt', action='store_true', default=False,
+    parser.add_argument(
+        '--yes', '-y', dest="skip_prompt", default=False, action='store_true',
         help='do not prompt me... just do it.')
 
-    parser.add_option(
-        '-v', '--verbose', dest='verbose', action='count', default=0,
+    parser.add_argument(
+        '--verbose', '-v', action='count', default=0,
         help='Increase verbosity level.')
 
-    parser.add_option(
-        '-t', '--lp-instance', dest='lp_instance', default='production',
+    parser.add_argument(
+        '--lp-instance', '-t', dest='lp_instance', default='production',
         help="The Launchpad instance to use. Defaults to production, but "
         "staging' or 'qastaging' might be used for testing.")
 
@@ -98,52 +81,57 @@ def is_valid_owner(bug):
 
 
 def get_message_from_stdin():
-    #stream = sys.stdin
-    #text = stream.read()
-    #stream.close()
-    #return text
-    return sys.stdin.read()
+    stream = sys.stdin
+    text = stream.read()
+    sys.stdin = open('/dev/tty') # 'reset' stdin to prompt if necessary
+    return text
 
 
-def get_message(options):
-    if options.message:
-        return options.message
+def get_message(message):
+    if message:
+        return message
     else:
         return get_message_from_stdin()
+            
+
+def prompt_to_continue(bug_id):
+    logging.debug("prompting")
+    ans = raw_input("Really add this comment to launchpad bug #%s? y/[n] " % bug_id)
+    if ans in ['y', 'Y', 'ye', 'Ye', 'yes', 'Yes']:
+        return True
+    return False
 
 
 def main(argv):
-    options, args = parse_options()
-    logging.basicConfig(level=log_level(options.verbose), format='%(levelname)s:%(message)s')
+    args = parse_options()
+    logging.basicConfig(level=log_level(args.verbose), format='%(levelname)s:%(message)s')
 
-    if not len(args):
-        logging.error(" Usage: charm review [options] <bug_id>...  need a bug for the charm to review")
-        return 1
+    #if not args.message and not args.skip_prompt:
+    #    logging.warning('you really should use "-y" when reading message from stdin')
 
-    bug_id = args[0]
-    review_message = get_message(options)
+    review_message = get_message(args.message) # before connecting to lp
 
-    logging.debug('login with %s launchpad:', options.lp_instance)
-    lp = Launchpad.login_with('charm-pilot', options.lp_instance)
+    logging.debug('login with %s launchpad:', args.lp_instance)
+    lp = Launchpad.login_with('charm-pilot', args.lp_instance)
 
+    bug_id = args.bug_id
     logging.debug('find bug %s:', bug_id)
     bug = lp.bugs[bug_id]
 
-    if bug and is_valid_owner(bug):
-        logging.debug('found bug... adding comment')
+    if bug:
+        logging.debug('found bug')
 
-        if not skip_prompt:
-            #TODO prompt
-            response = prompt_continue("this will add a comment to the lp bug %s.  Continue? (y/n)",
-                                       bug_id)
-            if response:
+        if args.skip_prompt or prompt_to_continue(bug_id):
+            logging.debug('adding comment')
+            bug.newMessage(content=review_message)
+            #TODO check return or catch exception
+        else:
+            logging.debug('not adding comment')
 
-        bug.newMessage(content=review_message)
-
-        #TODO check return or catch exception
     else:
         logging.error("no bug: %s", bug_id)
         return 1
+
     return 0
 
 
