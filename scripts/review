@@ -3,7 +3,7 @@
 #    review - adds review comment to charm bug
 #
 #    Copyright (C) 2011  Canonical Ltd.
-#    Author: Francis J. Lacoste <francis.lacoste@canonical.com>
+#    Author: Mark Mims <mark.mims@canonical.com>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,17 +19,12 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from launchpadlib.launchpad import Launchpad
-from lazr.restfulclient.errors import BadRequest, NotFound
-
-import sys
-import string
-
 import argparse
-
-from bzrlib.plugins.launchpad import lp_api
-
 import logging
+import sys
+
+from launchpadlib.launchpad import Launchpad
+
 
 
 def parse_options():
@@ -83,17 +78,12 @@ def get_message(message):
 def prompt_to_continue(bug_id):
     logging.debug("prompting")
     ans = raw_input("Really add this comment to launchpad bug #%s? y/[n] " % bug_id)
-    if ans in ['y', 'Y', 'ye', 'Ye', 'yes', 'Yes']:
-        return True
-    return False
+    return ans.strip().lower().startswith('y')
 
 
 def main(argv):
     args = parse_options()
     logging.basicConfig(level=log_level(args.verbose), format='%(levelname)s:%(message)s')
-
-    #if not args.message and not args.skip_prompt:
-    #    logging.warning('you really should use "-y" when reading message from stdin')
 
     review_message = get_message(args.message) # before connecting to lp
 
