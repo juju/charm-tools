@@ -203,7 +203,7 @@ def main(argv):
     if len(args):
         charm_dir = args[0]
     else:
-        charm_dir = '.'
+        charm_dir = os.getcwd()
 
     proof_charm(charm_dir, options.force, options.ignore_warnings)
 
