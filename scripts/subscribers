@@ -19,6 +19,9 @@ parser.add_argument('--series', '-s', default=None,
 parser.add_argument('--maintainer', default=None,
         help='Limit output to this maintainer\'s charms only.')
 parser.add_argument('--log-priority', default='WARNING')
+parser.add_argument('--launchpad-instance', default='production')
+parser.add_argument('--fix-unsubscribed', default=False, action='store_true',
+        help='Add a bug subscription for any unsubscribed maintainers')
 parser.add_argument('charms', default=[], nargs='*',
         help='Charms to check for subscriptions')
 
@@ -46,7 +49,17 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=log_pr
 if args.quiet:
     logging.disable(logging.WARNING)
 
-lp = launchpad.Launchpad.login_anonymously('unsubscribed-maintainers', 'production', version='devel', launchpadlib_dir='/home/clint/.cache/launchpadlib')
+app_name = 'Charm Tools - subscribers'
+launchpadlib_dir='/home/clint/.cache/launchpadlib'
+
+#service_root='https://api.launchpad.net/')
+if args.fix_unsubscribed:
+    login = launchpad.Launchpad.login_with
+else:
+    login = launchpad.Launchpad.login_anonymously
+
+lp = login(app_name, args.launchpad_instance,
+        version='devel', launchpadlib_dir=launchpadlib_dir)
 
 charmdistro = lp.distributions['charms']
 
@@ -109,3 +122,6 @@ for charm_name in charms:
         elif not args.subscribed:
             if not args.subscribed:
                 print '%s is not subscribed to %s' % (maintainer, charm_name)
+            if args.fix_unsubscribed:
+                info('adding bug subscription to %s for %s' % (charm_name, maint_email))
+                pkg.addBugSubscription(subscriber=lp_maintainer)
