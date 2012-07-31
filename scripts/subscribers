@@ -3,6 +3,7 @@ import os
 import yaml
 import argparse
 import logging
+from logging import warn, info, debug
 
 from launchpadlib import launchpad
 
@@ -15,6 +16,9 @@ parser.add_argument('--quiet', default=False, action='store_true',
         help='Hide everything except maintainer subscription lists.')
 parser.add_argument('--series', '-s', default=None,
         help='Which series of the charm store to run against. Defaults to current dev focus')
+parser.add_argument('--maintainer', default=None,
+        help='Limit output to this maintainer\'s charms only.')
+parser.add_argument('--log-priority', default='WARNING')
 parser.add_argument('charms', default=[], nargs='*',
         help='Charms to check for subscriptions')
 
@@ -25,8 +29,20 @@ if args.repository is None:
 else:
     repository = args.repository
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
-warn = logging.warn
+if args.log_priority == 'WARNING':
+    log_prio = logging.WARNING
+elif args.log_priority == 'INFO':
+    log_prio = logging.INFO
+elif args.log_priority == 'CRITICAL':
+    log_prio = logging.CRITICAL
+elif args.log_priority == 'INFO':
+    log_prio = logging.INFO
+elif args.log_priority == 'DEBUG':
+    log_prio = logging.DEBUG
+else:
+    log_prio = logging.DEBUG
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=log_prio)
 if args.quiet:
     logging.disable(logging.WARNING)
 
@@ -71,6 +87,13 @@ for charm_name in charms:
 
     if type(maintainers) == str:
         maintainers = [maintainers]
+
+    if args.maintainer is not None:
+        if args.maintainer not in maintainers:
+            maints_by_email = [ m.split('<')[1].split('>')[0] for m in maintainers ]
+            if args.maintainer not in maints_by_email:
+                debug('%s not in maintainer list %s' % (args.maintainer, maintainers))
+                continue
     
     for maintainer in maintainers:
         maint_email = maintainer.split('<')[1].split('>')[0]
