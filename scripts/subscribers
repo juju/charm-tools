@@ -13,6 +13,8 @@ parser.add_argument('--repository', default=None, type=str,
         help='Repository to look for charms in. Defaults to $JUJU_REPOSITORY or getcwd')
 parser.add_argument('--quiet', default=False, action='store_true',
         help='Hide everything except maintainer subscription lists.')
+parser.add_argument('--series', '-s', default=None,
+        help='Which series of the charm store to run against. Defaults to current dev focus')
 parser.add_argument('charms', default=[], nargs='*',
         help='Charms to check for subscriptions')
 
@@ -31,7 +33,11 @@ if args.quiet:
 lp = launchpad.Launchpad.login_anonymously('unsubscribed-maintainers', 'production', version='devel', launchpadlib_dir='/home/clint/.cache/launchpadlib')
 
 charmdistro = lp.distributions['charms']
-current_series = str(charmdistro.current_series).split('/').pop()
+
+if args.series:
+    current_series = args.series
+else:
+    current_series = str(charmdistro.current_series).split('/').pop()
 
 charms = []
 if len(args.charms):
