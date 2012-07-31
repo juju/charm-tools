@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+import sys
 import yaml
 import argparse
 import logging
@@ -21,7 +22,9 @@ parser.add_argument('--maintainer', default=None,
 parser.add_argument('--log-priority', default='WARNING')
 parser.add_argument('--launchpad-instance', default='production')
 parser.add_argument('--fix-unsubscribed', default=False, action='store_true',
-        help='Add a bug subscription for any unsubscribed maintainers')
+        help='Add a bug subscription for any unsubscribed maintainers. Requires --maintainer')
+parser.add_argument('--force-fix-all', default=False, action='store_true',
+        help=argparse.SUPPRESS)
 parser.add_argument('charms', default=[], nargs='*',
         help='Charms to check for subscriptions')
 
@@ -46,13 +49,21 @@ else:
     log_prio = logging.DEBUG
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=log_prio)
+
 if args.quiet:
     logging.disable(logging.WARNING)
+
+if args.maintainer is None and args.fix_unsubscribed:
+    warn('Running --fix-unsubscribed and without --maintainer is against policy.')
+    if not args.force_fix_all:
+        warn('Use --force-fix-all to override policy')
+        sys.exit(1)
+    else:
+        warn('--force-fix-all passed, continuing')
 
 app_name = 'Charm Tools - subscribers'
 launchpadlib_dir='/home/clint/.cache/launchpadlib'
 
-#service_root='https://api.launchpad.net/')
 if args.fix_unsubscribed:
     login = launchpad.Launchpad.login_with
 else:
