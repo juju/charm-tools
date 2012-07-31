@@ -1,0 +1,82 @@
+#!/usr/bin/python
+import os
+import yaml
+import argparse
+import logging
+
+from launchpadlib import launchpad
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--subscribed', default=False, action='store_true',
+        help='Show maintainers who are properly subscribed instead of unsubscribed')
+parser.add_argument('--repository', default=None, type=str,
+        help='Repository to look for charms in. Defaults to $JUJU_REPOSITORY or getcwd')
+parser.add_argument('--quiet', default=False, action='store_true',
+        help='Hide everything except maintainer subscription lists.')
+parser.add_argument('charms', default=[], nargs='*',
+        help='Charms to check for subscriptions')
+
+args = parser.parse_args()
+
+if args.repository is None:
+    repository = os.environ.get('JUJU_REPOSITORY', os.getcwd())
+else:
+    repository = args.repository
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
+warn = logging.warn
+if args.quiet:
+    logging.disable(logging.WARNING)
+
+lp = launchpad.Launchpad.login_anonymously('unsubscribed-maintainers', 'production', version='devel', launchpadlib_dir='/home/clint/.cache/launchpadlib')
+
+charmdistro = lp.distributions['charms']
+current_series = str(charmdistro.current_series).split('/').pop()
+
+charms = []
+if len(args.charms):
+    for charm_name in args.charms:
+        charm = charmdistro.getSourcePackage(name=charm_name)
+        charms.append(charm_name)
+else:
+    branches = charmdistro.getBranchTips()
+    for branch in branches:
+        try:
+            branch_series = str(branch[2][0]).split('/')[0]
+            charm_name = str(branch[0]).split('/')[3]
+        except IndexError:
+            continue
+        if branch_series != current_series:
+            continue
+        charms.append(charm_name)
+
+for charm_name in charms:
+    try:
+        with open('%s/%s/%s/metadata.yaml' % (repository, current_series, charm_name)) as mdata:
+            mdata_parsed = yaml.safe_load(mdata)
+    except IOError:
+        warn('%s/%s has no metadata in charm repo' % (current_series, charm_name))
+        continue
+    try:
+        maintainers = mdata_parsed['maintainer']
+    except KeyError:
+        warn('%s has no maintainer' % charm_name)
+        continue
+
+    if type(maintainers) == str:
+        maintainers = [maintainers]
+    
+    for maintainer in maintainers:
+        maint_email = maintainer.split('<')[1].split('>')[0]
+        lp_maintainer = lp.people.getByEmail(email=maint_email)
+        if not lp_maintainer:
+            warn('%s has no people in launchpad' % maintainer)
+            continue
+        pkg = charmdistro.getSourcePackage(name=charm_name)
+        subscription = pkg.getSubscription(person=lp_maintainer)
+        if subscription is not None:
+            if args.subscribed:
+                print '%s is subscribed to %s' % (maintainer, charm_name)
+        elif not args.subscribed:
+            if not args.subscribed:
+                print '%s is not subscribed to %s' % (maintainer, charm_name)
