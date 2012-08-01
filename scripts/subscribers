@@ -147,11 +147,17 @@ for charm_name in charms:
         pkg = charmdistro.getSourcePackage(name=charm_name)
         subscription = pkg.getSubscription(person=lp_maintainer)
         if subscription is not None:
+            msg = '%s is subscribed to %s' % (maintainer, charm_name)
             if args.subscribed:
-                print '%s is subscribed to %s' % (maintainer, charm_name)
+                print msg
+            else:
+                info(msg)
         elif not args.subscribed:
-            if not args.subscribed:
-                print '%s is not subscribed to %s' % (maintainer, charm_name)
+            msg = '%s is not subscribed to %s' % (maintainer, charm_name)
+            if args.subscribed:
+                info(msg)
+            else:
+                print msg
             if args.fix_unsubscribed:
                 info('adding bug subscription to %s for %s' % (charm_name, maint_email))
                 pkg.addBugSubscription(subscriber=lp_maintainer)
