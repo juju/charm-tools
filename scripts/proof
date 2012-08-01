@@ -150,10 +150,17 @@ try:
   if 'maintainer' not in charm:
     err('Charms need a maintainer (See RFC2822) - Name <email>')
   else:
-    (name, address) = email.utils.parseaddr(charm['maintainer'])
-    formatted = email.utils.formataddr((name, address))
-    if formatted != charm['maintainer']:
-        warn("Maintainer address should contain a real-name and email only. [%s]" % (formatted))
+    if type(charm['maintainer']) == type([]):  # It's a list
+        for maintainer in charm['maintainer']:
+            (name, address) = email.utils.parseaddr(maintainer)
+            formatted = email.utils.formataddr((name, address))
+            if formatted != maintainer:
+                warn("Maintainer address should contain a real-name and email only. [%s]" % (formatted))
+    else:  # it's not a list
+        (name, address) = email.utils.parseaddr(charm['maintainer'])
+        formatted = email.utils.formataddr((name, address))
+        if formatted != charm['maintainer']:
+            warn("Maintainer address should contain a real-name and email only. [%s]" % (formatted))
 
   # Must have a hooks dir
   if not path.exists(hooks_path):
