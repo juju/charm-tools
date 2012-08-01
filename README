@@ -93,3 +93,13 @@ Retrieves all of the charms in the charm distribution via bzr. This uses the
 mr command, which is available via 'sudo apt-get install mr' in Ubuntu. Note
 that on Ubuntu 10.10 and earlier the mr command throws warnings but it still
 works.
+
+subscribers
+===========
+This is used to check the quality of maintainer<->bug subscriptions in
+launchpad since we do not have this relationship automatically setup.
+
+As a maintainer, if you would like to ensure that you are subscribed to
+all of your charms you can run this command:
+
+charm subscribers --fix-unsubscribed --maintainer you@youremail.com --repository path/to/your/charms
