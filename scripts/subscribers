@@ -27,7 +27,10 @@ from logging import warn, info, debug
 
 from launchpadlib import launchpad
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+        description="""Prints out a report and optionally corrects found 
+        instances where maintainers of charms are not subscribed to bugs
+        on their charm in launchpad.""")
 parser.add_argument('--subscribed', default=False, action='store_true',
         help='Show maintainers who are properly subscribed instead of unsubscribed')
 parser.add_argument('--repository', default=None, type=str,
@@ -81,7 +84,8 @@ if args.maintainer is None and args.fix_unsubscribed:
         warn('--force-fix-all passed, continuing')
 
 app_name = 'Charm Tools - subscribers'
-launchpadlib_dir='/home/clint/.cache/launchpadlib'
+home_dir = os.environ.get('HOME', os.path.expanduser('~'))
+launchpadlib_dir = os.path.join(home_dir, '.cache', 'launchpadlib')
 
 if args.fix_unsubscribed:
     login = launchpad.Launchpad.login_with
