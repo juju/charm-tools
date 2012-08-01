@@ -154,7 +154,7 @@ try:
         maintainers = charm['maintainer']
     else:
         maintainers = [charm['maintainer']]
-    for maintainer in charm['maintainer']:
+    for maintainer in maintainers:
         (name, address) = email.utils.parseaddr(maintainer)
         formatted = email.utils.formataddr((name, address))
         if formatted != maintainer:
