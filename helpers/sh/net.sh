@@ -19,8 +19,8 @@
 # along with Charm Helpers.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-## 
-# Globally overridable settings. Make sure to set them before sourcing 
+##
+# Globally overridable settings. Make sure to set them before sourcing
 # this file.
 CH_WGET_ARGS=${CH_WGET_ARGS:-"-q --content-disposition"}
 
@@ -37,7 +37,7 @@ ch_get_file()
 {
 	local FILE=${1:-""}
 	local HASH=${2:-""}
-    local CH_DOWNLOAD_DIR=${CH_DOWNLOAD_DIR:-"`mktemp -d /tmp/ch-downloads.XXXXXX`"}
+	local CH_DOWNLOAD_DIR=${CH_DOWNLOAD_DIR:-"`mktemp -d /tmp/ch-downloads.XXXXXX`"}
 
 	if [ `ch_is_url "$FILE"` ]; then
 		wget $CH_WGET_ARGS --directory-prefix="$CH_DOWNLOAD_DIR/" "$FILE"
@@ -48,7 +48,7 @@ ch_get_file()
 		return 2
 	fi
 
-    if [ -z "$HASH" ];then
+	if [ -z "$HASH" ];then
 		#echo "Warning, no has specified. The file will be downloaded but not cryptographically checked!" > 2
 		echo "$FILE"
 		return 0
@@ -181,4 +181,3 @@ ch_get_ip()
 	echo $CHECK_IP
 	return 0
 }
-
