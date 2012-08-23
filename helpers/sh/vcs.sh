@@ -29,11 +29,33 @@ CH_VCS_HG_URL_PATTERN="" #UGH, they only have ssh:// and https?:// SO DIFFICULT.
 CH_VCS_VALID_URL_PATTERN="(lp:|(https?|svn|bzr|git|ssh)(\+ssh)?://)[-A-z0-9\+&@#/%?=~_|!:,.;]*[-A-z0-9\+&@#/%=~_|]"
 
 ##
+# "clone", "branch", "fetch" commands
+CH_VCS_BZR_FETCH_CMD="branch"
+CH_VCS_GIT_FETCH_CMD="clone"
+CH_VCS_SVN_FETCH_CMD="co"
+CH_VCS_HG_FETCH_CMD=""
+
+##
+# "pull", "up", "updated" commands
+CH_VCS_BZR_UPDATE_CMD="pull"
+CH_VCS_GIT_UPDATE_CMD="pull"
+CH_VCS_SVN_UPDATE_CMD="up"
+CH_VCS_HG_UPDATE_CMD=""
+
+##
 # File Match patterns
 CH_VCS_BZR_FILE=".bzr"
 CH_VCS_GIT_FILE=".git"
 CH_VCS_SVN_FILE=".svn"
 CH_VCS_HG_FILE=".hg"
+
+##
+# Supported VCS
+CH_VCS_SUPPORTED_TYPES=( bzr git svn hg )
+
+##
+# Make sure all requirements are fullfiled
+apt-get install -y subversion git-core bzr mercurial
 
 ##
 # Detect VCS
@@ -42,6 +64,10 @@ CH_VCS_HG_FILE=".hg"
 # param URL - URL of remote source
 #
 # echo type|null
+#
+# return 0 OK
+# return 1 No REPO_URL
+# return 2 Not a valid VCS
 ##
 ch_detect_vcs()
 {
@@ -51,6 +77,42 @@ ch_detect_vcs()
 		return 1
 	fi
 
+	if [[ $REPO_URL ~= $CH_VCS_BZR_URL_PATTERN ]]; then
+		# It's a BZR repo!
+		echo "bzr"
+		return 0
+	elif [[ $REPO_URL ~= $CH_VCS_GIT_URL_PATTERN ]]; then
+		# It's a Git repo!
+		echo "git"
+		return 0
+	elif [[ $REPO_URL ~= $CH_VCS_SVN_URL_PATTERN ]]; then
+		# It's subversion!
+		echo "svn"
+		return 0
+	elif [[ $REPO_URL ~= $CH_VCS_VALID_URL_PATTERN ]]; then
+		# It could be Subversion, HG, Git, or BZR but we don't know! Time
+		# to figure it out.
+		TEMP_BZR=`mktemp -d`
+		bzr branch $REPO_URL $TEMP_BZR
+		
+		for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
+			TMP_REPO=`ch_fetch_repo "$REPO_URL" "$type"`
+
+			if [ $? -eq 0 ]; then
+				# It's $type! Clean up and bail
+				rm -rf $TMP_REPO
+				echo "$type"
+				return 0
+			elif [ $? -le 2 ]; then
+				# Something went wrong, and it shouldn't have.
+				return 128
+			fi
+
+			rm -rf "$TMP_REPO"
+		done
+	fi
+
+	return 2 # Not a valid VCS system
 }
 
 ##
@@ -64,26 +126,48 @@ ch_detect_vcs()
 # return 0 OK
 # return 1 No REPO_URL
 # return 2 Not a valid URL
+# return 3 Unable to fetch
 ##
 ch_fetch_repo()
 {
 	local REPO_URL=${1:-""}
 	local REPO_TYPE=${2:-""}
 
+	# Check for crap
 	if [ -z "$REPO_URL" ]; then
 		# Don't give me crap!
 		return 1
 	fi
 
+	# If we're guessing, then lets guess!
 	if [ -z "$REPO_TYPE" ]; then
 		# FUUUU, got to go figure it out now
 		# Assume nothing, this could be garbage.
 		if [[ $REPO_URL =~ $CH_VCS_VALID_URL_PATTERN ]]; then
-			# Do magic?
+			local REPO_TYPE=`ch_detect_vcs $REPO_URL`
+
+			if [ $? -gt 0 ] || [ -z "$REPO_TYPE" ]; then
+				return 2
+			fi
 		else
 			return 2
 		fi
 	fi
+
+	local REPO_FETCH_CMD="CH_VCS_${REPO_TYPE,^^}_FETCH_CMD"
+	local REPO_FETCH_CMD=${!REPO_FETCH_CMD}
+
+	local REPO_PATH=`mkdir -d`
+
+	$REPO_TYPE $REPO_FETCH_CMD $REPO_URL $REPO_PATH
+
+	if [ $? -ne 0 ]; then
+		rm -rf $REPO_PATH
+		return 3
+	fi
+
+	echo $REPO_PATH
+	return 0
 }
 
 ##
