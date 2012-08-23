@@ -71,12 +71,13 @@ apt-get install -y subversion git-core bzr mercurial
 ##
 ch_detect_vcs()
 {
-	REPO_URL=${1:-""}
+	local REPO_URL=${1:-""}
 
 	if [ -z "$REPO_URL" ]; then
 		return 1
 	fi
 
+	# This should be a loop
 	if [[ $REPO_URL ~= $CH_VCS_BZR_URL_PATTERN ]]; then
 		# It's a BZR repo!
 		echo "bzr"
@@ -92,11 +93,11 @@ ch_detect_vcs()
 	elif [[ $REPO_URL ~= $CH_VCS_VALID_URL_PATTERN ]]; then
 		# It could be Subversion, HG, Git, or BZR but we don't know! Time
 		# to figure it out.
-		TEMP_BZR=`mktemp -d`
+		local TEMP_BZR=`mktemp -d`
 		bzr branch $REPO_URL $TEMP_BZR
-		
+
 		for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
-			TMP_REPO=`ch_fetch_repo "$REPO_URL" "$type"`
+			local TMP_REPO=`ch_fetch_repo "$REPO_URL" "$type"`
 
 			if [ $? -eq 0 ]; then
 				# It's $type! Clean up and bail
@@ -190,4 +191,27 @@ ch_update_repo()
 	if [ ! -d "$REPO_PATH" ]; then
 		return 1
 	fi
+
+	# Go through each repo type and find out which one we have
+	for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
+		local REPO_FILE="CH_VCS_${type,^^}_FILE"
+		local REPO_FILE="${!REPO_FILE}"
+
+		if [ -d $REPO_PATH/$REPO_FILE ]; then
+			local REPO_UPDATE="CH_VCS_${type,^^}_UPDATE_CMD"
+			local REPO_UPDATE="${!REPO_UPDATE}"
+			local CWD=`pwd`
+
+			cd $REPO_PATH
+			$type $REPO_UPDATE
+			local SUCC=$?
+			cd $CWD
+
+			if [ $SUCC -eq 0 ]; then
+				return 0
+			fi
+		fi
+	done
+
+	return 2
 }
