@@ -181,8 +181,8 @@ ch_fetch_repo()
 #
 # return 0 OK
 # return 1 No REPO_PATH
-# return 2 Not a valid path
-# return 3 Could not determine repository type
+# return 2 Not a valid repo path
+# return 3 Failed to update repo
 ##
 ch_update_repo()
 {
@@ -209,6 +209,8 @@ ch_update_repo()
 
 			if [ $SUCC -eq 0 ]; then
 				return 0
+			else
+				return 3
 			fi
 		fi
 	done
