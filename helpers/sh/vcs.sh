@@ -94,8 +94,8 @@ ch_detect_vcs()
 		return 0
 	elif [[ "$REPO_URL" =~ $CH_VCS_VALID_URL_PATTERN ]]; then
 		for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
-			TMP_REPO=`ch_fetch_repo "$REPO_URL" "$type"`
-			TMP_RESULT=$?
+			local TMP_REPO=`ch_fetch_repo "$REPO_URL" "$type"`
+			local TMP_RESULT=$?
 			if [ $TMP_RESULT -eq 0 ]; then
 				# It's $type! Clean up and bail
 				rm -rf $TMP_REPO
