@@ -21,26 +21,28 @@
 
 ##
 # URL Match patterns
-CH_VCS_BZR_URL_PATTERN="^(lp:\~|bzr:\/\/|bzr+ssh:\/\/)"
-CH_VCS_GIT_URL_PATTERN="(^git@|^git:\/\/|\.git$)"
-CH_VCS_SVN_URL_PATTERN="^(svn:\/\/|svn+ssh:\/\/)"
+CH_VCS_BZR_URL_PATTERN="^(lp:~?|bzr:|bzr\+ssh:)"
+CH_VCS_GIT_URL_PATTERN="(^git@|^git:|.git$)"
+CH_VCS_SVN_URL_PATTERN="^(svn:|svn\+ssh:)"
 CH_VCS_HG_URL_PATTERN="" #UGH, they only have ssh:// and https?:// SO DIFFICULT.
 # This is a VERY generous pattern and should weed out the majority of malformed URLS
-CH_VCS_VALID_URL_PATTERN="(lp:|(https?|svn|bzr|git|ssh)(\+ssh)?://)[-A-z0-9\+&@#/%?=~_|!:,.;]*[-A-z0-9\+&@#/%=~_|]"
+# Not sure why this didn't work. It works with `egrep -E`, but whatever.
+#CH_VCS_VALID_URL_PATTERN="(lp:|(https?|svn|bzr|git|ssh)(+ssh)?://)[-a-z0-9+&/?=_:.]*[-a-z0-9+&/=_]"
+CH_VCS_VALID_URL_PATTERN="^(lp:~?|https?://|svn://|svn\+ssh://|bzr://|bzr\+ssh://|git://|ssh://)[-a-z0-9\+&/?=_:.]*[-a-z0-9\+&/=_]"
 
 ##
 # "clone", "branch", "fetch" commands
 CH_VCS_BZR_FETCH_CMD="branch"
 CH_VCS_GIT_FETCH_CMD="clone"
 CH_VCS_SVN_FETCH_CMD="co"
-CH_VCS_HG_FETCH_CMD=""
+CH_VCS_HG_FETCH_CMD="clone"
 
 ##
-# "pull", "up", "updated" commands
+# "pull", "up", updated commands
 CH_VCS_BZR_UPDATE_CMD="pull"
 CH_VCS_GIT_UPDATE_CMD="pull"
 CH_VCS_SVN_UPDATE_CMD="up"
-CH_VCS_HG_UPDATE_CMD=""
+CH_VCS_HG_UPDATE_CMD="pull"
 
 ##
 # File Match patterns
@@ -55,7 +57,7 @@ CH_VCS_SUPPORTED_TYPES=( bzr git svn hg )
 
 ##
 # Make sure all requirements are fullfiled
-apt-get install -y subversion git-core bzr mercurial
+apt-get install -y subversion git-core bzr mercurial > /dev/null 2>&1
 
 ##
 # Detect VCS
@@ -78,33 +80,28 @@ ch_detect_vcs()
 	fi
 
 	# This should be a loop
-	if [[ $REPO_URL ~= $CH_VCS_BZR_URL_PATTERN ]]; then
+	if [[ $REPO_URL =~ $CH_VCS_BZR_URL_PATTERN ]]; then
 		# It's a BZR repo!
 		echo "bzr"
 		return 0
-	elif [[ $REPO_URL ~= $CH_VCS_GIT_URL_PATTERN ]]; then
+	elif [[ $REPO_URL =~ $CH_VCS_GIT_URL_PATTERN ]]; then
 		# It's a Git repo!
 		echo "git"
 		return 0
-	elif [[ $REPO_URL ~= $CH_VCS_SVN_URL_PATTERN ]]; then
+	elif [[ $REPO_URL =~ $CH_VCS_SVN_URL_PATTERN ]]; then
 		# It's subversion!
 		echo "svn"
 		return 0
-	elif [[ $REPO_URL ~= $CH_VCS_VALID_URL_PATTERN ]]; then
-		# It could be Subversion, HG, Git, or BZR but we don't know! Time
-		# to figure it out.
-		local TEMP_BZR=`mktemp -d`
-		bzr branch $REPO_URL $TEMP_BZR
-
+	elif [[ "$REPO_URL" =~ $CH_VCS_VALID_URL_PATTERN ]]; then
 		for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
-			local TMP_REPO=`ch_fetch_repo "$REPO_URL" "$type"`
-
-			if [ $? -eq 0 ]; then
+			TMP_REPO=`ch_fetch_repo "$REPO_URL" "$type"`
+			TMP_RESULT=$?
+			if [ $TMP_RESULT -eq 0 ]; then
 				# It's $type! Clean up and bail
 				rm -rf $TMP_REPO
 				echo "$type"
 				return 0
-			elif [ $? -le 2 ]; then
+			elif [ $TMP_RESULT -le 2 ]; then
 				# Something went wrong, and it shouldn't have.
 				return 128
 			fi
@@ -155,12 +152,19 @@ ch_fetch_repo()
 		fi
 	fi
 
-	local REPO_FETCH_CMD="CH_VCS_${REPO_TYPE,^^}_FETCH_CMD"
-	local REPO_FETCH_CMD=${!REPO_FETCH_CMD}
+	local REPO_FETCH_CMD="CH_VCS_${REPO_TYPE^^}_FETCH_CMD"
+	local REPO_FETCH_CMD="${!REPO_FETCH_CMD}"
 
-	local REPO_PATH=`mkdir -d`
+	local REPO_PATH=`mktemp -d`
+	local REPO_OPTS=""
 
-	$REPO_TYPE $REPO_FETCH_CMD $REPO_URL $REPO_PATH
+	# CURE YOU BZR!!!!!
+	if [ $REPO_TYPE == "bzr" ]; then
+		REPO_OPTS="--use-existing-dir"
+	fi
+		
+
+	$REPO_TYPE $REPO_FETCH_CMD $REPO_OPTS $REPO_URL $REPO_PATH > /dev/null 2>&1
 
 	if [ $? -ne 0 ]; then
 		rm -rf $REPO_PATH
@@ -168,7 +172,6 @@ ch_fetch_repo()
 	fi
 
 	echo $REPO_PATH
-	return 0
 }
 
 ##
@@ -194,16 +197,16 @@ ch_update_repo()
 
 	# Go through each repo type and find out which one we have
 	for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
-		local REPO_FILE="CH_VCS_${type,^^}_FILE"
+		local REPO_FILE="CH_VCS_${type^^}_FILE"
 		local REPO_FILE="${!REPO_FILE}"
 
 		if [ -d $REPO_PATH/$REPO_FILE ]; then
-			local REPO_UPDATE="CH_VCS_${type,^^}_UPDATE_CMD"
+			local REPO_UPDATE="CH_VCS_${type^^}_UPDATE_CMD"
 			local REPO_UPDATE="${!REPO_UPDATE}"
 			local CWD=`pwd`
 
 			cd $REPO_PATH
-			$type $REPO_UPDATE
+			$type $REPO_UPDATE > /dev/null 2>&1
 			local SUCC=$?
 			cd $CWD
 
