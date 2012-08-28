@@ -19,6 +19,8 @@
 # along with Charm Helpers.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
+CH_VCS_SKIP_APT=${CH_VCS_SKIP_APT:-"true"}
+
 ##
 # URL Match patterns
 CH_VCS_BZR_URL_PATTERN="^(lp:~?|bzr:|bzr\+ssh:)"
@@ -28,7 +30,7 @@ CH_VCS_HG_URL_PATTERN="" #UGH, they only have ssh:// and https?:// SO DIFFICULT.
 # This is a VERY generous pattern and should weed out the majority of malformed URLS
 # Not sure why this didn't work. It works with `egrep -E`, but whatever.
 #CH_VCS_VALID_URL_PATTERN="(lp:|(https?|svn|bzr|git|ssh)(+ssh)?://)[-a-z0-9+&/?=_:.]*[-a-z0-9+&/=_]"
-CH_VCS_VALID_URL_PATTERN="^(lp:~?|https?://|svn://|svn\+ssh://|bzr://|bzr\+ssh://|git://|ssh://)[-a-z0-9\+&/?=_:.]*[-a-z0-9\+&/=_]"
+CH_VCS_VALID_URL_PATTERN="^(lp:~?|https?://|svn://|svn\+ssh://|bzr://|bzr\+ssh://|git://|ssh://)[-a-z0-9\+&/?=_:.@]+*[-a-z0-9\+&/=_]"
 
 ##
 # "clone", "branch", "fetch" commands
@@ -57,7 +59,9 @@ CH_VCS_SUPPORTED_TYPES=( bzr git svn hg )
 
 ##
 # Make sure all requirements are fullfiled
-apt-get install -y subversion git-core bzr mercurial > /dev/null 2>&1
+if [ "$CH_VCS_SKIP_APT" != "true" ]; then
+	apt-get install -y subversion git-core bzr mercurial
+fi
 
 ##
 # Detect VCS
@@ -78,6 +82,25 @@ ch_detect_vcs()
 	if [ -z "$REPO_URL" ]; then
 		return 1
 	fi
+
+	if [ -d "$REPO_URL" ]; then
+		# This is no URL! It's a path!
+		# Go through each repo type and find out which one we have
+		for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
+			local REPO_FILE="CH_VCS_${type^^}_FILE"
+			local REPO_FILE="${!REPO_FILE}"
+
+			if [ -d $REPO_URL/$REPO_FILE ]; then
+				echo $type
+				return 0
+			fi
+		done
+
+		# It's a directory, but we couldn't match a VCS tool. We should bail
+		# because I _doubt_ it'll be a URL.
+		return 2
+	fi
+	# So, it's not a local path? Okay, maybe it's a URL?
 
 	# This should be a loop
 	if [[ $REPO_URL =~ $CH_VCS_BZR_URL_PATTERN ]]; then
@@ -155,7 +178,7 @@ ch_fetch_repo()
 	local REPO_FETCH_CMD="CH_VCS_${REPO_TYPE^^}_FETCH_CMD"
 	local REPO_FETCH_CMD="${!REPO_FETCH_CMD}"
 
-	local REPO_PATH=`mktemp -d`
+	local REPO_PATH=`mktemp -d /tmp/charm-helper-vcs-$REPO_TYPE.XXXXXX`
 	local REPO_OPTS=""
 
 	# CURE YOU BZR!!!!!
@@ -195,28 +218,27 @@ ch_update_repo()
 		return 1
 	fi
 
-	# Go through each repo type and find out which one we have
-	for type in "${CH_VCS_SUPPORTED_TYPES[@]}"; do
-		local REPO_FILE="CH_VCS_${type^^}_FILE"
-		local REPO_FILE="${!REPO_FILE}"
+	REPO_TYPE=`ch_detect_vcs "$REPO_PATH"`
 
-		if [ -d $REPO_PATH/$REPO_FILE ]; then
-			local REPO_UPDATE="CH_VCS_${type^^}_UPDATE_CMD"
-			local REPO_UPDATE="${!REPO_UPDATE}"
-			local CWD=`pwd`
+	if [ $? -ne 0 ]; then
+		return 3
+	fi
 
-			cd $REPO_PATH
-			$type $REPO_UPDATE > /dev/null 2>&1
-			local SUCC=$?
-			cd $CWD
+	local REPO_UPDATE="CH_VCS_${REPO_TYPE^^}_UPDATE_CMD"
+	local REPO_UPDATE="${!REPO_UPDATE}"
+	local CWD=`pwd`
 
-			if [ $SUCC -eq 0 ]; then
-				return 0
-			else
-				return 3
-			fi
-		fi
-	done
+	cd $REPO_PATH
+	type $REPO_TYPE
+	$REPO_TYPE $REPO_UPDATE > /dev/null 2>&1
+	local SUCC=$?
+	cd $CWD
+
+	if [ $SUCC -eq 0 ]; then
+		return 0
+	else
+		return 3
+	fi
 
 	return 2
 }
