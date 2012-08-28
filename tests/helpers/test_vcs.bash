@@ -31,7 +31,7 @@ mock_git()
 	if [ "$1" = "clone" ] && [ $# -eq 3 ]; then
 		return 0
 	fi
-	
+
 	if [ "$1" = "pull" ] && [ $# -eq 1 ]; then
 		return 0
 	fi
@@ -44,7 +44,7 @@ mock_bzr()
 	if [ "$1" = "branch" ] && [ $# -eq 3 ]; then
 		return 0
 	fi
-	
+
 	if [ "$1" = "pull" ] && [ $# -eq 1 ]; then
 		return 0
 	fi
@@ -57,7 +57,7 @@ mock_svn()
 	if [ "$1" = "co" ] && [ $# -eq 4 ]; then
 		return 0
 	fi
-	
+
 	if [ "$1" = "up" ] && [ $# -eq 1 ]; then
 		return 0
 	fi
@@ -72,11 +72,11 @@ mock_apt()
 
 if [ "$MOCK_NET" = "true" ]; then
     alias host=mock_host
-    alias dig=mock_dig    
+    alias dig=mock_dig
 fi
 
 ## At this time, this doesn't work, but one day it will - or at least should
-## Assuming that ch_detect_vcs works, ch_fetch_repo and ch_update_repo 
+## Assuming that ch_detect_vcs works, ch_fetch_repo and ch_update_repo
 ## should run without issue.
 if [ "$MOCK_VCS" = "true" ]; then
 	alias git=mock_git
@@ -85,6 +85,8 @@ if [ "$MOCK_VCS" = "true" ]; then
 	alias hg=mock_git
 	alias apt-get=mock_apt
 fi
+
+CH_VCS_INSTALL_DEPS="false"
 
 . $HELPERS_HOME/vcs.bash
 

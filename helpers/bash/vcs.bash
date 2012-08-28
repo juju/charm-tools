@@ -59,7 +59,7 @@ CH_VCS_SUPPORTED_TYPES=( bzr git svn hg )
 
 ##
 # Make sure all requirements are fullfiled
-if [ "$CH_VCS_INSTALL_DEPS" != "true" ]; then
+if [ "$CH_VCS_INSTALL_DEPS" = "true" ]; then
 	apt-get install -y subversion git-core bzr mercurial
 fi
 
