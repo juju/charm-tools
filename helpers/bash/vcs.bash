@@ -19,7 +19,7 @@
 # along with Charm Helpers.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-CH_VCS_SKIP_APT=${CH_VCS_SKIP_APT:-"true"}
+CH_VCS_INSTALL_DEPS=${CH_VCS_INSTALL_DEPS:-"true"}
 
 ##
 # URL Match patterns
@@ -59,7 +59,7 @@ CH_VCS_SUPPORTED_TYPES=( bzr git svn hg )
 
 ##
 # Make sure all requirements are fullfiled
-if [ "$CH_VCS_SKIP_APT" != "true" ]; then
+if [ "$CH_VCS_INSTALL_DEPS" != "true" ]; then
 	apt-get install -y subversion git-core bzr mercurial
 fi
 
@@ -229,7 +229,6 @@ ch_update_repo()
 	local CWD=`pwd`
 
 	cd $REPO_PATH
-	type $REPO_TYPE
 	$REPO_TYPE $REPO_UPDATE > /dev/null 2>&1
 	local SUCC=$?
 	cd $CWD
