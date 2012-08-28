@@ -31,3 +31,4 @@ check:
 	@echo Test charm proof
 	tests/proof/test.sh
 	tests/create/test.sh
+	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
