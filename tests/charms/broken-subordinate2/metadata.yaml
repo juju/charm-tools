@@ -1,0 +1,9 @@
+name: broken-subordinate2
+subordinate: true
+summary: <Fill in summary here>
+maintainer: test@testhost
+description: |
+  <Multi-line description here>
+requires:
+  foo:
+    interface: bar

@@ -1,5 +1,6 @@
 name: $package
 summary: $summary
+maintainer: $maintainer
 description: |
   $description
 provides:

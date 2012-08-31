@@ -1,0 +1,12 @@
+name: mod-spdy
+subordinate: true
+maintainer: Clint Byrum <clint@ubuntu.com>
+summary: mod_spdy is a SPDY module for Apache 2.2
+description: |
+  mod_spdy is a SPDY module for Apache 2.2 that allows your web server
+  to take advantage of SPDY features like stream multiplexing and header
+  compression.
+requires:
+  juju-info:
+    interface: juju-info
+    scope: container

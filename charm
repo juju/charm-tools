@@ -9,26 +9,31 @@ script_home=`readlink -f $script_home`/scripts
 
 usage()
 {
-  echo usage: $1 [ script_name ] >&2
+  echo "usage: $1 [ --help|-h ] [ script_name ]" >&2
   echo script choices are: >&2
-  exec ls $script_home >&2
+  echo $(list_commands)|sed -e 's/^/    /' >&2
   exit $2
 }
 
-options=$(getopt -o h -l help -- "$@")
-if [ $? -ne 0 ]; then
-    usage $(basename $0) 1
-fi
-eval set -- "$options"
+list_commands()
+{
+    ls -1 $script_home
+}
 
-while true
-do
-    case "$1" in
-    -h|--help)  usage $(basename $0) 0;;
-    --) shift 1; break;;
-    *)  break;;
-    esac
-done
+# If the options seem invalid, pass thru to underlying scripts
+if options=$(getopt -o hl -l help,list -- "$@") ; then
+    eval set -- "$options"
+
+    while true
+    do
+        case "$1" in
+        -h|--help)  usage $(basename $0) 0;;
+        -l|--list)  list_commands ; exit 0;;
+        --) shift 1; break;;
+        *)  break;;
+        esac
+    done
+fi
 
 script=${1:-""}
 

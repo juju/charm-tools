@@ -1,0 +1,21 @@
+name: python-apt
+summary: Python interface to libapt-pkg
+maintainer: tester <test@testhost>
+description: |
+  The apt_pkg Python interface will provide full access to the internal
+  libapt-pkg structures allowing Python programs to easily perform a
+  variety of functions, such as:  - Access to the APT configuration
+  system - Access to the APT package information database - Parsing of
+  Debian package control files, and other files with a   similar
+  structure The included 'aptsources' Python interface provides an
+  abstraction of the sources.list configuration on the repository and
+  the distro level.
+provides:
+  relation-name:
+    interface: interface-name
+requires:
+  relation-name:
+    interface: interface-name
+peers:
+  relation-name:
+    interface: interface-name

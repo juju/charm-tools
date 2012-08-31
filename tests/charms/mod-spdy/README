@@ -1,0 +1,19 @@
+This will open port 443 on any machine with apache and enable mod_spdy.
+
+juju deploy wrdpress
+juju deploy mysql
+juju add-relation mysql wordpress
+juju expose wordpress
+juju deploy mod-spdy
+juju add-relation mod-spdy wordpress
+
+Now, juju does not allow subordinates to open ports for their primaries,
+so you have to use the 'open-port' script in juju-jitsu.
+
+To do that, after you've done the steps above:
+
+bzr branch lp:juju-jitsu
+juju-jitsu/sub-commands/open-port your-primary-service 443
+
+https://your-public-ip/ should be SSL, and should be using SPDY if you
+try it in Chrome/Chromium.

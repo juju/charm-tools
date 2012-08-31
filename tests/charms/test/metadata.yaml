@@ -1,0 +1,14 @@
+name: test
+summary: <Fill in summary here>
+maintainer: test@testhost
+description: |
+  <Multi-line description here>
+provides:
+  relation-name:
+    interface: interface-name
+requires:
+  relation-name:
+    interface: interface-name
+peers:
+  relation-name:
+    interface: interface-name
