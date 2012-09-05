@@ -1,12 +1,18 @@
 # Tests for Python charm helpers.
 
-import charmhelpers
 import unittest
 import yaml
 
 from simplejson import dumps
 from StringIO import StringIO
 from testtools import TestCase
+
+import sys
+# Path hack to ensure we test the local code, not a version installed in
+# /usr/local/lib.  This is necessary since /usr/local/lib is prepended before
+# what is specified in PYTHONPATH.
+sys.path.insert(0, 'helpers/python')
+import charmhelpers
 
 
 class CharmHelpersTestCase(TestCase):
@@ -56,7 +62,7 @@ class CharmHelpersTestCase(TestCase):
                 'relations': {
                     'db': {'state': 'up'},
                     },
-                'state': unit_state,
+                'agent-state': unit_state,
                 }
             service_data['units']['{}/{}'.format(service_name, i)] = (
                 unit_data)
@@ -131,9 +137,9 @@ class CharmHelpersTestCase(TestCase):
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         self.assertEqual(
             'pending',
-            charmhelpers.unit_info('test-service', 'state'))
+            charmhelpers.unit_info('test-service', 'agent-state'))
 
-    def test_unit_info_returns_empty_for_nonexistant_service(self):
+    def test_unit_info_returns_empty_for_nonexistent_service(self):
         # If the service passed to unit_info() has not yet started (or
         # otherwise doesn't exist), unit_info() will return an empty
         # string.

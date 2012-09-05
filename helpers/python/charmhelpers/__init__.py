@@ -12,6 +12,10 @@ __all__ = [
     'relation_get',
     'relation_set',
     'unit_info',
+    'wait_for_machine',
+    'wait_for_page_contents',
+    'wait_for_relation',
+    'wait_for_unit',
     ]
 
 from collections import namedtuple
@@ -19,7 +23,6 @@ import json
 import operator
 from shelltoolbox import (
     command,
-    run,
     script_name,
     )
 import tempfile
@@ -28,6 +31,7 @@ import urllib2
 import yaml
 
 
+SLEEP_AMOUNT = 0.1
 Env = namedtuple('Env', 'uid gid home')
 log = command('juju-log')
 # We create a juju_status Command here because it makes testing much,
@@ -125,14 +129,14 @@ def wait_for_machine(num_machines=1, timeout=300):
         if len(non_zookeeper_machines) >= num_machines:
             all_machines_running = True
             for machine in non_zookeeper_machines:
-                if machine['instance-state'] != 'running':
+                if machine.get('instance-state') != 'running':
                     all_machines_running = False
                     break
             if all_machines_running:
                 break
         if time.time() - start_time >= timeout:
             raise RuntimeError('timeout waiting for service to start')
-        time.sleep(0.1)
+        time.sleep(SLEEP_AMOUNT)
     return num_machines, time.time() - start_time
 
 
@@ -141,14 +145,14 @@ def wait_for_unit(service_name, timeout=480):
     wait_for_machine(num_machines=1)
     start_time = time.time()
     while True:
-        state = unit_info(service_name, 'state')
+        state = unit_info(service_name, 'agent-state')
         if 'error' in state or state == 'started':
             break
         if time.time() - start_time >= timeout:
             raise RuntimeError('timeout waiting for service to start')
-        time.sleep(0.1)
+        time.sleep(SLEEP_AMOUNT)
     if state != 'started':
-        raise RuntimeError('unit did not start, state: ' + state)
+        raise RuntimeError('unit did not start, agent-state: ' + state)
 
 
 def wait_for_relation(service_name, relation_name, timeout=120):
@@ -160,7 +164,7 @@ def wait_for_relation(service_name, relation_name, timeout=120):
             break
         if time.time() - start_time >= timeout:
             raise RuntimeError('timeout waiting for relation to be up')
-        time.sleep(0.1)
+        time.sleep(SLEEP_AMOUNT)
 
 
 def wait_for_page_contents(url, contents, timeout=120, validate=None):
@@ -178,4 +182,4 @@ def wait_for_page_contents(url, contents, timeout=120, validate=None):
                 return page
         if time.time() - start_time >= timeout:
             raise RuntimeError('timeout waiting for contents of ' + url)
-        time.sleep(0.1)
+        time.sleep(SLEEP_AMOUNT)
