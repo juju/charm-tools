@@ -26,8 +26,11 @@ install:
 
 check:
 	tests/helpers/helpers.sh || sh -x tests/helpers/helpers.sh timeout
-	@echo Test shell helpers with bash
+	@echo Test shell helpers with dash
 	bash tests/helpers/helpers.sh || bash -x tests/helpers/helpers.sh timeout
+	tests/helpers/helpers.bash || sh -x tests/helpers/helpers.bash timeout
+	@echo Test shell helpers with bash
+	bash tests/helpers/helpers.bash || bash -x tests/helpers/helpers.bash timeout
 	@echo Test charm proof
 	tests/proof/test.sh
 	tests/create/test.sh
