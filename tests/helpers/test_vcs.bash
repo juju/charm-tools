@@ -128,11 +128,13 @@ ch_detect_vcs "notvalid" && return 1 || :
 [ "`ch_detect_vcs $temp_hg_dir`" = "hg" ]
 echo PASS
 
-start_test ch_fetch_repo...
-echo DEFERRED
+# TODO
+#start_test ch_fetch_repo...
+#echo DEFERRED
 
-start_test ch_update_repo...
-echo DEFERRED
+# TODO
+#start_test ch_update_repo...
+#echo DEFERRED
 
 trap - EXIT
 cleanup_repos
