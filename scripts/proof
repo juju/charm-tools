@@ -29,6 +29,23 @@ import argparse
 
 exit_code = 0
 
+KNOWN_METADATA_KEYS = [ 'name',
+                        'summary',
+                        'maintainer',
+                        'description',
+                        'subordinate',
+                        'provides',
+                        'requires',
+                        'peers' ]
+
+KNOWN_RELATION_KEYS = [ 'interface',
+                        'scope',
+                        'limit',
+                        'optional' ]
+
+KNOWN_SCOPES = [ 'global',
+                 'container' ]
+
 class RelationError(Exception):
     pass
 
@@ -137,6 +154,10 @@ try:
     crit('cannot parse ' + yaml_path + ":" + str(e))
 
   yamlfile.close()
+
+  for key in charm.keys():
+    if key not in KNOWN_METADATA_KEYS:
+      err("Unknown root metadata field (%s)" % key)
 
   charm_basename = path.basename(charm_path)
   if charm['name'] != charm_basename:
