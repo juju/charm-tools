@@ -1,8 +1,8 @@
 E: no copyright file
 E: Includes template README.ex file
-E: template relations should be renamed to fit charm: relation-name
 E: template interface names should be changed: interface-name
 E: template relations should be renamed to fit charm: relation-name
 E: template interface names should be changed: interface-name
 E: template relations should be renamed to fit charm: relation-name
 E: template interface names should be changed: interface-name
+E: template relations should be renamed to fit charm: relation-name

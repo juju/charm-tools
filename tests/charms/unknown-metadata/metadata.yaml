@@ -6,10 +6,13 @@ description: |
   <Multi-line description here>
 provides:
   relation-name:
+    baz: boom
     interface: interface-name
 requires:
   relation-name:
     interface: interface-name
+    scope: flouride
 peers:
   relation-name:
     interface: interface-name
+  non-map: [ interface, interface-name ]

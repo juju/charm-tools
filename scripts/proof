@@ -120,7 +120,26 @@ def check_relation_hooks(relations, subordinate):
   template_interfaces = ('interface-name')
   template_relations = ('relation-name')
 
-  for r in relations:
+  for r in relations.items():
+    if type(r[1]) != dict:
+      err("relation %s is not a map" % (r[0]))
+    else:
+      if 'scope' in r[1]:
+        scope = r[1]['scope']
+        if scope not in KNOWN_SCOPES:
+          err("Unknown scope found in relation %s - (%s)" % (r[0], scope))
+      if 'interface' in r[1]:
+        interface = r[1]['interface']
+        if interface in template_interfaces:
+          err("template interface names should be changed: "+interface)
+      else:
+        err("relation missing interface")
+      for key in r[1].keys():
+        if key not in KNOWN_RELATION_KEYS:
+          err("Unknown relation field in relation %s - (%s)" % (r[0], key))
+
+    r = r[0]
+
     if r in template_relations:
       err("template relations should be renamed to fit charm: "+r)
 
@@ -133,12 +152,6 @@ def check_relation_hooks(relations, subordinate):
     if not has_one and not subordinate:
         info("relation "+r+" has no hooks")
 
-    try:
-      interface = relations[r]['interface']
-      if interface in template_interfaces:
-        err("template interface names should be changed: "+interface)
-    except KeyError:
-      err("relation missing interface")
 
 def warn(msg):
   global exit_code

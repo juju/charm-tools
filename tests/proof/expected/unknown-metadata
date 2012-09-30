@@ -2,9 +2,13 @@ E: Unknown root metadata field (foo)
 W: metadata name (test) must match directory name (unknown-metadata) exactly for local deployment.
 E: no copyright file
 E: Includes template README.ex file
+E: template interface names should be changed: interface-name
+E: Unknown relation field in relation relation-name - (baz)
 E: template relations should be renamed to fit charm: relation-name
+E: Unknown scope found in relation relation-name - (flouride)
 E: template interface names should be changed: interface-name
 E: template relations should be renamed to fit charm: relation-name
+E: relation non-map is not a map
+I: relation non-map has no hooks
 E: template interface names should be changed: interface-name
 E: template relations should be renamed to fit charm: relation-name
-E: template interface names should be changed: interface-name
