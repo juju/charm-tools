@@ -36,6 +36,7 @@ KNOWN_METADATA_KEYS = [ 'name',
                         'subordinate',
                         'provides',
                         'requires',
+                        'format',
                         'peers' ]
 
 KNOWN_RELATION_KEYS = [ 'interface',
