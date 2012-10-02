@@ -11,6 +11,13 @@ __all__ = [
     'log_exit',
     'relation_get',
     'relation_set',
+    'relation_ids',
+    'relation_list',
+    'config_get',
+    'unit_get',
+    'open_port',
+    'close_port',
+    'service_control',
     'unit_info',
     'wait_for_machine',
     'wait_for_page_contents',
@@ -29,6 +36,7 @@ import tempfile
 import time
 import urllib2
 import yaml
+from subprocess import CalledProcessError
 
 
 SLEEP_AMOUNT = 0.1
@@ -48,20 +56,98 @@ def log_exit():
 
 
 def get_config():
-    config_get = command('config-get', '--format=json')
-    return json.loads(config_get())
+    _config_get = command('config-get', '--format=json')
+    return json.loads(_config_get())
 
-
-def relation_get(*args):
+def relation_get():
     cmd = command('relation-get')
-    return cmd(*args).strip()
+    return cmd().strip()
+
+def relation_get(attribute, unit=None, rid=None):
+    cmd = command('relation-get')
+    _args = []
+    if rid:
+        _args.append('-r')
+        _args.append(rid)
+    _args.append(attribute)
+    if unit:
+        _args.append(unit)
+    return cmd(*_args).strip()
 
 
 def relation_set(**kwargs):
     cmd = command('relation-set')
     args = ['{}={}'.format(k, v) for k, v in kwargs.items()]
-    return cmd(*args)
+    cmd(*args)
 
+
+def relation_ids(relation_name):
+    cmd = command('relation-ids')
+    args = [ relation_name ]
+    return cmd(*args).split()
+
+
+def relation_list(rid=None):
+    cmd = command('relation-list')
+    args = []
+    if rid:
+        args.append('-r')
+        args.append(rid)
+    return cmd(*args).split()
+
+
+def config_get(attribute):
+    cmd = command('config-get')
+    args = [ attribute ]
+    return cmd(*args).strip()
+
+
+def unit_get(attribute):
+    cmd = command('unit-get')
+    args = [ attribute ]
+    return cmd(*args).strip()
+
+
+def open_port(port, protocol="TCP"):
+    cmd = command('open-port')
+    args = [ '{}/{}'.format(port, protocol)  ]
+    cmd(*args)
+
+
+def close_port(port, protocol="TCP"):
+    cmd = command('close-port')
+    args = [ '{}/{}'.format(port, protocol)  ]
+    cmd(*args)
+
+START="start"
+RESTART="restart"
+STOP="stop"
+RELOAD="reload"
+
+def service_control(service_name, action):
+    cmd = command('service')
+    args = [ service_name, action ]
+    try:
+        if action == RESTART:
+            try:
+                cmd(*args)
+            except CalledProcessError:
+                service_control(service_name, START)
+        else:
+            cmd(*args)
+    except CalledProcessError:
+        log("Failed to perform {} on service {}".format(action, service_name))
+
+def configure_source(update=False):
+    source = config_get('source')
+    if (source.startswith('ppa:') or
+        source.startswith('cloud:') or
+        source.startswith('http:')):
+        run('add-apt-repository', source)
+    if source.startswith("http:"):
+        run('apt-key', 'import', config_get('key'))
+    if update:
+        run('apt-get', 'update')
 
 def make_charm_config_file(charm_config):
     charm_config_file = tempfile.NamedTemporaryFile()
