@@ -64,7 +64,7 @@ def get_config():
 def relation_get(attribute=None, unit=None, rid=None):
     cmd = command('relation-get')
     if attribute is None and unit is None and rid is None:
-        return(cmd().strip())
+        return cmd().strip()
     _args = []
     if rid:
         _args.append('-r')
