@@ -128,6 +128,10 @@ class CharmHelpersTestCase(TestCase):
         self.assertEqual('eggs',
             charmhelpers.relation_get('spam', 'test', 'test:1'))
 
+        self._patch_command(lambda *args: '%s' % mock_relation_values)
+        self.assertEqual("{'foo': 'bar', 'spam': 'eggs'}",
+            charmhelpers.relation_get())
+
     def test_relation_set(self):
         # relation_set calls out to relation-set and passes key=value
         # pairs to it.
