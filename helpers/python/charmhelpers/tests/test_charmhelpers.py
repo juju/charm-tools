@@ -49,7 +49,7 @@ class CharmHelpersTestCase(TestCase):
         for i in range(num_units):
             # The machine is always going to be i+1 because there
             # will always be num_units+1 machines.
-            machine_number = i+1
+            machine_number = i + 1
             unit_machine_data = {
                 'dns-name': 'machine{}.example.com'.format(machine_number),
                 'instance-id': 'machine{}'.format(machine_number),
@@ -123,13 +123,20 @@ class CharmHelpersTestCase(TestCase):
         self.assertEqual('eggs', charmhelpers.relation_get('spam'))
 
         self._patch_command(lambda *args: mock_relation_values[args[2]])
-        self.assertEqual('bar', charmhelpers.relation_get('foo','test','test:1'))
-        self.assertEqual('eggs', charmhelpers.relation_get('spam','test','test:1'))
+        self.assertEqual('bar',
+            charmhelpers.relation_get('foo', 'test', 'test:1'))
+        self.assertEqual('eggs',
+            charmhelpers.relation_get('spam', 'test', 'test:1'))
+
+        self._patch_command(lambda *args: '%s' % mock_relation_values)
+        self.assertEqual("{'foo': 'bar', 'spam': 'eggs'}",
+            charmhelpers.relation_get())
 
     def test_relation_set(self):
         # relation_set calls out to relation-set and passes key=value
         # pairs to it.
         items_set = {}
+
         def mock_relation_set(*args):
             for arg in args:
                 key, value = arg.split("=")
@@ -143,7 +150,7 @@ class CharmHelpersTestCase(TestCase):
         # relation_ids returns a list of relations id for the given
         # named relation
         mock_relation_ids = {
-            'test' : 'test:1 test:2'
+            'test': 'test:1 test:2'
             }
         self._patch_command(lambda *args: mock_relation_ids[args[0]])
         self.assertEqual(mock_relation_ids['test'].split(),
@@ -153,8 +160,8 @@ class CharmHelpersTestCase(TestCase):
         # relation_list returns a list of unit names either for the current
         # context or for the provided relation ID
         mock_unit_names = {
-            'test:1' : 'test/0 test/1 test/2',
-            'test:2' : 'test/3 test/4 test/5'
+            'test:1': 'test/0 test/1 test/2',
+            'test:2': 'test/3 test/4 test/5'
             }
 
         # Patch command for current context use base - context = test:1
@@ -169,24 +176,26 @@ class CharmHelpersTestCase(TestCase):
     def test_open_close_port(self):
         # expose calls open-port with port/protocol parameters
         ports_set = []
+
         def mock_open_port(*args):
             for arg in args:
                 ports_set.append(arg)
+
         def mock_close_port(*args):
             if args[0] in ports_set:
                 ports_set.remove(args[0])
         # Monkey patch in the open-port mock
         self._patch_command(mock_open_port)
-        charmhelpers.open_port(80,"TCP")
-        charmhelpers.open_port(90,"UDP")
+        charmhelpers.open_port(80, "TCP")
+        charmhelpers.open_port(90, "UDP")
         charmhelpers.open_port(100)
         self.assertTrue("80/TCP" in ports_set)
         self.assertTrue("90/UDP" in ports_set)
         self.assertTrue("100/TCP" in ports_set)
         # Monkey patch in the close-port mock function
         self._patch_command(mock_close_port)
-        charmhelpers.close_port(80,"TCP")
-        charmhelpers.close_port(90,"UDP")
+        charmhelpers.close_port(80, "TCP")
+        charmhelpers.close_port(90, "UDP")
         charmhelpers.close_port(100)
         # ports_set should now be empty
         self.assertEquals(len(ports_set), 0)
@@ -194,6 +203,7 @@ class CharmHelpersTestCase(TestCase):
     def test_service_control(self):
         # Collect commands that have been run
         commands_set = {}
+
         def mock_service(*args):
             service = args[0]
             action = args[1]
@@ -209,15 +219,14 @@ class CharmHelpersTestCase(TestCase):
             else:
                 commands_set[service].append(action)
 
-        result = [ 'start', 'stop', 'restart', 'start' ]
+        result = ['start', 'stop', 'restart', 'start']
 
         # Monkey patch service command
         self._patch_command(mock_service)
-        charmhelpers.service_control('myservice','start')
-        charmhelpers.service_control('myservice','stop')
-        charmhelpers.service_control('myservice','restart')
+        charmhelpers.service_control('myservice', 'start')
+        charmhelpers.service_control('myservice', 'stop')
+        charmhelpers.service_control('myservice', 'restart')
         self.assertEquals(result, commands_set['myservice'])
-
 
     def test_make_charm_config_file(self):
         # make_charm_config_file() writes the passed configuration to a
@@ -357,8 +366,8 @@ class CharmHelpersTestCase(TestCase):
             unit_state='start-error', machine_state='running')
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
-        self.assertRaises(
-            RuntimeError, charmhelpers.wait_for_unit, 'test-service', timeout=0)
+        self.assertRaises(RuntimeError, charmhelpers.wait_for_unit,
+            'test-service', timeout=0)
 
     def test_wait_for_unit_raises_error_on_timeout(self):
         # If the unit does not start before the timeout is reached,
@@ -367,8 +376,8 @@ class CharmHelpersTestCase(TestCase):
             unit_state='pending', machine_state='running')
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
-        self.assertRaises(
-            RuntimeError, charmhelpers.wait_for_unit, 'test-service', timeout=0)
+        self.assertRaises(RuntimeError, charmhelpers.wait_for_unit,
+            'test-service', timeout=0)
 
     def test_wait_for_relation_returns_if_relation_up(self):
         # wait_for_relation() waits for relations to come up. If a
