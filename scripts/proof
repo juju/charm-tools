@@ -232,7 +232,6 @@ try:
               lc += 1
               if l in readme_content:
                 err("%s Includes boilerplate README.ex line %d" % (readme, lc))
-            tr.seek(0)
     except IOError, e:
       err("Error while opening %s (%s)" % (e.filename, e.strerror))
   else:
