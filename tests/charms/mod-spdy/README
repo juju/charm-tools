@@ -1,3 +1,6 @@
+Configuration
+-------------
+
 This will open port 443 on any machine with apache and enable mod_spdy.
 
 juju deploy wrdpress
