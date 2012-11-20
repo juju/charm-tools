@@ -34,8 +34,8 @@ Contact Information
 Though this will be listed in the charm store itself don't assume a user will know that, so include that information here:
 
 Author:
-Report bugs at: http://bugs.launchpad.net/charms
-Location: http://jujucharms.com
+Report bugs at: http://bugs.launchpad.net/charms/+source/charmname
+Location: http://jujucharms.com/charms/distro/charmname
 
 * Be sure to remove the templated parts before submitting to https://launchpad.net/charms for inclusion in the charm store.
 
