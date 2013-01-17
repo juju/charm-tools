@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #    Copyright (C) 2011 - 2012  Canonical Ltd.
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -25,6 +26,7 @@ import argparse
 exit_code = 0
 
 KNOWN_METADATA_KEYS = ['name',
+                       'summary',
                        'maintainer',
                        'description',
                        'subordinate',
@@ -38,7 +40,8 @@ KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
 KNOWN_SCOPES = ['global', 'container']
 
 TEMPLATE_README = os.path.abspath(
-    os.path.join(__file__, '..', '..', 'templates', 'charm', 'README.ex'))
+    os.path.join(
+        __file__, '..', '..', '..', 'templates', 'charm', 'README.ex'))
 
 
 class RelationError(Exception):
@@ -238,9 +241,10 @@ try:
                                 continue
                             lc += 1
                             if l in readme_content:
-                                err("%s Includes boilerplate " % readme
-                                    "README.ex line %d" % lc)
-        except IOError, e:
+                                err_msg = ('%s Includes boilerplate '
+                                           'README.ex line %d')
+                                err(err_msg % (readme, lc))
+        except IOError as e:
             err("Error while opening %s (%s)" % (e.filename, e.strerror))
     else:
         warn("no README file")
