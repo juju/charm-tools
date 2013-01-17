@@ -15,10 +15,10 @@
 
 import argparse
 import email.utils
-import os.path as path
 import os
 import re
-from stat import *
+from stat import ST_MODE
+from stat import S_IXUSR
 import sys
 import yaml
 
@@ -51,7 +51,7 @@ class RelationError(Exception):
 
 def crit(msg):
     """Called when checking cannot continue."""
-    err("FATAL: " + msg, errors)
+    err("FATAL: " + msg)
 
 
 def err(msg):
@@ -77,7 +77,7 @@ def warn(msg):
 
 
 def check_hook(hook, hooks_path, required=True, recommended=False):
-    hook_path = path.join(hooks_path, hook)
+    hook_path = os.path.join(hooks_path, hook)
 
     try:
         mode = os.stat(hook_path)[ST_MODE]
@@ -147,8 +147,7 @@ def check_relation_hooks(relations, subordinate, hooks_path):
             info("relation " + r + " has no hooks")
 
 
-def run():
-    global EXIT_CODE
+def get_args():
     parser = argparse.ArgumentParser(
         description='Performs static analysis on charms')
     parser.add_argument('charm_name', nargs='?',
@@ -159,19 +158,23 @@ def run():
         charm_name = args.charm_name
     else:
         charm_name = os.getcwd()
+    return charm_name
+
+def run(charm_name):
+    global EXIT_CODE
 
     if os.path.isdir(charm_name):
         charm_path = charm_name
     else:
         charm_home = os.getenv('CHARM_HOME', '.')
-        charm_path = path.join(charm_home, charm_name)
+        charm_path = os.path.join(charm_home, charm_name)
 
     if not os.path.isdir(charm_path):
         crit("%s is not a directory, Aborting" % charm_path)
         return
 
-    hooks_path = path.join(charm_path, 'hooks')
-    yaml_path = path.join(charm_path, 'metadata.yaml')
+    hooks_path = os.path.join(charm_path, 'hooks')
+    yaml_path = os.path.join(charm_path, 'metadata.yaml')
     try:
         yamlfile = open(yaml_path, 'r')
         try:
@@ -186,7 +189,7 @@ def run():
             if key not in KNOWN_METADATA_KEYS:
                 err("Unknown root metadata field (%s)" % key)
 
-        charm_basename = path.basename(charm_path)
+        charm_basename = os.path.basename(charm_path)
         if charm['name'] != charm_basename:
             warn_msg = ("metadata name (%s) must match directory name (%s) "
                         "exactly for local deployment.") % (
@@ -215,11 +218,11 @@ def run():
                     warn(warn_msg)
 
         # Must have a hooks dir
-        if not path.exists(hooks_path):
+        if not os.path.exists(hooks_path):
             err("no hooks directory")
 
         # Must have a copyright file
-        if not path.exists(path.join(charm_path, 'copyright')):
+        if not os.path.exists(os.path.join(charm_path, 'copyright')):
             err("no copyright file")
 
         # should have a readme
@@ -317,7 +320,7 @@ def run():
         EXIT_CODE = -1
 
     rev_path = os.path.join(charm_path, 'revision')
-    if not path.exists(rev_path):
+    if not os.path.exists(rev_path):
         err("revision file in root of charm is required")
     else:
         with open(rev_path, 'r') as rev_file:
@@ -329,6 +332,7 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    charm_name = get_args()
+    run(charm_name)
     print "\n".join(LINT)
     sys.exit(EXIT_CODE)
