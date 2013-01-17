@@ -13,16 +13,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
+import email.utils
 import os.path as path
 import os
-import sys
-from stat import *
-import yaml
 import re
-import email.utils
-import argparse
+from stat import *
+import sys
+import yaml
 
-exit_code = 0
+EXIT_CODE = 0
+
+LINT = []
 
 KNOWN_METADATA_KEYS = ['name',
                        'summary',
@@ -49,28 +51,29 @@ class RelationError(Exception):
 
 def crit(msg):
     """Called when checking cannot continue."""
-    global exit_code
-    err("FATAL: " + msg)
-    sys.exit(exit_code)
+    err("FATAL: " + msg, errors)
 
 
 def err(msg):
-    global exit_code
-    print "E: " + msg
-    if exit_code < 200:
-        exit_code = 200
+    global EXIT_CODE
+    global LINT
+    LINT.append("E: " + msg)
+    if EXIT_CODE < 200:
+        EXIT_CODE = 200
 
 
 def info(msg):
     """Ignorable but sometimes useful."""
-    print "I: " + msg
+    global LINT
+    LINT.append("I: " + msg)
 
 
 def warn(msg):
-    global exit_code
-    print "W: " + msg
-    if exit_code < 100:
-        exit_code = 100
+    global EXIT_CODE
+    global LINT
+    LINT.append("W: " + msg)
+    if EXIT_CODE < 100:
+        EXIT_CODE = 100
 
 
 def check_hook(hook, hooks_path, required=True, recommended=False):
@@ -145,7 +148,7 @@ def check_relation_hooks(relations, subordinate, hooks_path):
 
 
 def run():
-    global exit_code
+    global EXIT_CODE
     parser = argparse.ArgumentParser(
         description='Performs static analysis on charms')
     parser.add_argument('charm_name', nargs='?',
@@ -165,7 +168,7 @@ def run():
 
     if not os.path.isdir(charm_path):
         crit("%s is not a directory, Aborting" % charm_path)
-        sys.exit(1)
+        return
 
     hooks_path = path.join(charm_path, 'hooks')
     yaml_path = path.join(charm_path, 'metadata.yaml')
@@ -175,6 +178,7 @@ def run():
             charm = yaml.load(yamlfile)
         except Exception as e:
             crit('cannot parse ' + yaml_path + ":" + str(e))
+            return
 
         yamlfile.close()
 
@@ -310,7 +314,7 @@ def run():
         check_hook('config-changed', hooks_path, required=False)
     except IOError:
         err("could not find metadata file for " + charm_name)
-        exit_code = -1
+        EXIT_CODE = -1
 
     rev_path = os.path.join(charm_path, 'revision')
     if not path.exists(rev_path):
@@ -323,7 +327,8 @@ def run():
             except ValueError:
                 err("revision file contains non-numeric data")
 
-    sys.exit(exit_code)
 
 if __name__ == "__main__":
     run()
+    print "\n".join(LINT)
+    sys.exit(EXIT_CODE)

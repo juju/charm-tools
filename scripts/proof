@@ -19,7 +19,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import sys
+
 from lib import proof
 
 if __name__ == "__main__":
     proof.run()
+    print "\n".join(proof.LINT)
+    sys.exit(proof.EXIT_CODE)
