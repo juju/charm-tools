@@ -25,6 +25,6 @@ from lib import proof
 
 if __name__ == "__main__":
     charm_name = proof.get_args()
-    proof.run(charm_name)
-    print "\n".join(proof.LINT)
-    sys.exit(proof.EXIT_CODE)
+    lint, exit_code = proof.run(charm_name)
+    print "\n".join(lint)
+    sys.exit(exit_code)
