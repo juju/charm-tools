@@ -107,7 +107,7 @@ class Linter(object):
             if type(r[1]) != dict:
                 self.err("relation %s is not a map" % (r[0]))
             else:
-                if 'scope' in r[0]:
+                if 'scope' in r[1]:
                     scope = r[1]['scope']
                     if scope not in KNOWN_SCOPES:
                         self.err("Unknown scope found in relation %s - (%s)" %
