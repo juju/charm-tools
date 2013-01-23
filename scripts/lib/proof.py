@@ -1,0 +1,339 @@
+#    Copyright (C) 2011 - 2012  Canonical Ltd.
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import email.utils
+import os
+import re
+from stat import ST_MODE
+from stat import S_IXUSR
+import sys
+import yaml
+
+KNOWN_METADATA_KEYS = ['name',
+                       'summary',
+                       'maintainer',
+                       'description',
+                       'subordinate',
+                       'provides',
+                       'requires',
+                       'format',
+                       'peers']
+
+KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
+
+KNOWN_SCOPES = ['global', 'container']
+
+TEMPLATE_README = os.path.abspath(
+    os.path.join(
+        __file__, '..', '..', '..', 'templates', 'charm', 'README.ex'))
+
+
+class RelationError(Exception):
+    pass
+
+
+class Linter(object):
+
+    def __init__(self):
+        self.lint = []
+        self.exit_code = 0
+
+    def crit(self, msg):
+        """Called when checking cannot continue."""
+        self.err("FATAL: " + msg)
+
+    def err(self, msg):
+        global EXIT_CODE
+        self.lint.append("E: " + msg)
+        if self.exit_code < 200:
+            self.exit_code = 200
+
+    def info(self, msg):
+        """Ignorable but sometimes useful."""
+        self.lint.append("I: " + msg)
+
+    def warn(self, msg):
+        global EXIT_CODE
+        self.lint.append("W: " + msg)
+        if self.exit_code < 100:
+            self.exit_code = 100
+
+    def check_hook(self, hook, hooks_path, required=True, recommended=False):
+        hook_path = os.path.join(hooks_path, hook)
+
+        try:
+            mode = os.stat(hook_path)[ST_MODE]
+            if not mode & S_IXUSR:
+                self.warn(hook + " not executable")
+            with open(hook_path, 'r') as hook_file:
+                count = 0
+                for line in hook_file:
+                    count += 1
+                    hook_warnings = [
+                        {'re': re.compile("http://169\.254\.169\.254/"),
+                         'msg': "hook accesses EC2 metadata service directly"}]
+                    for warning in hook_warnings:
+                        if warning['re'].search(line):
+                            self.warn(
+                                "(%s:%d) - %s" %
+                                (hook, count, warning['msg']))
+            return True
+
+        except OSError:
+            if required:
+                self.err("missing hook " + hook)
+            elif recommended:
+                self.warn("missing recommended hook " + hook)
+            return False
+
+    def check_relation_hooks(self, relations, subordinate, hooks_path):
+        template_interfaces = ('interface-name')
+        template_relations = ('relation-name')
+
+        for r in relations.items():
+            if type(r[1]) != dict:
+                self.err("relation %s is not a map" % (r[0]))
+            else:
+                if 'scope' in r[0]:
+                    scope = r[1]['scope']
+                    if scope not in KNOWN_SCOPES:
+                        self.err("Unknown scope found in relation %s - (%s)" %
+                                 (r[0], scope))
+                if 'interface' in r[1]:
+                    interface = r[1]['interface']
+                    if interface in template_interfaces:
+                        self.err("template interface names should be "
+                                 "changed: " + interface)
+                else:
+                    self.err("relation missing interface")
+                for key in r[1].keys():
+                    if key not in KNOWN_RELATION_KEYS:
+                        self.err(
+                            "Unknown relation field in relation %s - (%s)" %
+                            (r[0], key))
+
+            r = r[0]
+
+            if r in template_relations:
+                self.err("template relations should be renamed to fit "
+                         "charm: " + r)
+
+            has_one = False
+            has_one = has_one or self.check_hook(
+                r + '-relation-changed', hooks_path, required=False)
+            has_one = has_one or self.check_hook(
+                r + '-relation-departed', hooks_path, required=False)
+            has_one = has_one or self.check_hook(
+                r + '-relation-joined', hooks_path, required=False)
+            has_one = has_one or self.check_hook(
+                r + '-relation-broken', hooks_path, required=False)
+
+            if not has_one and not subordinate:
+                self.info("relation " + r + " has no hooks")
+
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        description='Performs static analysis on charms')
+    parser.add_argument('charm_name', nargs='?',
+                        help='path of charm dir to check. Defaults to PWD')
+    args = parser.parse_args()
+
+    if args.charm_name:
+        charm_name = args.charm_name
+    else:
+        charm_name = os.getcwd()
+    return charm_name
+
+
+def run(charm_name):
+    lint = Linter()
+    if os.path.isdir(charm_name):
+        charm_path = charm_name
+    else:
+        charm_home = os.getenv('CHARM_HOME', '.')
+        charm_path = os.path.join(charm_home, charm_name)
+
+    if not os.path.isdir(charm_path):
+        lint.crit("%s is not a directory, Aborting" % charm_path)
+        return lint.lint, lint.exit_code
+
+    hooks_path = os.path.join(charm_path, 'hooks')
+    yaml_path = os.path.join(charm_path, 'metadata.yaml')
+    try:
+        yamlfile = open(yaml_path, 'r')
+        try:
+            charm = yaml.load(yamlfile)
+        except Exception as e:
+            lint.crit('cannot parse ' + yaml_path + ":" + str(e))
+            return lint.lint, lint.exit_code
+
+        yamlfile.close()
+
+        for key in charm.keys():
+            if key not in KNOWN_METADATA_KEYS:
+                lint.err("Unknown root metadata field (%s)" % key)
+
+        charm_basename = os.path.basename(charm_path)
+        if charm['name'] != charm_basename:
+            warn_msg = ("metadata name (%s) must match directory name (%s) "
+                        "exactly for local deployment.") % (
+                            charm['name'], charm_basename)
+            lint.warn(warn_msg)
+
+        # summary should be short
+        if len(charm['summary']) > 72:
+            lint.warn('summary sould be less than 72')
+
+        # need a maintainer field
+        if 'maintainer' not in charm:
+            lint.err('Charms need a maintainer (See RFC2822) - Name <email>')
+        else:
+            if type(charm['maintainer']) == list:  # It's a list
+                maintainers = charm['maintainer']
+            else:
+                maintainers = [charm['maintainer']]
+            for maintainer in maintainers:
+                (name, address) = email.utils.parseaddr(maintainer)
+                formatted = email.utils.formataddr((name, address))
+                if formatted != maintainer:
+                    warn_msg = ("Maintainer address should contain a "
+                                "real-name and email only. [%s]" % (
+                                    formatted))
+                    lint.warn(warn_msg)
+
+        # Must have a hooks dir
+        if not os.path.exists(hooks_path):
+            lint.err("no hooks directory")
+
+        # Must have a copyright file
+        if not os.path.exists(os.path.join(charm_path, 'copyright')):
+            lint.err("no copyright file")
+
+        # should have a readme
+        root_files = os.listdir(charm_path)
+        found_readmes = set()
+        for filename in root_files:
+            if filename.upper().find('README') != -1:
+                found_readmes.add(filename)
+        if len(found_readmes):
+            if 'README.ex' in found_readmes:
+                lint.err("Includes template README.ex file")
+            try:
+                with open(TEMPLATE_README) as tr:
+                    bad_lines = []
+                    for line in tr:
+                        if len(line) >= 25:
+                            bad_lines.append(line.strip())
+                    for readme in found_readmes:
+                        readme_path = os.path.join(charm_path, readme)
+                        with open(readme_path) as r:
+                            readme_content = r.read()
+                            lc = 0
+                            for l in bad_lines:
+                                if not len(l):
+                                    continue
+                                lc += 1
+                                if l in readme_content:
+                                    err_msg = ('%s Includes boilerplate '
+                                               'README.ex line %d')
+                                    lint.err(err_msg % (readme, lc))
+            except IOError as e:
+                lint.err(
+                    "Error while opening %s (%s)" % (e.filename, e.strerror))
+        else:
+            lint.warn("no README file")
+
+        subordinate = charm.get('subordinate', False)
+        if type(subordinate) != bool:
+            lint.err("subordinate must be a boolean value")
+
+        # All charms should provide at least one thing
+        try:
+            provides = charm['provides']
+            lint.check_relation_hooks(provides, subordinate, hooks_path)
+        except KeyError:
+            if not subordinate:
+                lint.warn("all charms should provide at least one thing")
+
+        if subordinate:
+            try:
+                if 'requires' in charm:
+                    requires = charm['requires']
+                    found_scope_container = False
+                    for rel_name, rel in requires.iteritems():
+                        if 'scope' in rel:
+                            if rel['scope'] == 'container':
+                                found_scope_container = True
+                                break
+                    if not found_scope_container:
+                        raise RelationError
+                else:
+                    raise RelationError
+            except RelationError:
+                lint.err("subordinates must have at least one scope: "
+                         "container relation")
+        else:
+            try:
+                requires = charm['requires']
+                lint.check_relation_hooks(requires, subordinate, hooks_path)
+            except KeyError:
+                pass
+
+        try:
+            peers = charm['peers']
+            lint.check_relation_hooks(peers, subordinate, hooks_path)
+        except KeyError:
+            pass
+
+        if 'revision' in charm:
+            lint.warn("Revision should not be stored in metadata.yaml "
+                      "anymore. Move it to the revision file")
+            # revision must be an integer
+            try:
+                x = int(charm['revision'])
+                if x < 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                lint.warn("revision should be a positive integer")
+
+        lint.check_hook('install', hooks_path)
+        lint.check_hook('start', hooks_path, required=False, recommended=True)
+        lint.check_hook('stop', hooks_path, required=False, recommended=True)
+        lint.check_hook('config-changed', hooks_path, required=False)
+    except IOError:
+        lint.err("could not find metadata file for " + charm_name)
+        lint.exit_code = -1
+
+    rev_path = os.path.join(charm_path, 'revision')
+    if not os.path.exists(rev_path):
+        lint.err("revision file in root of charm is required")
+    else:
+        with open(rev_path, 'r') as rev_file:
+            content = rev_file.read().rstrip()
+            try:
+                int(content)
+            except ValueError:
+                lint.err("revision file contains non-numeric data")
+
+    return lint.lint, lint.exit_code
+
+
+if __name__ == "__main__":
+    charm_name = get_args()
+    lint, exit_code = run(charm_name)
+    print "\n".join(lint)
+    sys.exit(exit_code)
