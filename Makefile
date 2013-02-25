@@ -35,3 +35,5 @@ check:
 	tests/proof/test.sh
 	tests/create/test.sh
 	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
+	@echo PEP8 Lint of Python files
+	pep8 ./ `grep -rl '^#!/.*python' .`
