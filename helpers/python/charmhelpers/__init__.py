@@ -42,10 +42,13 @@ from subprocess import CalledProcessError
 
 SLEEP_AMOUNT = 0.1
 Env = namedtuple('Env', 'uid gid home')
-log = command('juju-log')
 # We create a juju_status Command here because it makes testing much,
 # much easier.
 juju_status = lambda: command('juju')('status')
+
+
+def log(message, juju_log=command('juju-log')):
+    return juju_log('--', message)
 
 
 def log_entry():

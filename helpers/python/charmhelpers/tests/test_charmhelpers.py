@@ -445,6 +445,46 @@ class CharmHelpersTestCase(TestCase):
             RuntimeError, charmhelpers.wait_for_page_contents,
             'http://example.com', "This will error", timeout=0)
 
+    def test_log(self):
+        # The "log" function forwards a string on to the juju-log command.
+        logged = []
+        def juju_log(*args):
+            logged.append(args)
+        charmhelpers.log('This is a log message', juju_log)
+        # Since we only logged one message, juju-log was only called once..
+        self.assertEqual(len(logged), 1)
+        # The message was included in the arguments passed to juju-log.
+        self.assertIn('This is a log message', logged[0])
+
+    def test_log_escapes_message(self):
+        # The Go version of juju-log interprets any string begining with two
+        # hyphens ("--") as a command-line switch, even if the third character
+        # is non-alphanumeric.  This is different behavior than the Python
+        # version of juju-log.  Therefore we signfiy the end of options by
+        # inserting the string " -- " just before the log message.
+        logged = []
+        def juju_log(*args):
+            logged.append(args)
+        charmhelpers.log('This is a log message', juju_log)
+        # The call to juju-log includes the " -- " string before the message.
+        self.assertEqual([('--', 'This is a log message')], logged)
+
+    def test_log_entry(self):
+        # The log_entry function logs a message about the script starting.
+        logged = []
+        self.patch(charmhelpers, 'log', logged.append)
+        self.patch(charmhelpers, 'script_name', lambda: 'SCRIPT-NAME')
+        charmhelpers.log_entry()
+        self.assertEqual(['--> Entering SCRIPT-NAME'], logged)
+
+    def test_log_exit(self):
+        # The log_exit function logs a message about the script ending.
+        logged = []
+        self.patch(charmhelpers, 'log', logged.append)
+        self.patch(charmhelpers, 'script_name', lambda: 'SCRIPT-NAME')
+        charmhelpers.log_exit()
+        self.assertEqual(['<-- Exiting SCRIPT-NAME'], logged)
+
 
 if __name__ == '__main__':
     unittest.main()
