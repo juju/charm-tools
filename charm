@@ -9,10 +9,10 @@ script_home=`readlink -f $script_home`/scripts
 
 usage()
 {
-  echo "usage: $1 [ --help|-h ] [ script_name ]" >&2
-  echo script choices are: >&2
-  echo $(list_commands)|sed -e 's/^/    /' >&2
-  exit $2
+    echo "usage: $1 [ --help|-h ] [ script_name ]" >&2
+    echo script choices are: >&2
+    echo $(list_commands)|sed -e 's/^/    /' >&2
+    exit $2
 }
 
 list_commands()
@@ -40,9 +40,11 @@ script=${1:-""}
 if [ -z "$script" ] ; then
     usage $(basename $0) 0
 fi
+
 if [ -x $script_home/$script ] ; then
-  shift
-  exec $script_home/$script $*
+    shift
+    exec $script_home/$script $*
 fi
+
 echo "abort: Unknown script $script" >&2
 usage $(basename $0) 2

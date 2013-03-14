@@ -49,10 +49,11 @@ _charm () {
         fi
     fi
 
-    cmdOpts=( )
-            cmdOpts=(--help)
-    optEnums=( )
-    fixedWords=( )
+    cmdOpts=()
+    cmdOpts=(--help)
+    optEnums=()
+    fixedWords=()
+
     case "$cmd" in
         get)
             for charm in $(_charm_official_charms) ; do
@@ -66,13 +67,13 @@ _charm () {
     IFS=$'\n'
     if [[ "$cur" == = ]] && [[ ${#optEnums[@]} -gt 0 ]]; then
         # complete directly after "--option=", list all enum values
-        COMPREPLY=( "${optEnums[@]}" )
+        COMPREPLY=("${optEnums[@]}")
         return 0
     else
-        fixedWords=( "${cmdOpts[@]}"
-                     "${globalOpts[@]}"
-                     "${optEnums[@]}"
-                     "${fixedWords[@]}" )
+        fixedWords=("${cmdOpts[@]}"
+                    "${globalOpts[@]}"
+                    "${optEnums[@]}"
+                    "${fixedWords[@]}")
     fi
 
     if [[ ${#fixedWords[@]} -gt 0 ]]; then

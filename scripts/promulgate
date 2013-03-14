@@ -66,7 +66,8 @@ def parse_options():
         help='Increase verbosity level.')
 
     parser.add_option(
-        '-u', '--unpromulgate', dest='unpromulgate', action='store_true', default=False,
+        '-u', '--unpromulgate', dest='unpromulgate', action='store_true',
+        default=False,
         help='Un-promulgate this branch instead of promulgating it')
 
     parser.add_option(
@@ -74,12 +75,15 @@ def parse_options():
         help='Override warnings and errors.  USE WITH EXTREME CARE !!!!')
 
     parser.add_option(
-        '-w', '--ignore-warnings', dest='ignore_warnings', action='store_true', default=False,
+        '-w', '--ignore-warnings', dest='ignore_warnings', action='store_true',
+        default=False,
         help='Promulgate this branch even with warnings from charm proof')
 
     parser.add_option(
-        '-o', '--owner-branch', dest='promulgate_owner_branch', action='store_true', default=False,
-        help='Promulgate a branch owned by a someone/group other than ~charmers')
+        '-o', '--owner-branch', dest='promulgate_owner_branch',
+        action='store_true', default=False,
+        help='Promulgate a branch owned by a someone/group other than '
+            + '~charmers')
 
     return parser.parse_args()
 
@@ -103,7 +107,8 @@ def proof_charm(charm_dir, force=False, ignore_warnings=False):
             sys.exit(1)
     if charm_proof == 100:
         if ignore_warnings:
-            logging.info("ignore-warnings enabled ... Continuing with warnings")
+            logging.info("ignore-warnings enabled ... Continuing with "
+                + "warnings")
         elif force:
             logging.info("force option enabled ... Continuing with warnings")
         else:
@@ -116,14 +121,14 @@ def charm_name_from_metadata(charm_dir):
     charm_metadata = os.path.join(charm_dir, 'metadata.yaml')
     if not os.access(charm_metadata, os.R_OK):
         logging.error("can't read charm metadata: %s", charm_metadata)
-    
+
     with open(charm_metadata) as metadata:
         charm = yaml.load(metadata)
 
     return charm['name']
 
 
-def find_branch_to_promulgate(lp,charm_dir,branch_url):
+def find_branch_to_promulgate(lp, charm_dir, branch_url):
     if branch_url is None:
         tree, branch, relpath = bzrdir.BzrDir.open_containing_tree_or_branch(
             charm_dir)
@@ -143,7 +148,7 @@ def find_branch_to_promulgate(lp,charm_dir,branch_url):
     return charm_branch
 
 
-def get_lp_charm_series(lp,series):
+def get_lp_charm_series(lp, series):
     charm_distro = lp.distributions[DISTRIBUTION]
     if series is None:
         charm_series = charm_distro.current_series
@@ -163,30 +168,33 @@ def get_lp_charm_series(lp,series):
 
 
 def update_branch_info(charm_branch, branch_status, branch_reviewer):
-    logging.info( "Setting status of %s to %s", charm_branch.bzr_identity, branch_status)
+    logging.info("Setting status of %s to %s", charm_branch.bzr_identity,
+        branch_status)
     charm_branch.lifecycle_status = branch_status
 
-    logging.info( "Setting reviewer of %s to %s", charm_branch.bzr_identity, branch_reviewer)
+    logging.info("Setting reviewer of %s to %s", charm_branch.bzr_identity,
+        branch_reviewer)
     charm_branch.reviewer = branch_reviewer
 
     charm_branch.lp_save()
 
 
-def update_official_charm_branch(lp,series,charm_branch,charm_name):
-    charm_series = get_lp_charm_series(lp,series)
+def update_official_charm_branch(lp, series, charm_branch, charm_name):
+    charm_series = get_lp_charm_series(lp, series)
     lp_charm = charm_series.getSourcePackage(name=charm_name)
     if charm_branch:
-        logging.info( 'Setting %s as the official branch for %s',
+        logging.info('Setting %s as the official branch for %s',
                       charm_branch.bzr_identity,
                       lp_charm.name)
-        update_branch_info(charm_branch, OFFICIAL_BRANCH_STATUS, lp.people[REVIEW_TEAM_NAME])
+        update_branch_info(charm_branch, OFFICIAL_BRANCH_STATUS,
+            lp.people[REVIEW_TEAM_NAME])
     else:
         logging.info('Removing official branch for %s', lp_charm.name)
     lp_charm.setBranch(branch=charm_branch, pocket=OFFICIAL_BRANCH_POCKET)
 
 
 def branch_owner(bzr_branch):
-    lp_url = bzr_branch.bzr_identity #TODO this really sucks... better way?
+    lp_url = bzr_branch.bzr_identity  # TODO this really sucks... better way?
     return lp_url.lstrip('lp:').split('/')[0]
 
 
@@ -198,7 +206,8 @@ def is_valid_owner(charm_branch, promulgate_owner_branch):
 
 def main(argv):
     options, args = parse_options()
-    logging.basicConfig(level=log_level(options.verbose), format='%(levelname)s:%(message)s')
+    logging.basicConfig(level=log_level(options.verbose),
+        format='%(levelname)s:%(message)s')
 
     if len(args):
         charm_dir = args[0]
@@ -212,23 +221,25 @@ def main(argv):
 
     if options.unpromulgate:
         logging.info('unpromulgating...')
-        charm_branch = None # makes LP delete the source package.
+        charm_branch = None  # makes LP delete the source package.
     else:
         logging.info('promulgating...')
-        charm_branch = find_branch_to_promulgate(lp,charm_dir,options.branch)
+        charm_branch = find_branch_to_promulgate(lp, charm_dir, options.branch)
 
     if not is_valid_owner(charm_branch, options.promulgate_owner_branch):
         logging.error(" Invalid branch owner: %s", branch_owner(charm_branch))
-        logging.error(" Branch push location must be owned by '~charmers'\n" +
-                      "       use `bzr push --remember lp:~charmers/charms/<series>/<charm-name>/trunk`\n" +
-                      "       or override this behavior using the '--owner-branch' option")
+        logging.error(" Branch push location must be owned by '~charmers'\n"
+                    + "   use `bzr push --remember lp:~charmers/charms/"
+                    + "<series>/<charm-name>/trunk`\n   or override this "
+                    + "behavior using the '--owner-branch'"
+                    + " option")
         return 1
 
-    update_official_charm_branch(lp, options.series, charm_branch, charm_name_from_metadata(charm_dir))
+    update_official_charm_branch(lp, options.series, charm_branch,
+        charm_name_from_metadata(charm_dir))
 
     return 0
 
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-

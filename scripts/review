@@ -26,12 +26,13 @@ import sys
 from launchpadlib.launchpad import Launchpad
 
 
-
 def parse_options():
     parser = argparse.ArgumentParser(
-        description="Review a charm by adding a comment to the corresponding charm bug.  The review comment can be passed as a --message arg or via stdin")
+        description="Review a charm by adding a comment to the corresponding"
+            + " charm bug.  The review comment can be passed as a --message"
+            + " arg or via stdin")
 
-    parser.add_argument('bug_id', 
+    parser.add_argument('bug_id',
         help='The launchpad bug for the charm being reviewed.')
 
     parser.add_argument(
@@ -64,7 +65,7 @@ def log_level(verbose):
 def get_message_from_stdin():
     stream = sys.stdin
     text = stream.read()
-    sys.stdin = open('/dev/tty') # 'reset' stdin to prompt if necessary
+    sys.stdin = open('/dev/tty')  # 'reset' stdin to prompt if necessary
     return text
 
 
@@ -73,19 +74,21 @@ def get_message(message):
         return message
     else:
         return get_message_from_stdin()
-            
+
 
 def prompt_to_continue(bug_id):
     logging.debug("prompting")
-    ans = raw_input("Really add this comment to launchpad bug #%s? y/[n] " % bug_id)
+    ans = raw_input("Really add this comment to launchpad bug #%s? y/[n] "
+                    % bug_id)
     return ans.strip().lower().startswith('y')
 
 
 def main(argv):
     args = parse_options()
-    logging.basicConfig(level=log_level(args.verbose), format='%(levelname)s:%(message)s')
+    logging.basicConfig(level=log_level(args.verbose),
+        format='%(levelname)s:%(message)s')
 
-    review_message = get_message(args.message) # before connecting to lp
+    review_message = get_message(args.message)  # before connecting to lp
 
     logging.debug('login with %s launchpad:', args.lp_instance)
     lp = Launchpad.login_with('charm-pilot', args.lp_instance)
@@ -99,7 +102,8 @@ def main(argv):
 
         if args.skip_prompt or prompt_to_continue(bug_id):
             logging.debug('adding comment')
-            bug.newMessage(content=review_message) #TODO check return or catch exception
+            # TODO check return or catch exception
+            bug.newMessage(content=review_message)
         else:
             logging.debug('not adding comment')
 
@@ -112,4 +116,3 @@ def main(argv):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-
