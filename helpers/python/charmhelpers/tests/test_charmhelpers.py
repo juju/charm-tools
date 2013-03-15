@@ -448,6 +448,7 @@ class CharmHelpersTestCase(TestCase):
     def test_log(self):
         # The "log" function forwards a string on to the juju-log command.
         logged = []
+
         def juju_log(*args):
             logged.append(args)
         charmhelpers.log('This is a log message', juju_log)
@@ -463,6 +464,7 @@ class CharmHelpersTestCase(TestCase):
         # version of juju-log.  Therefore we signfiy the end of options by
         # inserting the string " -- " just before the log message.
         logged = []
+
         def juju_log(*args):
             logged.append(args)
         charmhelpers.log('This is a log message', juju_log)
