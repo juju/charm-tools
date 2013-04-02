@@ -83,7 +83,7 @@ def parse_options():
         '-o', '--owner-branch', dest='promulgate_owner_branch',
         action='store_true', default=False,
         help='Promulgate a branch owned by a someone/group other than '
-            + '~charmers')
+        '~charmers')
 
     return parser.parse_args()
 
@@ -108,7 +108,7 @@ def proof_charm(charm_dir, force=False, ignore_warnings=False):
     if charm_proof == 100:
         if ignore_warnings:
             logging.info("ignore-warnings enabled ... Continuing with "
-                + "warnings")
+                         "warnings")
         elif force:
             logging.info("force option enabled ... Continuing with warnings")
         else:
@@ -169,11 +169,11 @@ def get_lp_charm_series(lp, series):
 
 def update_branch_info(charm_branch, branch_status, branch_reviewer):
     logging.info("Setting status of %s to %s", charm_branch.bzr_identity,
-        branch_status)
+                 branch_status)
     charm_branch.lifecycle_status = branch_status
 
     logging.info("Setting reviewer of %s to %s", charm_branch.bzr_identity,
-        branch_reviewer)
+                 branch_reviewer)
     charm_branch.reviewer = branch_reviewer
 
     charm_branch.lp_save()
@@ -184,10 +184,10 @@ def update_official_charm_branch(lp, series, charm_branch, charm_name):
     lp_charm = charm_series.getSourcePackage(name=charm_name)
     if charm_branch:
         logging.info('Setting %s as the official branch for %s',
-                      charm_branch.bzr_identity,
-                      lp_charm.name)
+                     charm_branch.bzr_identity,
+                     lp_charm.name)
         update_branch_info(charm_branch, OFFICIAL_BRANCH_STATUS,
-            lp.people[REVIEW_TEAM_NAME])
+                           lp.people[REVIEW_TEAM_NAME])
     else:
         logging.info('Removing official branch for %s', lp_charm.name)
     lp_charm.setBranch(branch=charm_branch, pocket=OFFICIAL_BRANCH_POCKET)
@@ -207,7 +207,7 @@ def is_valid_owner(charm_branch, promulgate_owner_branch):
 def main(argv):
     options, args = parse_options()
     logging.basicConfig(level=log_level(options.verbose),
-        format='%(levelname)s:%(message)s')
+                        format='%(levelname)s:%(message)s')
 
     if len(args):
         charm_dir = args[0]
@@ -229,14 +229,14 @@ def main(argv):
     if not is_valid_owner(charm_branch, options.promulgate_owner_branch):
         logging.error(" Invalid branch owner: %s", branch_owner(charm_branch))
         logging.error(" Branch push location must be owned by '~charmers'\n"
-                    + "   use `bzr push --remember lp:~charmers/charms/"
-                    + "<series>/<charm-name>/trunk`\n   or override this "
-                    + "behavior using the '--owner-branch'"
-                    + " option")
+                      "   use `bzr push --remember lp:~charmers/charms/"
+                      "<series>/<charm-name>/trunk`\n   or override this "
+                      "behavior using the '--owner-branch'"
+                      " option")
         return 1
 
     update_official_charm_branch(lp, options.series, charm_branch,
-        charm_name_from_metadata(charm_dir))
+                                 charm_name_from_metadata(charm_dir))
 
     return 0
 

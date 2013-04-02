@@ -36,16 +36,12 @@ class CharmHelpersTestCase(TestCase):
         """Generate valid juju status dict and return it."""
         machine_data = {}
         # The 0th machine is the Zookeeper.
-        machine_data[0] = {
-            'dns-name': 'zookeeper.example.com',
-            'instance-id': 'machine0',
-            'state': 'not-started',
-            }
-        service_data = {
-            'charm': 'local:precise/{}-1'.format(service_name),
-            'relations': {},
-            'units': {},
-            }
+        machine_data[0] = {'dns-name': 'zookeeper.example.com',
+                           'instance-id': 'machine0',
+                           'state': 'not-started'}
+        service_data = {'charm': 'local:precise/{}-1'.format(service_name),
+                        'relations': {},
+                        'units': {}}
         for i in range(num_units):
             # The machine is always going to be i+1 because there
             # will always be num_units+1 machines.
@@ -54,24 +50,18 @@ class CharmHelpersTestCase(TestCase):
                 'dns-name': 'machine{}.example.com'.format(machine_number),
                 'instance-id': 'machine{}'.format(machine_number),
                 'state': machine_state,
-                'instance-state': machine_state,
-                }
+                'instance-state': machine_state}
             machine_data[machine_number] = unit_machine_data
             unit_data = {
                 'machine': machine_number,
                 'public-address':
-                    '{}-{}.example.com'.format(service_name, i),
-                'relations': {
-                    'db': {'state': 'up'},
-                    },
-                'agent-state': unit_state,
-                }
+                '{}-{}.example.com'.format(service_name, i),
+                'relations': {'db': {'state': 'up'}},
+                'agent-state': unit_state}
             service_data['units']['{}/{}'.format(service_name, i)] = (
                 unit_data)
-        juju_status_data = {
-            'machines': machine_data,
-            'services': {service_name: service_data},
-            }
+        juju_status_data = {'machines': machine_data,
+                            'services': {service_name: service_data}}
         return juju_status_data
 
     def _make_juju_status_yaml(self, num_units=1,
@@ -116,21 +106,20 @@ class CharmHelpersTestCase(TestCase):
         # as returned by relation-get $VAR.
         mock_relation_values = {
             'foo': 'bar',
-            'spam': 'eggs',
-            }
+            'spam': 'eggs'}
         self._patch_command(lambda *args: mock_relation_values[args[0]])
         self.assertEqual('bar', charmhelpers.relation_get('foo'))
         self.assertEqual('eggs', charmhelpers.relation_get('spam'))
 
         self._patch_command(lambda *args: mock_relation_values[args[2]])
         self.assertEqual('bar',
-            charmhelpers.relation_get('foo', 'test', 'test:1'))
+                         charmhelpers.relation_get('foo', 'test', 'test:1'))
         self.assertEqual('eggs',
-            charmhelpers.relation_get('spam', 'test', 'test:1'))
+                         charmhelpers.relation_get('spam', 'test', 'test:1'))
 
         self._patch_command(lambda *args: '%s' % mock_relation_values)
         self.assertEqual("{'foo': 'bar', 'spam': 'eggs'}",
-            charmhelpers.relation_get())
+                         charmhelpers.relation_get())
 
     def test_relation_set(self):
         # relation_set calls out to relation-set and passes key=value
@@ -149,9 +138,7 @@ class CharmHelpersTestCase(TestCase):
     def test_relation_ids(self):
         # relation_ids returns a list of relations id for the given
         # named relation
-        mock_relation_ids = {
-            'test': 'test:1 test:2'
-            }
+        mock_relation_ids = {'test': 'test:1 test:2'}
         self._patch_command(lambda *args: mock_relation_ids[args[0]])
         self.assertEqual(mock_relation_ids['test'].split(),
                          charmhelpers.relation_ids('test'))
@@ -159,10 +146,8 @@ class CharmHelpersTestCase(TestCase):
     def test_relation_list(self):
         # relation_list returns a list of unit names either for the current
         # context or for the provided relation ID
-        mock_unit_names = {
-            'test:1': 'test/0 test/1 test/2',
-            'test:2': 'test/3 test/4 test/5'
-            }
+        mock_unit_names = {'test:1': 'test/0 test/1 test/2',
+                           'test:2': 'test/3 test/4 test/5'}
 
         # Patch command for current context use base - context = test:1
         self._patch_command(lambda: mock_unit_names['test:1'])
@@ -209,9 +194,9 @@ class CharmHelpersTestCase(TestCase):
             action = args[1]
             if service not in commands_set:
                 commands_set[service] = []
-            if (len(commands_set[service]) > 1 and
-                commands_set[service][-1] == 'stop' and
-                action == 'restart'):
+            if ((len(commands_set[service]) > 1 and
+                 commands_set[service][-1] == 'stop' and
+                 action == 'restart')):
                 # Service is stopped - so needs 'start'
                 # action as restart will fail
                 commands_set[service].append(action)
@@ -231,11 +216,9 @@ class CharmHelpersTestCase(TestCase):
     def test_make_charm_config_file(self):
         # make_charm_config_file() writes the passed configuration to a
         # temporary file as YAML.
-        charm_config = {
-            'foo': 'bar',
-            'spam': 'eggs',
-            'ham': 'jam',
-            }
+        charm_config = {'foo': 'bar',
+                        'spam': 'eggs',
+                        'ham': 'jam'}
         # make_charm_config_file() returns the file object so that it
         # can be garbage collected properly.
         charm_config_file = charmhelpers.make_charm_config_file(charm_config)
@@ -367,7 +350,7 @@ class CharmHelpersTestCase(TestCase):
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         self.assertRaises(RuntimeError, charmhelpers.wait_for_unit,
-            'test-service', timeout=0)
+                          'test-service', timeout=0)
 
     def test_wait_for_unit_raises_error_on_timeout(self):
         # If the unit does not start before the timeout is reached,
@@ -377,7 +360,7 @@ class CharmHelpersTestCase(TestCase):
         mock_juju_status = lambda: juju_yaml
         self.patch(charmhelpers, 'juju_status', mock_juju_status)
         self.assertRaises(RuntimeError, charmhelpers.wait_for_unit,
-            'test-service', timeout=0)
+                          'test-service', timeout=0)
 
     def test_wait_for_relation_returns_if_relation_up(self):
         # wait_for_relation() waits for relations to come up. If a

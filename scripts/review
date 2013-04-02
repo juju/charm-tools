@@ -29,11 +29,11 @@ from launchpadlib.launchpad import Launchpad
 def parse_options():
     parser = argparse.ArgumentParser(
         description="Review a charm by adding a comment to the corresponding"
-            + " charm bug.  The review comment can be passed as a --message"
-            + " arg or via stdin")
+        " charm bug.  The review comment can be passed as a --message"
+        " arg or via stdin")
 
     parser.add_argument('bug_id',
-        help='The launchpad bug for the charm being reviewed.')
+                        help='The launchpad bug for the charm being reviewed.')
 
     parser.add_argument(
         '--message', '-m',
@@ -86,7 +86,7 @@ def prompt_to_continue(bug_id):
 def main(argv):
     args = parse_options()
     logging.basicConfig(level=log_level(args.verbose),
-        format='%(levelname)s:%(message)s')
+                        format='%(levelname)s:%(message)s')
 
     review_message = get_message(args.message)  # before connecting to lp
 
