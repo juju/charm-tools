@@ -4,26 +4,25 @@
 """Helper functions for writing Juju charms in Python."""
 
 __metaclass__ = type
-__all__ = [
-    'get_config',
-    'log',
-    'log_entry',
-    'log_exit',
-    'relation_get',
-    'relation_set',
-    'relation_ids',
-    'relation_list',
-    'config_get',
-    'unit_get',
-    'open_port',
-    'close_port',
-    'service_control',
-    'unit_info',
-    'wait_for_machine',
-    'wait_for_page_contents',
-    'wait_for_relation',
-    'wait_for_unit',
-    ]
+__all__ = ['get_config',
+           'log',
+           'log_entry',
+           'log_exit',
+           'relation_get',
+           'relation_set',
+           'relation_ids',
+           'relation_list',
+           'config_get',
+           'unit_get',
+           'open_port',
+           'close_port',
+           'service_control',
+           'unit_info',
+           'wait_for_machine',
+           'wait_for_page_contents',
+           'wait_for_relation',
+           'wait_for_unit',
+           ]
 
 from collections import namedtuple
 import json
@@ -31,8 +30,8 @@ import operator
 from shelltoolbox import (
     command,
     script_name,
-    run
-    )
+    run,
+)
 import tempfile
 import time
 import urllib2
@@ -146,9 +145,9 @@ def service_control(service_name, action):
 
 def configure_source(update=False):
     source = config_get('source')
-    if (source.startswith('ppa:') or
-        source.startswith('cloud:') or
-        source.startswith('http:')):
+    if ((source.startswith('ppa:') or
+         source.startswith('cloud:') or
+         source.startswith('http:'))):
         run('add-apt-repository', source)
     if source.startswith("http:"):
         run('apt-key', 'import', config_get('key'))

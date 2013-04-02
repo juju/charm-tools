@@ -55,7 +55,8 @@ except ImportError:
 parser = argparse.ArgumentParser()
 parser.add_argument('charmname', help='Name of charm to create.')
 parser.add_argument('charmhome', nargs='?',
-        help='Dir to create charm in. Defaults to CHARM_HOME env var or PWD')
+                    help='Dir to create charm in. Defaults to CHARM_HOME '
+                    'env var or PWD')
 args = parser.parse_args()
 
 if args.charmhome:
@@ -77,7 +78,7 @@ if path.exists(output_dir):
 shutil.copytree(path.join(template_dir, 'charm'), output_dir)
 
 v = {'package': args.charmname,
-   'maintainer': '%s <%s>' % get_maintainer()}
+     'maintainer': '%s <%s>' % get_maintainer()}
 
 try:
     c = apt.Cache()
