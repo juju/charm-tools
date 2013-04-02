@@ -76,19 +76,20 @@ def format_as_table(data,
 def charm_review_queue():
     print "Connecting to launchpad..."
     lp = Launchpad.login_anonymously('charm-tools', 'production',
-        version='devel', launchpadlib_dir='~/.cache/launchpadlib')
+                                     version='devel',
+                                     launchpadlib_dir='~/.cache/launchpadlib')
     charm = lp.distributions['charms']
     charmers = lp.people['charmers']
     charm_contributors = lp.people['charm-contributors']
 
     print "Querying launchpad for bugs ..."
     bugs = charm.searchTasks(tags=['new-formula', 'new-charm'],
-        status=['New', 'Confirmed', 'Triaged', 'In Progress',
-            'Fix Committed'],
-        tags_combinator="Any")
+                             status=['New', 'Confirmed', 'Triaged',
+                                     'In Progress', 'Fix Committed'],
+                             tags_combinator="Any")
     charmers_bugs = charmers.searchTasks(
         status=['New', 'Confirmed', 'Triaged', 'In Progress',
-            'Fix Committed'])
+                'Fix Committed'])
 
     print "Querying launchpad for proposals ..."
     proposals = charmers.getRequestedReviews(status="Needs review")
@@ -105,14 +106,13 @@ def charm_review_queue():
         bug_created = datetime.datetime.strptime(
             bug['date_created'].split('+')[0], "%Y-%m-%dT%H:%M:%S.%f")
         entry_age = datetime.datetime.utcnow() - bug_created
-        entry = {
-        'date_created': bug['date_created'].split("T")[0],
-        'age': str(entry_age).split('.')[0],
-        'summary': (entry_summary[:max_summary_length] + '...')
-            if len(entry_summary) > max_summary_length else entry_summary,
-        'item': bug['web_link'],
-        'status': bug['status'],
-        }
+        entry = {'date_created': bug['date_created'].split("T")[0],
+                 'age': str(entry_age).split('.')[0],
+                 'summary': (entry_summary[:max_summary_length] + '...')
+                 if len(entry_summary) > max_summary_length else entry_summary,
+                 'item': bug['web_link'],
+                 'status': bug['status'],
+                 }
         queue.append(entry)
 
     # Merge proposals in charmers group
@@ -124,15 +124,14 @@ def charm_review_queue():
         proposal_age = datetime.datetime.utcnow() - proposal_date_created
         if proposal_summary is None:
             proposal_summary = "Proposal"
-        entry = {
-            'date_created': proposal['date_created'].split("T")[0],
-            'age': str(proposal_age).split('.')[0],
-            'summary': (proposal_summary[:max_summary_length] + '...')
-                if len(proposal_summary) > max_summary_length
-                else proposal_summary,
-            'item': proposal['web_link'],
-            'status': proposal['queue_status'],
-        }
+        entry = {'date_created': proposal['date_created'].split("T")[0],
+                 'age': str(proposal_age).split('.')[0],
+                 'summary': (proposal_summary[:max_summary_length] + '...')
+                 if len(proposal_summary) > max_summary_length
+                 else proposal_summary,
+                 'item': proposal['web_link'],
+                 'status': proposal['queue_status'],
+                 }
         queue.append(entry)
 
     return(sorted(queue, key=lambda k: k['date_created']))
@@ -140,7 +139,7 @@ def charm_review_queue():
 
 def main():
     parser = argparse.ArgumentParser(
-            description="Shows items needing the attention of ~charmers")
+        description="Shows items needing the attention of ~charmers")
     parser.parse_args()
     review_queue = charm_review_queue()
     keys = ['date_created', 'age', 'summary', 'item', 'status']

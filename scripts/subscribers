@@ -36,27 +36,28 @@ parser = argparse.ArgumentParser(
     in the specified repository so that metadata.yaml can be inspected
     to find the maintainer.""")
 parser.add_argument('--subscribed', default=False, action='store_true',
-    help='Show maintainers who are properly subscribed instead of '
-    + 'unsubscribed')
+                    help='Show maintainers who are properly subscribed '
+                    'instead of unsubscribed')
 parser.add_argument('--repository', default=None, type=str,
-    help='Repository to look for charms in. Defaults to $JUJU_REPOSITORY '
-    + 'or getcwd')
+                    help='Repository to look for charms in. Defaults to '
+                    '$JUJU_REPOSITORY or getcwd')
 parser.add_argument('--quiet', default=False, action='store_true',
-    help='Hide everything except maintainer subscription lists.')
+                    help='Hide everything except maintainer subscription '
+                    'lists.')
 parser.add_argument('--series', '-s', default=None,
-    help='Which series of the charm store to run against. Defaults to '
-    + 'current dev focus')
+                    help='Which series of the charm store to run against. '
+                    'Defaults to current dev focus')
 parser.add_argument('--maintainer', default=None,
-    help='Limit output to this maintainer\'s charms only.')
+                    help='Limit output to this maintainer\'s charms only.')
 parser.add_argument('--log-priority', default='WARNING')
 parser.add_argument('--launchpad-instance', default='production')
 parser.add_argument('--fix-unsubscribed', default=False, action='store_true',
-    help='Add a bug subscription for any unsubscribed maintainers. Requires '
-    + '--maintainer')
+                    help='Add a bug subscription for any unsubscribed '
+                    'maintainers. Requires --maintainer')
 parser.add_argument('--force-fix-all', default=False, action='store_true',
-    help=argparse.SUPPRESS)
+                    help=argparse.SUPPRESS)
 parser.add_argument('charms', default=[], nargs='*',
-    help='Charms to check for subscriptions')
+                    help='Charms to check for subscriptions')
 
 args = parser.parse_args()
 
@@ -79,14 +80,14 @@ else:
     log_prio = logging.DEBUG
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-    level=log_prio)
+                    level=log_prio)
 
 if args.quiet:
     logging.disable(logging.WARNING)
 
 if args.maintainer is None and args.fix_unsubscribed:
     warn('Running --fix-unsubscribed and without --maintainer is against'
-        + ' policy.')
+         ' policy.')
     if not args.force_fix_all:
         warn('Use --force-fix-all to override policy')
         sys.exit(1)
@@ -103,7 +104,7 @@ else:
     login = launchpad.Launchpad.login_anonymously
 
 lp = login(app_name, args.launchpad_instance,
-        version='devel', launchpadlib_dir=launchpadlib_dir)
+           version='devel', launchpadlib_dir=launchpadlib_dir)
 
 charmdistro = lp.distributions['charms']
 
@@ -132,11 +133,11 @@ else:
 for charm_name in charms:
     try:
         with open('%s/%s/%s/metadata.yaml' % (repository, current_series,
-                charm_name)) as mdata:
+                                              charm_name)) as mdata:
             mdata_parsed = yaml.safe_load(mdata)
     except IOError:
         warn('%s/%s has no metadata in charm repo' % (current_series,
-            charm_name))
+                                                      charm_name))
         continue
     try:
         maintainers = mdata_parsed['maintainer']
@@ -153,7 +154,7 @@ for charm_name in charms:
                                for m in maintainers]
             if args.maintainer not in maints_by_email:
                 debug('%s not in maintainer list %s' % (args.maintainer,
-                    maintainers))
+                                                        maintainers))
                 continue
 
     for maintainer in maintainers:
@@ -178,5 +179,5 @@ for charm_name in charms:
                 print msg
             if args.fix_unsubscribed:
                 info('adding bug subscription to %s for %s' % (charm_name,
-                    maint_email))
+                                                               maint_email))
                 pkg.addBugSubscription(subscriber=lp_maintainer)
