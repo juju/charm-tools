@@ -1,33 +1,21 @@
 #!/usr/bin/env python
+# Copyright (C) 2013 Marco Ceppi <marco@ceppi.net>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import sys
-from launchpadlib.launchpad import Launchpad
-
-
-def remote_charms():
-    lp = Launchpad.login_anonymously('charm-tools', 'production',
-                                     version='devel')
-    charm = lp.distributions['charms']
-    current_series = str(charm.current_series).split('/').pop()
-    branches = charm.getBranchTips()
-    charms = []
-
-    for branch in branches:
-        try:
-            branch_series = str(branch[2][0]).split('/')[0]
-            charm_name = str(branch[0]).split('/')[3]
-        except IndexError:
-            branch_series = ''
-        if branch_series == current_series:
-            charms.append("lp:charms/%s" % charm_name)
-        else:
-            charms.append("lp:%s" % branch[0])
-    return charms
-
-
-def local_charms(directory):
-    return os.listdir(directory)
+from lib import charms
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -37,4 +25,4 @@ if __name__ == "__main__":
         else:
             sys.exit(1)
 
-    print "\n".join(charms())
+    print "\n".join(charms.remote())
