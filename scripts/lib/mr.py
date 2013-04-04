@@ -18,6 +18,7 @@ import ConfigParser
 
 from bzrlib.bzrdir import BzrDir
 
+
 class Mr:
     def __init__(self, directory=False, config=False, trust_all=False):
         self.directory = directory or os.getcwd()
@@ -25,31 +26,47 @@ class Mr:
         self.trust_all = trust_all
         self.config_file = config or os.path.join(self.directory, '.mrconfig')
 
-        if self.check_mr_bzr_exists():
-            if not config or not os.path.exists(config):
-                raise Exception('No .mrconfig specified')
-            cp = ConfigParser.ConfigParser()
-            self.config = ConfigParser.read(config)
-            self.bzr_dir =  BzrDir.open(self.director
+        if self._check_repository_exists():
+            self.config = self._read_cfg()
+            self.bzr_dir = BzrDir.open(self.directory)
         else:
             self.config = ConfigParser.RawConfigParser()
             self.bzr_dir = BzrDir.create(self.directory)
             self.bzr_dir.create_repository(shared=True)
 
     def update(self):
-        print "Not today"
+        pass
 
-    # This isn't a true conversion of Mr, as such it's highly specialized
-    # for just Charm Tools. So when you "add" a charm, it's just going
-    # to use the charm name to fill in a template. Repository is in there
-    # just in case we later add personal branching.
     def add(self, name=False, repository='lp:charms'):
-        if not name raise Exception('No name provided')
+        # This isn't a true conversion of Mr, as such it's highly specialized
+        # for just Charm Tools. So when you "add" a charm, it's just going
+        # to use the charm name to fill in a template. Repository is in there
+        # just in case we later add personal branching.
+        if not name:
+            raise Exception('No name provided')
+        if not self.config.has_section(name):
+            self.config.add_section(name)
+
+        self.config.set(name, 'checkout', os.path.join(repository, name))
+
+    def checkout(self):
+        pass
 
     def remove(self, name=False):
-        if not name raise Exception('No name provided')
+        if not name:
+            raise Exception('No name provided')
 
-    def check_mr_bzr_exists(self):
-        # Eventually do more checks to make sure it's a shared repository
+        self.config.remove_section(name)
+
+    def _write_cfg(self):
+        pass
+
+    def _read_cfg(self):
+        if not self.config_file:
+            raise Exception('No .mrconfig specified')
+        return ConfigParser.read(self.config_file)
+
+    def _check_repository_exists(self):
+        # Eventually do more checks to make sure it is a shared repository
         # and not a branch, etc.
         return os.path.exists(self.control_dir)
