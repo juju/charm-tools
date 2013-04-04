@@ -29,9 +29,9 @@ parser.add_argument('charms_directory', nargs='?',
 args = parser.parse_args()
 
 if not args.charms_directory:
-    sys.stderr.write('Error: No value for path_to_charms provided\n\n')
+    sys.stderr.write('Error: No value for charms_directory provided\n\n')
     parser.print_help()
-    os.exit(1)
+    sys.exit(1)
 
 if not os.path.exists(args.charms_directory):
     os.makedirs(args.charms_directory, 0o755)
