@@ -36,7 +36,7 @@ if not args.charms_directory:
 if not os.path.exists(args.charms_directory):
     os.makedirs(args.charms_directory, 0o755)
 
-charm_update = subprocess.call([os.path.join(os.path.dirname(
+charm_update = subprocess.call([sys.executable, os.path.join(os.path.dirname(
                                 os.path.realpath(__file__)), 'update'),
                                 args.charms_directory])
 if charm_update != 0:
