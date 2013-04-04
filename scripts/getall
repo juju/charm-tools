@@ -37,6 +37,10 @@ if not os.path.exists(args.charms_directory):
 
 try:
     mr = Mr(directory=args.charms_directory)
-    mr.update()
-except Exception as e:
-    print "Error processing update, ", e
+    os.stderr.write('Grabbing %s charms from Charm Store' % len(mr.list()))
+    for charm in mr.list():
+        os.stderr.write('Branching %s' % charm)
+        try:
+            mr.update(charm)
+        except Exception as e:
+            print >> sys.stderr,  "Error during update: ", e
