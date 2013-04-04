@@ -21,28 +21,22 @@ import argparse
 from lib.mr import Mr
 
 
-def get_args():
-    # This seems like overkill, just imitating what was done in other files
-    parser = argparse.ArgumentParser(
-        description='Retrieves all charms from Launchpad')
-    parser.add_argument('charms_directory', nargs='?', required=True
-                        help='Path to where all charms should be downloaded')
-    args = parser.parse_args()
+parser = argparse.ArgumentParser(
+    description='Retrieves all charms from Launchpad')
+parser.add_argument('charms_directory', nargs='?', required=True
+                    help='Path to where all charms should be downloaded')
+args = parser.parse_args()
 
-    return args, parser
+if not args.charms_directory:
+    sys.stderr.write('Error: No value for path_to_charms provided\n\n')
+    parser.print_help()
+    os.exit(1)
 
-if __name__ == "__main__":
-    args, parser = get_args()
-    if not args.charms_directory:
-        sys.stderr.write('Error: No value for path_to_charms provided\n\n')
-        parser.print_help()
-        os.exit(1)
+if not os.path.exists(args.charms_directory):
+    os.makedirs(args.charms_directory, 0o755)
 
-    if not os.path.exists(args.charms_directory):
-        os.makedirs(args.charms_directory, 0o755)
-
-    try:
-        mr = Mr(directory=args.charms_directory)
-        mr.update()
-    except Exception as e:
-        print "Error processing update, ", e
+try:
+    mr = Mr(directory=args.charms_directory)
+    mr.update()
+except Exception as e:
+    print "Error processing update, ", e
