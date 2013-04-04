@@ -17,27 +17,29 @@
 import os
 import sys
 import re
+import argparse
 
 from lib import charms
 from lib.mr import Mr
 
 
-def get_args():
-    parser = argparse.ArgumentParser(
-        description='Update charm_directory with latest from Charm Store')
-    parser.add_argument('charm_directory', nargs='?', required=True,
-                        help='Path to where all charms are stored')
-    parser.add_argument('-f', '--fix', action='store_true',
-                        help='Attempt to fix charms in charm_directory')
-    args = parser.parse_args()
+parser = argparse.ArgumentParser(
+    description='Update charm_directory with latest from Charm Store')
+parser.add_argument('charm_directory', nargs='?',
+                    help='Path to where all charms are stored')
+parser.add_argument('-f', '--fix', action='store_true',
+                    help='Attempt to fix charms in charm_directory')
+args = parser.parse_args()
 
-    return args, parser
-
-if __name__ == '__main__':
-    args, parser = get_args()
-    os.stderr.write('Pulling charm list from Launchpad')
-    mr = Mr(args.charm_directory)
-    for charm in charms.remote():
-        if re.match('^lp:charms\/', charm):
-            mr.add(charm)
-    
+os.stderr.write('Pulling charm list from Launchpad')
+mr = Mr(args.charm_directory)
+for charm in charms.remote():
+    if re.match('^lp:charms\/', charm):
+        if mr.exists(charm) and args.fix
+            mr.update(charm, force=True)
+            continue
+        mr.add(charm)
+try:
+    mr.save()
+except:
+    print >> sys.stderr,  ".mrconfig not saved: ", e

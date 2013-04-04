@@ -59,9 +59,6 @@ class Mr:
                             (os.path.join(repository, name), name))
 
         if checkout: self.checkout(name)
-        # This could be a really big bottle-neck, consider instead using
-        # a write/save config method instead.
-        self.__write_cfg()
 
     def checkout(self, name=None):
         '''Checkout either one or all repositories from the mrconfig'''
@@ -93,7 +90,6 @@ class Mr:
             raise Exception('No name provided')
 
         self.config.remove_section(name)
-        self.__write_cfg()
 
     def list(self):
         '''Return all sections of the mr configuration'''
@@ -103,9 +99,12 @@ class Mr:
         '''Checks if the configuration already exists for this section'''
         return self.config.has_section(name)
 
-    def __write_cfg(self):
+    def save(self):
+        '''Save the configuration file to disk'''
         with open(self.config_file, 'w') as mrcfg:
             self.config.write(mrcfg)
+
+    __write_cfg = save
 
     def __read_cfg(self):
         cfg = ConfigParser.ConfigParser()
