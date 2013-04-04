@@ -57,12 +57,13 @@ class Mr:
         remote = Branch.open(charm_remote)
         remote.bzrdir.sprout(os.path.join(self.directory, charm))
 
+        self._write_cfg()
+
     def checkout(self, charm=None):
         '''Checkout either one or all repositories from the mrconfig'''
         if not charm:
             for charm in self.config.sections():
-                charm_checkout = self.config.get(charm, 'checkout')
-                charm_remote = charm_checkout.split(' ')[-1]
+                charm_remote = self._parse_checkout(charm)
                 self._checkout(charm_remote,
                                os.path.join(self.directory, charm))
         else:
@@ -70,13 +71,22 @@ class Mr:
             if not self.config.has_section(charm):
                 raise Exception('No configuration for %s' % charm)
 
-            charm_checkout = self.config.get(charm, 'checkout')
-            charm_remote = charm_checkout.split(' ')[-1]
+            charm_remote = self._parse_checkout(charm)
             self._checkout(charm_remote,
                            os.path.join(self.directory, charm))
 
     def update(self):
-        pass
+        '''Update, or checkout, a charm in to directory'''
+        # Have this mirror checkout where it's all or one if charm is passed?
+        for charm in self.config.sections():
+            if not os.path.exists(os.join(self.directory, charm, '.bzr')):
+                self.checkout(charm)
+                continue
+
+            charm_remote = self._parse_checkout(charm)
+            local_branch = Branch.open(os.join(self.directory, charm))
+            remote_branch = Branch.open(charm_remote)
+            local_branch.pull(remote_branch)
 
     def remove(self, name=None):
         '''Remove a repository from the mrconfig'''
@@ -84,6 +94,10 @@ class Mr:
             raise Exception('No name provided')
 
         self.config.remove_section(name)
+        self._write_cfg()
+
+    def list(self):
+        return self.config.sections()
 
     def _write_cfg(self):
         with open(self.config_file) as mrcfg:
@@ -95,11 +109,16 @@ class Mr:
         return ConfigParser.read(self.config_file)
 
     def _checkout(self, src, to):
-        charm_remote = charm.split(' ')[-1]
-        remote = Branch.open(charm_remote)
-        remote.bzrdir.sprout(os.path.join(self.directory, charm))
+        remote = Branch.open(src)
+        remote.bzrdir.sprout(to)
         # I wish there was a way to 'close' a RemoteBranch. Sadly,
         # I don't think there is
+
+    def _parse_checkout(self, charm):
+        if not self.config.has_section(charm):
+            raise Exception('No section %s configured' % charm)
+
+        return self.config.get(charm, 'checkout').split(' ')[-1]
 
     def _is_repository(self):
         try:
