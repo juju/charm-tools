@@ -26,19 +26,24 @@ load_plugins()
 
 
 class Mr:
-    def __init__(self, directory=None, config=None, trust_all=False):
+    def __init__(self, directory=None, config=None, mr_compat=True):
         self.directory = directory or os.getcwd()
         self.control_dir = os.path.join(self.directory, '.bzr')
         self.trust_all = trust_all
         self.config_file = config or os.path.join(self.directory, '.mrconfig')
+        self.mr_compat = mr_compat
 
-        if self.__is_repository():
-            self.config = self.__read_cfg()
-            self.bzr_dir = Repository.open(self.directory)
+        if mr_compat:
+            if self.__is_repository():
+                self.config = self.__read_cfg()
+                self.bzr_dir = Repository.open(self.directory)
+            else:
+                self.config = ConfigParser.RawConfigParser()
+                r = BzrDir.create(self.directory)
+                self.bzr_dir = self.bzr_dir.create_repository(shared=True)
         else:
             self.config = ConfigParser.RawConfigParser()
-            r = BzrDir.create(self.directory)
-            self.bzr_dir = self.bzr_dir.create_repository(shared=True)
+            self.bzr_dir = None
 
     def add(self, name=None, repository='lp:charms', checkout=False):
         # This isn't a true conversion of Mr, as such it's highly specialized
