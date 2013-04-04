@@ -16,7 +16,9 @@
 import os
 import ConfigParser
 
+from bzrlib import errors
 from bzrlib.bzrdir import BzrDir
+from bzrlib.repository import Repository
 
 
 class Mr:
@@ -26,13 +28,13 @@ class Mr:
         self.trust_all = trust_all
         self.config_file = config or os.path.join(self.directory, '.mrconfig')
 
-        if self._check_repository_exists():
+        if self._is_repository():
             self.config = self._read_cfg()
-            self.bzr_dir = BzrDir.open(self.directory)
+            self.bzr_dir = Repository.open(self.directory)
         else:
             self.config = ConfigParser.RawConfigParser()
-            self.bzr_dir = BzrDir.create(self.directory)
-            self.bzr_dir.create_repository(shared=True)
+            r = BzrDir.create(self.directory)
+            self.bzr_dir = self.bzr_dir.create_repository(shared=True)
 
     def update(self):
         pass
@@ -66,7 +68,10 @@ class Mr:
             raise Exception('No .mrconfig specified')
         return ConfigParser.read(self.config_file)
 
-    def _check_repository_exists(self):
-        # Eventually do more checks to make sure it is a shared repository
-        # and not a branch, etc.
-        return os.path.exists(self.control_dir)
+    def _is_repository(self):
+        try:
+            r = Repository.open(self.directory)
+        except errors.NotBranchError:
+            return False
+
+        return r.is_shared()
