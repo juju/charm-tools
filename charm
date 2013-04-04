@@ -1,35 +1,49 @@
-#!/bin/sh
-# Simple wrapper to call charm tools scripts. Meant to
-# be placed in user's path.
-set -ue
+#!/usr/bin/env python
+# Copyright (C) 2013 Marco Ceppi <marco@ceppi.net>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-script_home=`readlink -f $0`
-script_home=`dirname $script_home`
-script_home=`readlink -f $script_home`/scripts
+import os
+import sys
 
-usage()
-{
-    echo "usage: $1 [ --help|-h ] [ script_name ]" >&2
-    echo script choices are: >&2
-    echo $(list_commands)|sed -e 's/^/    /' >&2
-    exit $2
-}
+import subprocess
 
-list_commands()
-{
-    ls -1 $script_home
-}
 
-script=${1:-""}
+def usage(exit_code=0):
+    sys.stderr.write('usage: %s subcommand\n' % sys.argv[0])
+    subs = subcommands(os.path.dirname(os.path.realpath(__file__)))
+    sys.stderr.write('\n  Available subcommands are:\n    ')
+    sys.stderr.write('\n    '.join(subs))
+    sys.stderr.write('\n')
+    sys.exit(exit_code)
 
-if [ -z "$script" ] ; then
-    usage $(basename $0) 0
-fi
 
-if [ -x $script_home/$script ] ; then
-    shift
-    exec $script_home/$script $*
-fi
+def subcommands(scripts_dir):
+    subs = os.listdir(os.path.join(scripts_dir, 'scripts'))
+    subs.sort()
+    # Removes blacklisted items from the subcommands list.
+    return filter(lambda s: s not in ['lib', 'help'], subs)
 
-echo "abort: Unknown script $script" >&2
-usage $(basename $0) 2
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        usage(1)
+
+    sub = sys.argv[1]
+    opts = sys.argv[2:]
+    sub_exec = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                            'scripts', sub)
+    if not os.path.exists(sub_exec):
+        sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
+        usage(2)
+    subprocess.call([sub_exec] + opts)
