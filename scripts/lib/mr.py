@@ -14,13 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import bzrlib
 import ConfigParser
 
+from bzrlib.bzrdir import BzrDir
 
 class Mr:
     def __init__(self, directory=False, config=False, trust_all=False):
         self.directory = directory or os.getcwd()
+        self.control_dir = os.path.join(self.directory, '.bzr')
         self.trust_all = trust_all
         self.config_file = config or os.path.join(self.directory, '.mrconfig')
 
@@ -29,8 +30,11 @@ class Mr:
                 raise Exception('No .mrconfig specified')
             cp = ConfigParser.ConfigParser()
             self.config = ConfigParser.read(config)
+            self.bzr_dir =  BzrDir.open(self.director
         else:
             self.config = ConfigParser.RawConfigParser()
+            self.bzr_dir = BzrDir.create(self.directory)
+            self.bzr_dir.create_repository(shared=True)
 
     def update(self):
         print "Not today"
@@ -46,4 +50,6 @@ class Mr:
         if not name raise Exception('No name provided')
 
     def check_mr_bzr_exists(self):
-        return os.path.exists(os.path.join(self.directory, '.bzr'))
+        # Eventually do more checks to make sure it's a shared repository
+        # and not a branch, etc.
+        return os.path.exists(self.control_dir)
