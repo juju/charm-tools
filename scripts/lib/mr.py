@@ -16,13 +16,14 @@
 import os
 import ConfigParser
 
-from bzrlib import errors
+from bzrlib import errors, trace
 from bzrlib.bzrdir import BzrDir
 from bzrlib.branch import Branch
 from bzrlib.plugin import load_plugins
 from bzrlib.repository import Repository
 
 load_plugins()
+trace.enable_default_logging()  # Provide better error handling
 
 
 class Mr:
