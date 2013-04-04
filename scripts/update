@@ -23,7 +23,7 @@ from lib import charms
 from lib.mr import Mr
 
 
-parser = argparse.ArgumentParser(
+parser = argparse.ArgumentParser(prog='charm update',
     description='Update charm_directory with latest from Charm Store')
 parser.add_argument('charm_directory', nargs='?',
                     help='Path to where all charms are stored')

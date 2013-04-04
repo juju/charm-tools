@@ -20,21 +20,6 @@ list_commands()
     ls -1 $script_home
 }
 
-# If the options seem invalid, pass thru to underlying scripts
-if options=$(getopt -o hl -l help,list -- "$@") ; then
-    eval set -- "$options"
-
-    while true
-    do
-        case "$1" in
-        -h|--help)  usage $(basename $0) 0;;
-        -l|--list)  list_commands ; exit 0;;
-        --) shift 1; break;;
-        *)  break;;
-        esac
-    done
-fi
-
 script=${1:-""}
 
 if [ -z "$script" ] ; then

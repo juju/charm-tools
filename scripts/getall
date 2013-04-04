@@ -21,7 +21,7 @@ import argparse
 from lib.mr import Mr
 
 
-parser = argparse.ArgumentParser(
+parser = argparse.ArgumentParser(prog='charm getall',
     description='Retrieves all charms from Launchpad')
 parser.add_argument('charms_directory', nargs='?', required=True
                     help='Path to where all charms should be downloaded')
