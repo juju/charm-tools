@@ -66,9 +66,14 @@ class Mr:
                 self._checkout(charm_remote,
                                os.path.join(self.directory, charm))
         else:
+            # Move this, and the charm_* stuff to _checkout? Makes sense
             if not self.config.has_section(charm):
                 raise Exception('No configuration for %s' % charm)
-            
+
+            charm_checkout = self.config.get(charm, 'checkout')
+            charm_remote = charm_checkout.split(' ')[-1]
+            self._checkout(charm_remote,
+                           os.path.join(self.directory, charm))
 
     def update(self):
         pass
