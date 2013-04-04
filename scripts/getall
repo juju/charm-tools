@@ -17,34 +17,32 @@
 import os
 import sys
 import argparse
+
 from lib.mr import Mr
 
 
-def usage(exit_code=0):
-    sys.stderr.write('Usage: getall path_to_charms\n')
-    sys.stderr.write('retrieves all charms from LaunchPad\n')
-    sys.exit(exit_code)
-
-
 def get_args():
+    # This seems like overkill, just imitating what was done in other files
     parser = argparse.ArgumentParser(
-        description='Performs static analysis on charms')
-    parser.add_argument('path_to_charms', nargs='?',
+        description='Retrieves all charms from Launchpad')
+    parser.add_argument('charms_directory', nargs='?', required=True
                         help='Path to where all charms should be downloaded')
     args = parser.parse_args()
 
-    return args.path_to_charms if args.path_to_charms else None
+    return args, parser
 
 if __name__ == "__main__":
-    getall_path = get_args()
-    if not getall_path:
+    args, parser = get_args()
+    if not args.charms_directory:
         sys.stderr.write('Error: No value for path_to_charms provided\n\n')
-        usage(1)
+        parser.print_help()
+        os.exit(1)
 
-    if not os.path.exists(getall_path):
-        os.makedirs(getall_path, 0o755)
+    if not os.path.exists(args.charms_directory):
+        os.makedirs(args.charms_directory, 0o755)
 
     try:
-        Mr.update()
-    except:
-
+        mr = Mr(directory=args.charms_directory)
+        mr.update()
+    except Exception as e:
+        print "Error processing update, ", e
