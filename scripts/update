@@ -1,71 +1,43 @@
-#!/bin/sh
-home=`dirname $0`
+#!/usr/bin/env python
+# Copyright (C) 2013 Marco Ceppi <marco@ceppi.net>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-usage() {
-    echo "usage: $1 [ --fix ] charm_directory" >&2
-    exit $2
-}
+import os
+import sys
+import re
 
-options=$(getopt -o hf -l help,fix -- "$@")
-if [ $? -ne 0 ]; then
-    usage $(basename $0) 1
-fi
-eval set -- "$options"
+from lib import charms
+from lib.mr import Mr
 
-fixmode=0
 
-while true
-do
-    case "$1" in
-    -h|--help)  usage $(basename $0) 0;;
-    -f|--fix) shift 1; fixmode=1 ;;
-    --) shift 1; break;;
-    *)  break;;
-    esac
-done
-charm_home=$1
+def get_args():
+    parser = argparse.ArgumentParser(
+        description='Update charm_directory with latest from Charm Store')
+    parser.add_argument('charm_directory', nargs='?', required=True,
+                        help='Path to where all charms are stored')
+    parser.add_argument('-f', '--fix', action='store_true',
+                        help='Attempt to fix charms in charm_directory')
+    args = parser.parse_args()
 
-if [ -z "$charm_home" ] ; then
-    echo "usage: update charm_directory [ --fix ]" >&2
-    exit 1
-fi
+    return args, parser
 
-echo Pulling charm list from launchpad >&2
-newfile=`mktemp $charm_home/.mrconfig.XXXXXXXX`
-cp /dev/null $newfile
-for s in `$home/list | awk -F\/ '/^lp:charms\// { print $2 }'` ; do
-    cat >> $newfile <<EOF
-[$s]
-checkout = bzr branch lp:charms/$s $s
-
-EOF
-    if [ $fixmode -eq 1 ] ; then
-        if [ -d $charm_home/$s ] ; then
-            echo FIX: fixing existing charm $s
-            if !(cd $charm_home/$s && bzr pull --remember lp:charms/$s) ; then
-                echo WARNING: problem with local copy in $charm_home/$s, investigate o get the official charm at lp:charms/$s >&2
-            fi
-        fi
-    fi
-done
-
-ondisk_charms=`ls $charm_home|wc -l`
-echo Checking bzr trees of $ondisk_charms charms in $charm_home >&2
-for i in $charm_home/* ; do
-    for x in parent push ; do
-        location=`(cd $i && bzr config ${x}_location 2>/dev/null)`
-        if echo $location | grep -q '/charm/' ; then
-            new=`echo $location | sed -e 's,/charm/,/charms/,'`
-            if [ $fixmode -eq 1 ] ; then
-                echo UPDATING: $i, ${x}_location >&2
-                (cd $i && bzr config ${x}_location=$new) || echo FAILED >&2
-            else
-                echo WARNING: $i\'s ${x}_location must be redirected to lp:charms, or re-run update with --fix >&2
-                echo cd $i '&&' bzr config ${x}_location=$new
-            fi
-        fi
-    done
-done
-
-echo updating $charm_home/.mrconfig >&2
-mv -f $newfile $charm_home/.mrconfig
+if __name__ == '__main__':
+    args, parser = get_args()
+    os.stderr.write('Pulling charm list from Launchpad')
+    mr = Mr(args.charm_directory)
+    for charm in charms.remote():
+        if re.match('^lp:charms\/', charm):
+            mr.add(charm)
+    
