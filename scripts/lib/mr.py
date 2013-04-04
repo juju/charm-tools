@@ -18,7 +18,11 @@ import ConfigParser
 
 from bzrlib import errors
 from bzrlib.bzrdir import BzrDir
+from bzrlib.branch import Branch
+from bzrlib.plugin import load_plugins
 from bzrlib.repository import Repository
+
+load_plugins()
 
 
 class Mr:
@@ -52,7 +56,10 @@ class Mr:
         self.config.set(name, 'checkout', os.path.join(repository, name))
 
     def checkout(self):
-        pass
+        for charm in self.config.sections():
+            charm_remote = charm.split(' ')[-1]
+            
+        
 
     def remove(self, name=False):
         if not name:
