@@ -22,12 +22,28 @@ class Mr:
     def __init__(self, directory=False, config=False, trust_all=False):
         self.directory = directory or os.getcwd()
         self.trust_all = trust_all
-        if not config or not os.path.exists(config):
-            raise Exception('No .mrconfig specified')
-        cp = ConfigParser.ConfigParser()
-        self.config = ConfigParser.read(config)
-        self.config_file = config
+        self.config_file = config or os.path.join(self.directory, '.mrconfig')
 
+        if self.check_mr_bzr_exists():
+            if not config or not os.path.exists(config):
+                raise Exception('No .mrconfig specified')
+            cp = ConfigParser.ConfigParser()
+            self.config = ConfigParser.read(config)
+        else:
+            self.config = ConfigParser.RawConfigParser()
 
     def update(self):
         print "Not today"
+
+    # This isn't a true conversion of Mr, as such it's highly specialized
+    # for just Charm Tools. So when you "add" a charm, it's just going
+    # to use the charm name to fill in a template. Repository is in there
+    # just in case we later add personal branching.
+    def add(self, name=False, repository='lp:charms'):
+        if not name raise Exception('No name provided')
+
+    def remove(self, name=False):
+        if not name raise Exception('No name provided')
+
+    def check_mr_bzr_exists(self):
+        return os.path.exists(os.path.join(self.directory, '.bzr'))
