@@ -57,7 +57,7 @@ class Mr:
             self.config.add_section(name)
 
         self.config.set(name, 'checkout', "bzr branch %s %s" %
-                            (os.path.join(repository, name), name))
+                            ('/'.join([repository, name]), name))
 
         if checkout:
             self.checkout(name)
