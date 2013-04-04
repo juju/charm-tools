@@ -1,31 +1,50 @@
-#!/bin/sh
-set -e
+#!/usr/bin/env python
+# Copyright (C) 2013 Marco Ceppi <marco@ceppi.net>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-usage() {
-    echo "usage: getall path_to_charms" >&2
-    echo "retrieves all charms from launchpad using mr and bzr"
-    exit $1
-}
+import os
+import sys
+import argparse
+from lib.mr import Mr
 
-if [ -z "$1" ] ; then
-    usage 1
-fi
-charm_home=$1
 
-if [ "$1" = "--help" -o "$1" = "-h" ] ; then
-    usage 0
-fi
+def usage(exit_code=0):
+    sys.stderr.write('Usage: getall path_to_charms\n')
+    sys.stderr.write('retrieves all charms from LaunchPad\n')
+    sys.exit(exit_code)
 
-home=`dirname $0`
-home=`readlink -f $home`
 
-if ! [ -d "$charm_home/.bzr" ] ; then
-    echo initializing $charm_home as bzr repository
-    bzr init-repo $charm_home
-    $home/update $charm_home
-    echo checking out all charms
-    mr -c $charm_home/.mrconfig -d $charm_home --trust-all checkout
-    echo "In order to update charms, run this script again."
-else
-    mr -c $charm_home/.mrconfig -d $charm_home --trust-all update
-fi
+def get_args():
+    parser = argparse.ArgumentParser(
+        description='Performs static analysis on charms')
+    parser.add_argument('path_to_charms', nargs='?',
+                        help='Path to where all charms should be downloaded')
+    args = parser.parse_args()
+
+    return args.path_to_charms if args.path_to_charms else None
+
+if __name__ == "__main__":
+    getall_path = get_args()
+    if not getall_path:
+        sys.stderr.write('Error: No value for path_to_charms provided\n\n')
+        usage(1)
+
+    if not os.path.exists(getall_path):
+        os.makedirs(getall_path, 0o755)
+
+    try:
+        Mr.update()
+    except:
+
