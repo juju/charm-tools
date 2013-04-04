@@ -45,6 +45,7 @@ class Mr:
         # for just Charm Tools. So when you "add" a charm, it's just going
         # to use the charm name to fill in a template. Repository is in there
         # just in case we later add personal branching.
+        '''Add a respository to the mrconfig'''
         if not name:
             raise Exception('No name provided')
         if not self.config.has_section(name):
@@ -57,6 +58,7 @@ class Mr:
         remote.bzrdir.sprout(os.path.join(self.directory, charm))
 
     def checkout(self, charm=None):
+        '''Checkout either one or all repositories from the mrconfig'''
         if not charm:
             for charm in self.config.sections():
                 charm_checkout = self.config.get(charm, 'checkout')
@@ -72,6 +74,7 @@ class Mr:
         pass
 
     def remove(self, name=None):
+        '''Remove a repository from the mrconfig'''
         if not name:
             raise Exception('No name provided')
 
