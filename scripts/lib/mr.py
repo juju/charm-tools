@@ -55,7 +55,7 @@ class Mr:
         if not self.config.has_section(name):
             self.config.add_section(name)
 
-        self.config.set(name, 'checkout', "bzr checkout %s %s" %
+        self.config.set(name, 'checkout', "bzr branch %s %s" %
                             (os.path.join(repository, name), name))
 
         if checkout:

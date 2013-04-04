@@ -17,13 +17,14 @@
 import os
 import sys
 import argparse
+import subprocess
 
 from lib.mr import Mr
 
 
 parser = argparse.ArgumentParser(prog='charm getall',
     description='Retrieves all charms from Launchpad')
-parser.add_argument('charms_directory', nargs='?', required=True
+parser.add_argument('charms_directory', nargs='?',
                     help='Path to where all charms should be downloaded')
 args = parser.parse_args()
 
@@ -35,12 +36,24 @@ if not args.charms_directory:
 if not os.path.exists(args.charms_directory):
     os.makedirs(args.charms_directory, 0o755)
 
+charm_update = subprocess.call([os.path.join(os.path.dirname(
+                                os.path.realpath(__file__)), 'update'),
+                                args.charms_directory])
+if charm_update != 0:
+    sys.stderr.write('Unable to perform `charm update`!\n')
+    os.exit(1)
+
 try:
     mr = Mr(directory=args.charms_directory)
-    os.stderr.write('Grabbing %s charms from Charm Store' % len(mr.list()))
+    sys.stderr.write('Grabbing %s charms from Charm Store\n' % len(mr.list()))
     for charm in mr.list():
-        os.stderr.write('Branching %s' % charm)
+        sys.stderr.write('Branching %s\n' % charm)
         try:
             mr.update(charm)
+        except (KeyboardInterrupt, SystemExit):
+            sys.stderr.write('\nKeyboard Interrupt caught. Exiting!\n')
+            break
         except Exception as e:
-            print >> sys.stderr,  "Error during update: ", e
+            print >> sys.stderr, "Error during update: ", e
+except Exception as e:
+    print >> sys.stderr, "Error during setup: ", e

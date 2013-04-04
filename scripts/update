@@ -31,15 +31,18 @@ parser.add_argument('-f', '--fix', action='store_true',
                     help='Attempt to fix charms in charm_directory')
 args = parser.parse_args()
 
-os.stderr.write('Pulling charm list from Launchpad')
+sys.stderr.write('Pulling charm list from Launchpad\n')
 mr = Mr(args.charm_directory)
 for charm in charms.remote():
     if re.match('^lp:charms\/', charm):
-        if mr.exists(charm) and args.fix:
-            mr.update(charm, force=True)
+        charm_name = os.path.basename(charm)
+        if mr.exists(charm_name) and args.fix:
+            mr.update(charm_name, force=True)
             continue
-        mr.add(charm)
+        mr.add(charm_name)
 try:
     mr.save()
 except:
+    # Got this from http://stackoverflow.com/q/5574702/196832
     print >> sys.stderr,  ".mrconfig not saved: ", e
+    sys.exit(1)
