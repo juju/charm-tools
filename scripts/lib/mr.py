@@ -58,7 +58,8 @@ class Mr:
         self.config.set(name, 'checkout', "bzr checkout %s %s" %
                             (os.path.join(repository, name), name))
 
-        if checkout: self.checkout(name)
+        if checkout:
+            self.checkout(name)
 
     def checkout(self, name=None):
         '''Checkout either one or all repositories from the mrconfig'''

@@ -35,7 +35,7 @@ os.stderr.write('Pulling charm list from Launchpad')
 mr = Mr(args.charm_directory)
 for charm in charms.remote():
     if re.match('^lp:charms\/', charm):
-        if mr.exists(charm) and args.fix
+        if mr.exists(charm) and args.fix:
             mr.update(charm, force=True)
             continue
         mr.add(charm)
