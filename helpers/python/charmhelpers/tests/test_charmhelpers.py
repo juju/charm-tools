@@ -8,7 +8,6 @@ from StringIO import StringIO
 from testtools import TestCase
 
 import sys
-import os
 # Path hack to ensure we test the local code, not a version installed in
 # /usr/local/lib.  This is necessary since /usr/local/lib is prepended before
 # what is specified in PYTHONPATH.
@@ -470,47 +469,6 @@ class CharmHelpersTestCase(TestCase):
         self.patch(charmhelpers, 'script_name', lambda: 'SCRIPT-NAME')
         charmhelpers.log_exit()
         self.assertEqual(['<-- Exiting SCRIPT-NAME'], logged)
-
-    def test_not_legacy_juju(self):
-        # The Go version of juju install an agent.conf file in the directory
-        # above the charm. If that file exists then we must be running against
-        # the go version of juju
-        os.environ['CHARM_DIR'] = os.getcwd()
-
-        def cleanup():
-            del os.environ["CHARM_DIR"]
-        self.addCleanup(cleanup)
-
-        agent_file_path = "%s/../agent.conf" % os.getcwd()
-        with open(agent_file_path, 'w') as agent_file:
-            agent_file.write("")
-
-        self.assertEqual(False, charmhelpers.legacy_juju())
-        os.remove(agent_file_path)
-        self.assertEqual(False, os.path.exists(agent_file_path))
-
-    def test_legacy_juju(self):
-        # The Go version of juju install an agent.conf file in the directory
-        # above the charm. If that file doesn't exist then we must be running
-        # against the legacy version of juju
-        os.environ['CHARM_DIR'] = os.getcwd()
-
-        def cleanup():
-            del os.environ["CHARM_DIR"]
-        self.addCleanup(cleanup)
-
-        agent_file_exists = os.path.exists("%s/../agent.conf" % os.getcwd())
-        self.assertEqual(False, agent_file_exists)
-        self.assertEqual(True, charmhelpers.legacy_juju())
-
-    def test_legacy_raises_exception(self):
-        # The Go version of juju install an agent.conf file in the directory
-        # above the charm. If the env variable CHARM_DIR isn't set we can't
-        # reasonably work out which version of juju we're running
-        self.assertRaises(KeyError, lambda: os.environ["CHARM_DIR"])
-        self.assertRaises(
-            charmhelpers.CantDetermineJujuVersionException,
-            charmhelpers.legacy_juju)
 
 
 if __name__ == '__main__':

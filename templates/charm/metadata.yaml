@@ -5,12 +5,13 @@ description: |
   $description
 categories:
   - misc
+subordinate: false
 provides:
-  relation-name:
+  provides-relation:
     interface: interface-name
 requires:
-  relation-name:
+  requires-relation:
     interface: interface-name
 peers:
-  relation-name:
+  peer-relation:
     interface: interface-name
