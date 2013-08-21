@@ -1,8 +1,0 @@
-name: missing-categories
-maintainer: test@testhost
-summary: <Fill in summary here>
-description: |
-  <Multi-line description here>
-provides:
-  website:
-    interface: http
