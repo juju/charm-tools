@@ -5,7 +5,7 @@ maintainer: test@testhost
 description: |
   <Multi-line description here>
 categories:
-  - miscellaneous
+  - misc
 provides:
   relation-name:
     baz: boom

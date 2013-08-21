@@ -7,7 +7,7 @@ description: |
   to take advantage of SPDY features like stream multiplexing and header
   compression.
 categories:
-  - miscellaneous
+  - misc
 requires:
   juju-info:
     interface: juju-info

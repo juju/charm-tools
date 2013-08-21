@@ -3,7 +3,7 @@ summary: <Fill in summary here>
 description: |
   <Multi-line description here>
 categories:
-  - miscellaneous
+  - misc
 provides:
   relation-name:
     interface: interface-name

@@ -11,7 +11,7 @@ description: |
   abstraction of the sources.list configuration on the repository and
   the distro level.
 categories:
-  - miscellaneous
+  - misc
 provides:
   relation-name:
     interface: interface-name
