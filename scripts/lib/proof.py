@@ -225,8 +225,8 @@ def run(charm_name):
                 # may change them.
                 lint.warn(
                     'Categories metadata must be a list of one or more of: '
-                    'application, app-server, database, file-server, '
-                    'proxy-cache, miscellaneous')
+                    'applications, app-servers, databases, file-servers, '
+                    'cache-proxy, misc')
 
         # Must have a hooks dir
         if not os.path.exists(hooks_path):
