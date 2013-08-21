@@ -228,6 +228,9 @@ def run(charm_name):
                     'applications, app-servers, databases, file-servers, '
                     'cache-proxy, misc')
 
+        if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
+            lint.warn("No icon.svg file.")
+
         # Must have a hooks dir
         if not os.path.exists(hooks_path):
             lint.err("no hooks directory")
