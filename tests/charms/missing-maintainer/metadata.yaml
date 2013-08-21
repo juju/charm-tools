@@ -2,6 +2,8 @@ name: test
 summary: <Fill in summary here>
 description: |
   <Multi-line description here>
+categories:
+  - miscellaneous
 provides:
   relation-name:
     interface: interface-name

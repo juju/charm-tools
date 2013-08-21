@@ -216,6 +216,9 @@ def run(charm_name):
                                     formatted))
                     lint.warn(warn_msg)
 
+        if 'categories' not in charm:
+            lint.warn('The categories field is missing.')
+
         # Must have a hooks dir
         if not os.path.exists(hooks_path):
             lint.err("no hooks directory")

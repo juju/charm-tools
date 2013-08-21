@@ -4,6 +4,8 @@ summary: <Fill in summary here>
 maintainer: test@testhost
 description: |
   <Multi-line description here>
+categories:
+  - miscellaneous
 requires:
   foo:
     interface: bar
