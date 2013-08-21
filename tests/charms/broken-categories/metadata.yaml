@@ -1,0 +1,9 @@
+name: broken-categories
+maintainer: test@testhost
+summary: <Fill in summary here>
+description: |
+  <Multi-line description here>
+categories:
+provides:
+  website:
+    interface: http

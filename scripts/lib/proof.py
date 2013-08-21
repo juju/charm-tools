@@ -218,6 +218,13 @@ def run(charm_name):
 
         if 'categories' not in charm:
             lint.warn('Metadata is missing categories.')
+        else:
+            categories = charm['categories']
+            if type(categories) != list or categories == []:
+                lint.warn(
+                    'Categories metadata must be a list of one or more of: '
+                    'application, app-server, database, file-server, '
+                    'proxy-cache, miscellaneous')
 
         # Must have a hooks dir
         if not os.path.exists(hooks_path):
