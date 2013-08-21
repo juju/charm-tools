@@ -3,6 +3,8 @@ summary: $summary
 maintainer: $maintainer
 description: |
   $description
+categories:
+  - miscellaneous
 provides:
   relation-name:
     interface: interface-name

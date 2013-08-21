@@ -3,6 +3,8 @@ summary: <Fill in summary here>
 maintainer: tester <test@testhost>
 description: |
   <Multi-line description here>
+categories:
+  - miscellaneous
 provides:
   relation-name:
     interface: interface-name

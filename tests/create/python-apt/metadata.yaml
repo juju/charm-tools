@@ -10,6 +10,8 @@ description: |
   structure The included 'aptsources' Python interface provides an
   abstraction of the sources.list configuration on the repository and
   the distro level.
+categories:
+  - miscellaneous
 provides:
   relation-name:
     interface: interface-name
