@@ -217,7 +217,7 @@ def run(charm_name):
                     lint.warn(warn_msg)
 
         if 'categories' not in charm:
-            lint.warn('The categories field is missing.')
+            lint.warn('Metadata is missing categories.')
 
         # Must have a hooks dir
         if not os.path.exists(hooks_path):

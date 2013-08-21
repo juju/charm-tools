@@ -1,4 +1,4 @@
-W: The categories field is missing.
+W: Metadata is missing categories.
 E: no copyright file
 E: Includes template README.ex file
 E: README.ex Includes boilerplate README.ex line 1
