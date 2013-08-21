@@ -1,0 +1,19 @@
+name: icon-template
+summary: <Fill in summary here>
+maintainer: test@testhost
+description: |
+  <Multi-line description here>
+categories:
+  - misc
+provides:
+  relation-name:
+    baz: boom
+    interface: interface-name
+requires:
+  relation-name:
+    interface: interface-name
+    scope: flouride
+peers:
+  relation-name:
+    interface: interface-name
+  non-map: [ interface, interface-name ]
