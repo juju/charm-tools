@@ -297,17 +297,17 @@ def run(charm_name):
             lint.err("subordinate must be a boolean value")
 
         # All charms should provide at least one thing
-        try:
-            provides = charm['provides']
+        provides = charm.get('provides')
+        if provides is not None:
             lint.check_relation_hooks(provides, subordinate, hooks_path)
-        except KeyError:
+        else:
             if not subordinate:
                 lint.warn("all charms should provide at least one thing")
 
         if subordinate:
             try:
-                if 'requires' in charm:
-                    requires = charm['requires']
+                requires = charm.get('requires')
+                if requires is not None:
                     found_scope_container = False
                     for rel_name, rel in requires.iteritems():
                         if 'scope' in rel:
@@ -322,17 +322,13 @@ def run(charm_name):
                 lint.err("subordinates must have at least one scope: "
                          "container relation")
         else:
-            try:
-                requires = charm['requires']
+            requires = charm.get('requires')
+            if requires is not None:
                 lint.check_relation_hooks(requires, subordinate, hooks_path)
-            except KeyError:
-                pass
 
-        try:
-            peers = charm['peers']
+        peers = charm.get('peers')
+        if peers is not None:
             lint.check_relation_hooks(peers, subordinate, hooks_path)
-        except KeyError:
-            pass
 
         if 'revision' in charm:
             lint.warn("Revision should not be stored in metadata.yaml "

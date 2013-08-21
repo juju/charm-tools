@@ -1,0 +1,10 @@
+name: empty-requires
+summary: <Fill in summary here>
+maintainer: test@testhost
+description: |
+  <Multi-line description here>
+provides:
+requires:
+peers:
+categories:
+  - misc
