@@ -1,6 +1,9 @@
 name: test
 summary: <Fill in summary here>
 maintainer: test@testhost
+categories:
+  - application
+  - cache-proxy
 description: |
   <Multi-line description here>
 provides:
