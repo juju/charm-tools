@@ -21,6 +21,7 @@ from stat import ST_MODE
 from stat import S_IXUSR
 import sys
 import yaml
+import hashlib
 
 KNOWN_METADATA_KEYS = ['name',
                        'summary',
@@ -40,6 +41,10 @@ KNOWN_SCOPES = ['global', 'container']
 TEMPLATE_README = os.path.abspath(
     os.path.join(
         __file__, '..', '..', '..', 'templates', 'charm', 'README.ex'))
+
+TEMPLATE_ICON = os.path.abspath(
+    os.path.join(
+        __file__, '..', '..', '..', 'templates', 'charm', 'icon.svg'))
 
 
 class RelationError(Exception):
@@ -230,6 +235,20 @@ def run(charm_name):
 
         if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
             lint.warn("No icon.svg file.")
+        else:
+            # should have an icon.svg
+            template_sha1 = hashlib.sha1()
+            icon_sha1 = hashlib.sha1()
+            try:
+                with open(TEMPLATE_ICON) as ti:
+                    template_sha1.update(ti.read())
+                    with open(os.path.join(charm_path, 'icon.svg')) as ci:
+                        icon_sha1.update(ci.read())
+                if template_sha1.hexdigest() == icon_sha1.hexdigest():
+                    lint.err("Includes template icon.svg file.")
+            except IOError as e:
+                lint.err(
+                    "Error while opening %s (%s)" % (e.filename, e.strerror))
 
         # Must have a hooks dir
         if not os.path.exists(hooks_path):
