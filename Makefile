@@ -35,5 +35,5 @@ check:
 	tests/proof/test.sh
 	tests/create/test.sh
 	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
-	@echo PEP8 Lint of Python files
-	@echo `grep -rl '^#!/.*python' .` | xargs -r -n1 pep8
+#	@echo PEP8 Lint of Python files
+#	@echo `grep -rl '^#!/.*python' .` | xargs -r -n1 pep8
