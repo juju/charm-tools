@@ -22,6 +22,7 @@ __all__ = ['get_config',
            'wait_for_page_contents',
            'wait_for_relation',
            'wait_for_unit',
+           'legacy_juju',
            ]
 
 from collections import namedtuple
@@ -37,6 +38,7 @@ import time
 import urllib2
 import yaml
 from subprocess import CalledProcessError
+import os
 
 
 SLEEP_AMOUNT = 0.1
@@ -275,3 +277,8 @@ def wait_for_page_contents(url, contents, timeout=120, validate=None):
         if time.time() - start_time >= timeout:
             raise RuntimeError('timeout waiting for contents of ' + url)
         time.sleep(SLEEP_AMOUNT)
+
+
+def legacy_juju():
+    """Return True if the charm was deployed using python juju."""
+    return not os.path.exists(os.path.join(os.getcwd(), '..', 'agent.conf'))
