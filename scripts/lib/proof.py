@@ -221,6 +221,8 @@ def run(charm_name):
         else:
             categories = charm['categories']
             if type(categories) != list or categories == []:
+                # The category names are not validated because jujucharms.com
+                # may change them.
                 lint.warn(
                     'Categories metadata must be a list of one or more of: '
                     'application, app-server, database, file-server, '
