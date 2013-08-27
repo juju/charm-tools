@@ -37,3 +37,7 @@ check:
 	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
 #	@echo PEP8 Lint of Python files
 #	@echo `grep -rl '^#!/.*python' .` | xargs -r -n1 pep8
+
+clean:
+	find . -name '*.pyc' -delete
+	find . -name '*.bak' -delete

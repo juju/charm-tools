@@ -1,105 +1,79 @@
-Juju Charms
-==================
+# Juju Charms
 
 This is a collection of Juju charms for use as a reference and in
 deploying real services using juju. See Juju's home page for
 more information.
 
+https://juju.ubuntu.com
 https://launchpad.net/charm
 
-
-Quick Start
-===========
+# Quick Start
 
 First, you'll need juju. If its not available in your version of Ubuntu
-yet (none provide it as of this writing), you can use the PPA:
+you can use the PPA:
 
-sudo add-apt-repository ppa:juju/pkgs
-sudo apt-get update
-sudo apt-get install juju
+    sudo add-apt-repository ppa:juju/stable
+    sudo apt-get update
+    sudo apt-get install juju-core
 
-You'll also need the 'mr' program for the next step
+You can install charm-tools from the distro, stable ppa, or daily-builds
+PPA.
 
-sudo apt-get install mr
+    sudo apt-get install charm-tools
 
-# Setup your AWS credentials in AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY
-export AWS_SECRET_ACCESS_KEY=aaaaaaaaaaaaaabbbbbbbbbbbbccccccccccccddddddddd
-export AWS_ACCESS_KEY_ID=0123456789ABCDEF
-bzr branch lp:charm-tools
-cd charm-tools
-scripts/getall
+Alternatively you can branch the project and run the tip of the code.
 
-This will give you all of the tools. 
+    bzr branch lp:charm-tools
+    cd charm-tools
 
-tests/mediawiki.sh
+If you've branched locally, you'll need to add the `charm-tools/bin`
+directory to your `$PATH`
 
-This deploys a mediawiki with two web nodes, and two memcached nodes,
-and an haproxy load balancer.
+    export PATH="$(pwd):${PATH}"
 
-Once this returns you can run 'watch juju status' to watch the
-environment take shape, or
+# Directory structure
 
-juju debug-log
+## bin
 
-to get all of the messages
+tools to help in building charms
 
-tests/wiki.sh
+## templates
 
-This deploys mediawiki without memcached or a load balancer, but with
-a slave for expanding read query capacity.
+templates for usage in building new charms
 
-Directory structure
-===================
-
-scripts/
-  tools to help in building and testing charms
-
-templates/
-  templates for usage in building new charms
-
-charms/
-  This directory is now empty, as charms are now controlled by the 'charm'
-  distribution at https://launchpad.net/charm. Charms will now be assumed
-  to be in $CHARM_HOME or under the current working directory if it is unset.
+# Tools
 
 In order to use any of these charms, once you have juju setup and
-working in your path:
+working in your path
 
-$ juju deploy --repository=$CHARM_HOME mysql
+## create
 
-Will deploy the mysql charm.
-
-create
-=========
 To generate a new charm from a debian package available on your system
 
-$ scripts/create foo
+    juju charm create foo
 
 This should add a directory to charms with the name foo, and some of the
 metadata.yml and hooks filled in. It will create these in $CHARM_HOME
 or under the current working directory.
 
-proof
-=====
+## proof
+
 To perform basic static analysis on a charm, run
 
-$ scripts/proof foo
+    juju charm proof foo
 
 It will analyze the charm for any obvious mistakes.
 
-getall
-======
-Retrieves all of the charms in the charm distribution via bzr. This uses the
-mr command, which is available via 'sudo apt-get install mr' in Ubuntu. Note
-that on Ubuntu 10.10 and earlier the mr command throws warnings but it still
-works.
+## getall
 
-subscribers
-===========
+Retrieves all of the charms in the charm distribution via bzr. 
+
+## subscribers
+
 This is used to check the quality of maintainer<->bug subscriptions in
 launchpad since we do not have this relationship automatically setup.
 
 As a maintainer, if you would like to ensure that you are subscribed to
 all of your charms you can run this command:
 
-charm subscribers --fix-unsubscribed --maintainer you@youremail.com --repository path/to/your/charms
+    juju charm subscribers --fix-unsubscribed --maintainer you@youremail.com --repository path/to/your/charms
