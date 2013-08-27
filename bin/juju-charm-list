@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from lib import charms
+from charm-tools import charms
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

@@ -19,7 +19,7 @@ import sys
 import re
 import argparse
 
-from lib import charms
+from charm-tools import charms
 
 parser = argparse.ArgumentParser(prog='charm search',
     description='Match name against all charms (official and personal) in \

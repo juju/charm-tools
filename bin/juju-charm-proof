@@ -21,7 +21,7 @@
 
 import sys
 
-from lib import proof
+from charm-tools import proof
 
 if __name__ == "__main__":
     charm_name = proof.get_args()

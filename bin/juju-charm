@@ -30,7 +30,14 @@ def usage(exit_code=0):
 
 
 def subcommands(scripts_dir):
-    subs = os.listdir(os.path.join(scripts_dir, 'scripts'))
+    subs = []
+    for path in os.environ['PATH'].split(os.pathsep):
+        path = path.strip('"')
+        for cmd in glob(os.path.join(path, 'juju-charm-*')):
+            sub = os.path.basename(cmd)
+            sub = sub.split('juju-charm-')[0].replace('-', ' ')
+            subs.append(sub)
+
     subs.sort()
     # Removes blacklisted items from the subcommands list.
     return filter(lambda s: s not in ['lib', 'help'], subs)

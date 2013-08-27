@@ -19,8 +19,8 @@ import sys
 import re
 import argparse
 
-from lib import charms
-from lib.mr import Mr
+from charm-tools import charms
+from charm-tools.mr import Mr
 
 
 parser = argparse.ArgumentParser(prog='charm update',

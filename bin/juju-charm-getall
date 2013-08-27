@@ -19,7 +19,7 @@ import sys
 import argparse
 import subprocess
 
-from lib.mr import Mr
+from charm-tools.mr import Mr
 
 
 parser = argparse.ArgumentParser(prog='charm getall',

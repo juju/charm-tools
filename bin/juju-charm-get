@@ -18,8 +18,8 @@ import os
 import sys
 import argparse
 
-from lib.mr import Mr
-from lib import charms
+from charm-tools.mr import Mr
+from charm-tools import charms
 
 parser = argparse.ArgumentParser(prog='charm get',
     description='Retrieves official charm branch from launchpad.net')
