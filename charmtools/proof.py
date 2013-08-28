@@ -38,13 +38,12 @@ KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
 
 KNOWN_SCOPES = ['global', 'container']
 
-TEMPLATE_README = os.path.abspath(
-    os.path.join(
-        __file__, '..', '..', '..', 'templates', 'charm', 'README.ex'))
+TEMPLATE_PATH = os.path.abspath(os.path.dirname(__file__))
 
-TEMPLATE_ICON = os.path.abspath(
-    os.path.join(
-        __file__, '..', '..', '..', 'templates', 'charm', 'icon.svg'))
+TEMPLATE_README = os.path.join(TEMPLATE_PATH, 'templates', 'charm',
+                               'README.ex')
+
+TEMPLATE_ICON = os.path.join(TEMPLATE_PATH, 'templates', 'charm', 'icon.svg')
 
 
 class RelationError(Exception):
