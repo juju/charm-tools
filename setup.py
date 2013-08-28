@@ -41,6 +41,7 @@ else:
         version=__version__['charm-tools'],
         packages=['charmtools'],
         install_requires=['launchpadlib'],
+        package_data={'charmtools': ['templates/*/*.*', 'templates/*/hooks/*']},
         maintainer='Marco Ceppi',
         description=('Tools for maintaining Juju charms'),
         license='GPL v3',
