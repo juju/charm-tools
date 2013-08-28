@@ -31,8 +31,11 @@ def setup_parser():
     parser.add_argument('-f', '--fix', action='store_true',
                         help='Attempt to fix charms in charm_directory')
 
+    return parser
+
 
 def main():
+    parser = setup_parser()
     args = parser.parse_args()
 
     sys.stderr.write('Pulling charm list from Launchpad\n')

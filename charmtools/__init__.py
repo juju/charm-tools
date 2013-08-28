@@ -40,7 +40,7 @@ def subcommands(scripts_dir):
         path = path.strip('"')
         for cmd in glob.glob(os.path.join(path, 'juju-charm-*%s' % ext)):
             sub = os.path.basename(cmd)
-            sub = sub.split('juju-charm-')[1]
+            sub = sub.split('juju-charm-')[1].replace(ext, '')
             subs.append(sub)
 
     subs.sort()
