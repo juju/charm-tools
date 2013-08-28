@@ -26,8 +26,8 @@ import shutil
 import tempfile
 import textwrap
 import socket
-import pwd
 import argparse
+
 from Cheetah.Template import Template
 from stat import ST_MODE
 
@@ -37,13 +37,18 @@ def portable_get_maintainer():
     if 'NAME' in os.environ:
         name = os.environ['NAME']
     else:
-        name = pwd.getpwuid(os.getuid()).pw_gecos.split(',')[0].strip()
+        try:
+            import pwd
+            name = pwd.getpwuid(os.getuid()).pw_gecos.split(',')[0].strip()
+
+            if not len(name):
+                name = pwd.getpwuid(os.getuid())[0]
 
     if not len(name):
-        username = pwd.getpwuid(os.getuid())[0]
-        name = username
+        name = 'Your Name'
 
-    email = os.environ.get('EMAIL', '%s@%s' % (name, socket.getfqdn()))
+    email = os.environ.get('EMAIL', '%s@%s' % (name.replace(' ', '.'),
+                                               socket.getfqdn()))
     return name, email
 
 
@@ -92,7 +97,7 @@ def main():
     else:
         charm_home = os.getenv('CHARM_HOME', '.')
 
-    home = path.abspath(path.join(path.dirname(sys.argv[0]), '..'))
+    home = path.abspath(path.dirname(__file__))
     template_dir = path.join(home, 'templates')
     output_dir = path.join(charm_home, args.charmname)
     print "Generating template for " + args.charmname + " from templates in " \
