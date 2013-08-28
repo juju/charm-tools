@@ -18,7 +18,9 @@ import os
 import sys
 import subprocess
 
-exit_code = subprocess.call([sys.executable, os.path.join(os.path.dirname(
-                             os.path.realpath(__file__)), 'promulgate'),
-                            '--unpromulgate'] + sys.argv[1:])
-sys.exit(exit_code)
+
+def main():
+    exit_code = subprocess.call([sys.executable, os.path.join(os.path.dirname(
+                                 os.path.realpath(__file__)), 'promulgate'),
+                                '--unpromulgate'] + sys.argv[1:])
+    sys.exit(exit_code)

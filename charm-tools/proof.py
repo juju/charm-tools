@@ -363,8 +363,13 @@ def run(charm_name):
     return lint.lint, lint.exit_code
 
 
-if __name__ == "__main__":
+def main():
     charm_name = get_args()
     lint, exit_code = run(charm_name)
-    print "\n".join(lint)
+    if lint:
+        print "\n".join(lint)
     sys.exit(exit_code)
+   
+
+if __name__ == "__main__":
+    main()

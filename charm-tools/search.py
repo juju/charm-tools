@@ -14,15 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import sys
-from charm-tools import charms
+import re
+import argparse
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        print('usage: list [ --help ]')
-        if sys.argv[1] == '--help':
-            sys.exit(0)
-        else:
-            sys.exit(1)
+from . import charms
 
-    print "\n".join(charms.remote())
+
+def setup_parser():
+    parser = argparse.ArgumentParser(prog='charm search',
+        description='Match name against all charms (official and personal) in \
+                     store')
+    parser.add_argument('name', nargs=1, help='Name which to search by')
+
+
+def main():
+    args = parser.parse_args()
+    matches = [c for c in charms.remote() if args.name[0] in c]
+    print '\n'.join(matches)

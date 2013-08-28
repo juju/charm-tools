@@ -83,7 +83,7 @@ def prompt_to_continue(bug_id):
     return ans.strip().lower().startswith('y')
 
 
-def main(argv):
+def main():
     args = parse_options()
     logging.basicConfig(level=log_level(args.verbose),
                         format='%(levelname)s:%(message)s')
@@ -115,4 +115,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(main())
