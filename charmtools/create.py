@@ -43,6 +43,8 @@ def portable_get_maintainer():
 
             if not len(name):
                 name = pwd.getpwuid(os.getuid())[0]
+        except:
+            name = 'Your Name'
 
     if not len(name):
         name = 'Your Name'
@@ -76,7 +78,7 @@ def apt_fill(package):
         v['description'] = textwrap.fill(p.description, width=72,
                                          subsequent_indent='  ')
     except:
-        print "Failed to find " + args.charmname + " in apt cache, creating " \
+        print "Failed to find " + package + " in apt cache, creating " \
             + "an empty charm instead."
         v['summary'] = '<Fill in summary here>'
         v['description'] = '<Multi-line description here>'
@@ -85,6 +87,7 @@ def apt_fill(package):
 
 
 def main():
+    parser = setup_parser()
     args = parser.parse_args()
 
     try:
@@ -113,7 +116,7 @@ def main():
     v = {'package': args.charmname,
          'maintainer': '%s <%s>' % get_maintainer()}
 
-    v = v + apt_fill(args.charmname)
+    v.update(apt_fill(args.charmname))
 
     for root, dirs, files in os.walk(output_dir):
         for outfile in files:
