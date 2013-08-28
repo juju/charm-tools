@@ -16,8 +16,13 @@
 
 import os
 import sys
+import glob
 
 import subprocess
+
+ext = ''
+if os.name == 'nt':
+    ext = '.exe'
 
 
 def usage(exit_code=0):
@@ -33,28 +38,30 @@ def subcommands(scripts_dir):
     subs = []
     for path in os.environ['PATH'].split(os.pathsep):
         path = path.strip('"')
-        for cmd in glob(os.path.join(path, 'juju-charm-*')):
+        for cmd in glob.glob(os.path.join(path, 'juju-charm-*%s' % ext)):
             sub = os.path.basename(cmd)
-            sub = sub.split('juju-charm-')[0].replace('-', ' ')
+            sub = sub.split('juju-charm-')[1]
             subs.append(sub)
 
     subs.sort()
     # Removes blacklisted items from the subcommands list.
-    return filter(lambda s: s not in ['mr', 'charm'], subs)
+    return filter(lambda s: s not in ['mr', 'charms'], subs)
 
 
 def main():
+    #print sys.argv
     if len(sys.argv) < 2:
         usage(1)
 
     sub = sys.argv[1]
     opts = sys.argv[2:]
-    sub_exec = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            'scripts', sub)
+    sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
+               "juju-charm-%s%s" % (sub, ext))
+    #print sub_exec
     if not os.path.exists(sub_exec):
         sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
         usage(2)
-    subprocess.call([sys.executable, sub_exec] + opts)
+    subprocess.call([sub_exec] + opts)
 
 
 if __name__ == '__main__':

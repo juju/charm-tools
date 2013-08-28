@@ -13,29 +13,11 @@ from setuptools import setup, find_packages
 
 __version__ = {
   'charmhelpers': '0.0.3',
-  'charm-tools': '0.1.0'
+  'charm-tools': '0.1.0-rc1'
 }
 
 
-if 'charm-tools' not in sys.argv[0]: 
-    setup(
-        name='charmhelpers',
-        version=__version__['charmhelpers'],
-        packages=find_packages('helpers/python'),
-        package_dir={'': 'helpers/python'},
-        include_package_data=True,
-        zip_safe=False,
-        maintainer='Launchpad Yellow',
-        description=('Helper functions for writing Juju charms'),
-        license='GPL v3',
-        url='https://launchpad.net/charm-tools',
-        classifiers=[
-            "Development Status :: 3 - Alpha",
-            "Intended Audience :: Developers",
-            "Programming Language :: Python",
-        ],
-    )
-else:
+if True:
     setup(
         name='charmtools',
         version=__version__['charm-tools'],
