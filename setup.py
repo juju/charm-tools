@@ -18,7 +18,7 @@ setup(
     name='charmtools',
     version=__version__,
     packages=['charmtools'],
-    install_requires=['launchpadlib'],
+    install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml'],
     package_data={'charmtools': ['templates/*/*.*', 'templates/*/hooks/*']},
     maintainer='Marco Ceppi',
     description=('Tools for maintaining Juju charms'),
