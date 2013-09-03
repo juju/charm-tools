@@ -30,8 +30,11 @@ def setup_parser():
     parser.add_argument('branch_to', nargs='?',
                         help='Path to where charm should be branched')
 
+    return parser
+
 
 def main():
+    parser = setup_parser()
     args = parser.parse_args()
 
     charm = args.charm[0]

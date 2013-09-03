@@ -161,6 +161,7 @@ def get_args():
         charm_name = args.charm_name
     else:
         charm_name = os.getcwd()
+
     return charm_name
 
 
@@ -368,7 +369,6 @@ def main():
     if lint:
         print "\n".join(lint)
     sys.exit(exit_code)
-   
 
 if __name__ == "__main__":
     main()

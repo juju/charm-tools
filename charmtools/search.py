@@ -28,8 +28,11 @@ def setup_parser():
                      store')
     parser.add_argument('name', nargs=1, help='Name which to search by')
 
+    return parser
+
 
 def main():
+    parser = setup_parser()
     args = parser.parse_args()
     matches = [c for c in charms.remote() if args.name[0] in c]
     print '\n'.join(matches)

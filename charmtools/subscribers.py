@@ -61,8 +61,11 @@ def setup_parser():
     parser.add_argument('charms', default=[], nargs='*',
                         help='Charms to check for subscriptions')
 
+    return parser
+
 
 def main():
+    parser = setup_parser()
     args = parser.parse_args()
 
     if args.repository is None:
