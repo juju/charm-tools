@@ -11,7 +11,7 @@ ez_setup.use_setuptools()
 
 from setuptools import setup, find_packages
 
-__version__ = '0.1.0-rc2'
+__version__ = '0.1.0-rc3'
 
 
 setup(
@@ -34,18 +34,18 @@ setup(
         'console_scripts': [
             'charm = charmtools:main',
             'juju-charm = charmtools:main',
-            'juju-charm-get = charmtools.get:main',
-            'juju-charm-getall = charmtools.getall:main',
-            'juju-charm-proof = charmtools.proof:main',
-            'juju-charm-create = charmtools.create:main',
-            'juju-charm-list = charmtools.list:main',
-            'juju-charm-promulgate = charmtools.promulgate:main',
-            'juju-charm-review = charmtools.review:main',
-            'juju-charm-review-queue = charmtools.review_queue:main',
-            'juju-charm-search = charmtools.search:main',
-            'juju-charm-subscribers = charmtools.subscribers:main',
-            'juju-charm-unpromulgate = charmtools.unpromulgate:main',
-            'juju-charm-update = charmtools.update:main',
+            'charm-get = charmtools.get:main',
+            'charm-getall = charmtools.getall:main',
+            'charm-proof = charmtools.proof:main',
+            'charm-create = charmtools.create:main',
+            'charm-list = charmtools.list:main',
+            'charm-promulgate = charmtools.promulgate:main',
+            'charm-review = charmtools.review:main',
+            'charm-review-queue = charmtools.review_queue:main',
+            'charm-search = charmtools.search:main',
+            'charm-subscribers = charmtools.subscribers:main',
+            'charm-unpromulgate = charmtools.unpromulgate:main',
+            'charm-update = charmtools.update:main',
         ],
     },
 )

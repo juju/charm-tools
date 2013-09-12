@@ -38,9 +38,9 @@ def subcommands(scripts_dir):
     subs = []
     for path in os.environ['PATH'].split(os.pathsep):
         path = path.strip('"')
-        for cmd in glob.glob(os.path.join(path, 'juju-charm-*%s' % ext)):
+        for cmd in glob.glob(os.path.join(path, 'charm-*%s' % ext)):
             sub = os.path.basename(cmd)
-            sub = sub.split('juju-charm-')[1].replace(ext, '')
+            sub = sub.split('charm-')[1].replace(ext, '')
             subs.append(sub)
 
     subs.sort()
@@ -49,15 +49,18 @@ def subcommands(scripts_dir):
 
 
 def main():
-    #print sys.argv
     if len(sys.argv) < 2:
         usage(1)
 
     sub = sys.argv[1]
     opts = sys.argv[2:]
+    if sub == '--description':
+        sys.stdout.write("Set of tools for authoring and maintaining charms\n")
+        sys.exit(0)
+
     sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
-               "juju-charm-%s%s" % (sub, ext))
-    #print sub_exec
+               "charm-%s%s" % (sub, ext))
+
     if not os.path.exists(sub_exec):
         sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
         usage(2)
