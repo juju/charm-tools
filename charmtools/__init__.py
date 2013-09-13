@@ -43,7 +43,7 @@ def subcommands(scripts_dir):
             sub = sub.split('charm-')[1].replace(ext, '')
             subs.append(sub)
 
-    subs.sort()
+    subs = sorted(set(subs))
     # Removes blacklisted items from the subcommands list.
     return filter(lambda s: s not in ['mr', 'charms'], subs)
 
