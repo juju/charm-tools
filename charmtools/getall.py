@@ -46,7 +46,7 @@ def main():
 
     charm_update = subprocess.call([os.path.join(os.path.dirname(
                                     os.path.realpath(sys.argv[0])), 
-                                    'juju-charm-update%s' % ext),
+                                    'charm-update%s' % ext),
                                     args.charms_directory])
     if charm_update != 0:
         sys.stderr.write('Unable to perform `juju charm update`!\n')
