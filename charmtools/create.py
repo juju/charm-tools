@@ -141,3 +141,6 @@ def main():
                 print "WARNING: could not process template for " \
                     + full_outfile + ": " + str(e)
                 raise
+
+if __name__ == "__main__":
+    main()

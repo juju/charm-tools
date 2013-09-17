@@ -1,7 +1,7 @@
 #!/bin/sh
 
 TESTDIR=`dirname $0`
-CREATE=$TESTDIR/../../scripts/create
+CREATE=$TESTDIR/../../charmtools/create.py
 
 cleanup() {
     if [ -n "$workdir" ] && [ -d "$workdir" ] ; then
