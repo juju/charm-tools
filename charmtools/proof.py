@@ -47,6 +47,17 @@ TEMPLATE_README = os.path.join(TEMPLATE_PATH, 'templates', 'charm',
 
 TEMPLATE_ICON = os.path.join(TEMPLATE_PATH, 'templates', 'charm', 'icon.svg')
 
+KNOWN_OPTION_KEYS = set(('description', 'type', 'default'))
+
+REQUIRED_OPTION_KEYS = set(('description', ))
+
+KNOWN_OPTION_TYPES = {
+    'str': basestring,
+    'int': int,
+    'float': float,
+    'boolean': bool,
+}
+
 
 class RelationError(Exception):
     pass
@@ -150,6 +161,83 @@ class Linter(object):
 
             if not has_one and not subordinate:
                 self.info("relation " + r + " has no hooks")
+
+    def check_config_file(self, charm_path):
+        config_path = os.path.join(charm_path, 'config.yaml')
+        if not os.path.isfile(config_path):
+            self.warn('File config.yaml not found.')
+            return
+        try:
+            with open(config_path) as config_file:
+                config = yaml.load(config_file.read())
+        except Exception, error:
+            self.err('Cannot parse config.yaml: %s' % error)
+            return
+        if not isinstance(config, dict):
+            self.err('config.yaml not parsed into a dictionary.')
+            return
+        if 'options' not in config:
+            self.err('config.yaml must have an "options" key.')
+            return
+        if len(config) > 1:
+            wrong_keys = sorted(config)
+            wrong_keys.pop(wrong_keys.index('options'))
+            self.warn('Ignored keys in config.yaml: %s' % wrong_keys)
+
+        options = config['options']
+        if not isinstance(options, dict):
+            self.err(
+                'config.yaml: options section is not parsed as a dictionary')
+            return
+
+        for option_name, option_value in options.items():
+            if not isinstance(option_value, dict):
+                self.err(
+                    'config.yaml: data for option %s is not a dict'
+                    % option_name)
+                continue
+            existing_keys = set(option_value)
+            missing_keys = KNOWN_OPTION_KEYS - existing_keys
+            missing_required_keys = REQUIRED_OPTION_KEYS & missing_keys
+            missing_optional_keys = missing_keys - missing_required_keys
+            if missing_required_keys:
+                self.err(
+                    'config.yaml: option %s does not have the required keys: '
+                    '%s' % (
+                        option_name, ', '.join(sorted(missing_required_keys))))
+            if missing_optional_keys:
+                self.warn(
+                    'config.yaml: option %s does not have the optional keys: '
+                    '%s' % (
+                        option_name, ', '.join(sorted(missing_optional_keys))))
+            invalid_keys = existing_keys - KNOWN_OPTION_KEYS
+            if invalid_keys:
+                invalid_keys = [str(key) for key in sorted(invalid_keys)]
+                self.warn(
+                    'config.yaml: option %s as unknown keys: %s' % (
+                        option_name, ', '.join(invalid_keys)))
+
+            if 'description' in existing_keys:
+                if not isinstance(option_value['description'], basestring):
+                    self.warn(
+                        'config.yaml: description of option %s should be a '
+                        'string' % option_name)
+            option_type = option_value.get('type', 'str')
+            if option_type not in KNOWN_OPTION_TYPES:
+                self.warn('config.yaml: option %s has an invalid type (%s)'
+                          % (option_name, option_type))
+            elif 'default' in option_value:
+                expected_type = KNOWN_OPTION_TYPES[option_value['type']]
+                if not isinstance(option_value['default'], expected_type):
+                    self.err(
+                        'config.yaml: type of option %s is specified as '
+                        '%s, but the type of the default value is %s'
+                        % (option_name, option_value['type'],
+                           type(option_value['default']).__name__))
+            else:
+                # Nothing to do: the option type is valid but no default
+                # value exists.
+                pass
 
 
 def get_args():
@@ -362,6 +450,7 @@ def run(charm_name):
             except ValueError:
                 lint.err("revision file contains non-numeric data")
 
+    lint.check_config_file(charm_path)
     return lint.lint, lint.exit_code
 
 
