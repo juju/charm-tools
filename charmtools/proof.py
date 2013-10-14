@@ -169,7 +169,7 @@ class Linter(object):
             return
         try:
             with open(config_path) as config_file:
-                config = yaml.load(config_file.read())
+                config = yaml.safe_load(config_file.read())
         except Exception, error:
             self.err('Cannot parse config.yaml: %s' % error)
             return
@@ -272,7 +272,7 @@ def run(charm_name):
     try:
         yamlfile = open(yaml_path, 'r')
         try:
-            charm = yaml.load(yamlfile)
+            charm = yaml.safe_load(yamlfile)
         except Exception as e:
             lint.crit('cannot parse ' + yaml_path + ":" + str(e))
             return lint.lint, lint.exit_code

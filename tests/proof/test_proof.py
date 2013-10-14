@@ -241,6 +241,16 @@ class TestProof(TestCase):
             'the type of the default value is str')
         self.assertEqual(expected, self.linter.lint[0])
 
+    def test_yaml_with_python_objects(self):
+        """Python objects can't be loaded."""
+        # Try to load the YAML representation of the int() function.
+        self.write_config("!!python/name:__builtin__.int ''\n")
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            "E: Cannot parse config.yaml: could not determine a constructor "
+            "for the tag 'tag:yaml.org,2002:python/name:__builtin__.int'")
+        self.assertTrue(self.linter.lint[0].startswith(expected))
 
 if __name__ == '__main__':
     main()
