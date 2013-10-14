@@ -125,7 +125,7 @@ def charm_name_from_metadata(charm_dir):
         logging.error("can't read charm metadata: %s", charm_metadata)
 
     with open(charm_metadata) as metadata:
-        charm = yaml.load(metadata)
+        charm = yaml.safe_load(metadata)
 
     return charm['name']
 
