@@ -52,7 +52,7 @@ KNOWN_OPTION_KEYS = set(('description', 'type', 'default'))
 REQUIRED_OPTION_KEYS = set(('description', ))
 
 KNOWN_OPTION_TYPES = {
-    'str': basestring,
+    'string': basestring,
     'int': int,
     'float': float,
     'boolean': bool,

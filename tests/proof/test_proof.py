@@ -51,7 +51,7 @@ class TestProof(TestCase):
         self.write_config("""
             options:
               string_opt:
-                type: str
+                type: string
                 description: A string option
                 default: some text
               int_opt:
@@ -107,7 +107,7 @@ class TestProof(TestCase):
         self.write_config("""
             options:
               string_opt:
-                type: str
+                type: string
                 description: whatever
                 default: blah
             noise: The art of - in visible silence
@@ -215,14 +215,14 @@ class TestProof(TestCase):
         self.write_config("""
             options:
               foo:
-                type: str
+                type: string
                 default: 17
                 description: blah
             """)
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'E: config.yaml: type of option foo is specified as str, but '
+            'E: config.yaml: type of option foo is specified as string, but '
             'the type of the default value is int')
         self.assertEqual(expected, self.linter.lint[0])
 
