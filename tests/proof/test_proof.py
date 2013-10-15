@@ -149,22 +149,7 @@ class TestProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'W: config.yaml: option foo does not have the optional keys: '
-            'default')
-        self.assertEqual(expected, self.linter.lint[0])
-
-    def test_option_data_misses_required_key(self):
-        self.write_config("""
-            options:
-              foo:
-                type: int
-                default: 3
-            """)
-        self.linter.check_config_file(self.charm_dir)
-        self.assertEqual(1, len(self.linter.lint))
-        expected = (
-            'E: config.yaml: option foo does not have the required keys: '
-            'description')
+            'W: config.yaml: option foo does not have the keys: default')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_option_data_with_unknown_key(self):
@@ -180,7 +165,7 @@ class TestProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'W: config.yaml: option foo as unknown keys: 42, something')
+            'W: config.yaml: option foo has unknown keys: 42, something')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_option_data_with_invalid_descr_type(self):

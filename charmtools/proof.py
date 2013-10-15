@@ -49,8 +49,6 @@ TEMPLATE_ICON = os.path.join(TEMPLATE_PATH, 'templates', 'charm', 'icon.svg')
 
 KNOWN_OPTION_KEYS = set(('description', 'type', 'default'))
 
-REQUIRED_OPTION_KEYS = set(('description', ))
-
 KNOWN_OPTION_TYPES = {
     'string': basestring,
     'int': int,
@@ -198,23 +196,15 @@ class Linter(object):
                 continue
             existing_keys = set(option_value)
             missing_keys = KNOWN_OPTION_KEYS - existing_keys
-            missing_required_keys = REQUIRED_OPTION_KEYS & missing_keys
-            missing_optional_keys = missing_keys - missing_required_keys
-            if missing_required_keys:
-                self.err(
-                    'config.yaml: option %s does not have the required keys: '
-                    '%s' % (
-                        option_name, ', '.join(sorted(missing_required_keys))))
-            if missing_optional_keys:
+            if missing_keys:
                 self.warn(
-                    'config.yaml: option %s does not have the optional keys: '
-                    '%s' % (
-                        option_name, ', '.join(sorted(missing_optional_keys))))
+                    'config.yaml: option %s does not have the keys: %s' % (
+                        option_name, ', '.join(sorted(missing_keys))))
             invalid_keys = existing_keys - KNOWN_OPTION_KEYS
             if invalid_keys:
                 invalid_keys = [str(key) for key in sorted(invalid_keys)]
                 self.warn(
-                    'config.yaml: option %s as unknown keys: %s' % (
+                    'config.yaml: option %s has unknown keys: %s' % (
                         option_name, ', '.join(invalid_keys)))
 
             if 'description' in existing_keys:
@@ -222,7 +212,7 @@ class Linter(object):
                     self.warn(
                         'config.yaml: description of option %s should be a '
                         'string' % option_name)
-            option_type = option_value.get('type', 'str')
+            option_type = option_value.get('type', 'string')
             if option_type not in KNOWN_OPTION_TYPES:
                 self.warn('config.yaml: option %s has an invalid type (%s)'
                           % (option_name, option_type))
