@@ -226,6 +226,22 @@ class TestProof(TestCase):
             'the type of the default value is str')
         self.assertEqual(expected, self.linter.lint[0])
 
+    def test_option_empty_default_value(self):
+        # An empty default value is treated as an error.
+        self.write_config("""
+            options:
+              foo:
+                type: string
+                default:
+                description: blah
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            'E: config.yaml: type of option foo is specified as string, '
+            'but the type of the default value is NoneType')
+        self.assertEqual(expected, self.linter.lint[0])
+
     def test_yaml_with_python_objects(self):
         """Python objects can't be loaded."""
         # Try to load the YAML representation of the int() function.
