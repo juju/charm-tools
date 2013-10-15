@@ -51,7 +51,7 @@ class TestProof(TestCase):
         self.write_config("""
             options:
               string_opt:
-                type: str
+                type: string
                 description: A string option
                 default: some text
               int_opt:
@@ -107,7 +107,7 @@ class TestProof(TestCase):
         self.write_config("""
             options:
               string_opt:
-                type: str
+                type: string
                 description: whatever
                 default: blah
             noise: The art of - in visible silence
@@ -149,22 +149,7 @@ class TestProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'W: config.yaml: option foo does not have the optional keys: '
-            'default')
-        self.assertEqual(expected, self.linter.lint[0])
-
-    def test_option_data_misses_required_key(self):
-        self.write_config("""
-            options:
-              foo:
-                type: int
-                default: 3
-            """)
-        self.linter.check_config_file(self.charm_dir)
-        self.assertEqual(1, len(self.linter.lint))
-        expected = (
-            'E: config.yaml: option foo does not have the required keys: '
-            'description')
+            'W: config.yaml: option foo does not have the keys: default')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_option_data_with_unknown_key(self):
@@ -180,7 +165,7 @@ class TestProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'W: config.yaml: option foo as unknown keys: 42, something')
+            'W: config.yaml: option foo has unknown keys: 42, something')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_option_data_with_invalid_descr_type(self):
@@ -215,14 +200,14 @@ class TestProof(TestCase):
         self.write_config("""
             options:
               foo:
-                type: str
+                type: string
                 default: 17
                 description: blah
             """)
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'E: config.yaml: type of option foo is specified as str, but '
+            'E: config.yaml: type of option foo is specified as string, but '
             'the type of the default value is int')
         self.assertEqual(expected, self.linter.lint[0])
 
@@ -241,6 +226,32 @@ class TestProof(TestCase):
             'the type of the default value is str')
         self.assertEqual(expected, self.linter.lint[0])
 
+    def test_option_empty_default_value(self):
+        # An empty default value is treated as an error.
+        self.write_config("""
+            options:
+              foo:
+                type: string
+                default:
+                description: blah
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            'E: config.yaml: type of option foo is specified as string, '
+            'but the type of the default value is NoneType')
+        self.assertEqual(expected, self.linter.lint[0])
+
+    def test_yaml_with_python_objects(self):
+        """Python objects can't be loaded."""
+        # Try to load the YAML representation of the int() function.
+        self.write_config("!!python/name:__builtin__.int ''\n")
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            "E: Cannot parse config.yaml: could not determine a constructor "
+            "for the tag 'tag:yaml.org,2002:python/name:__builtin__.int'")
+        self.assertTrue(self.linter.lint[0].startswith(expected))
 
 if __name__ == '__main__':
     main()
