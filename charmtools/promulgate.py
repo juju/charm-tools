@@ -101,7 +101,7 @@ def proof_charm(charm_dir, force=False, ignore_warnings=False):
     logging.info("Running charm proof ... ")
     charm_proof = subprocess.call([sys.executable, os.path.join(
                                    os.path.dirname(os.path.realpath(__file__)),
-                                   'proof'), charm_dir])
+                                   'proof.py'), charm_dir])
     if charm_proof == 1 or charm_proof == 200:
         if force:
             logging.info("force option enabled ... Continuing with errors")
