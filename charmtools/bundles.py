@@ -10,6 +10,9 @@ from linter import Linter
 class BundleLinter(Linter):
     def validate(self, contents):
         for name, bdata in contents.items():
+            if name == 'envExport':
+                self.err('envExport is the default export name. Please '
+                         'use a unique name')
             if not 'services' in bdata:
                 self.crit("%s: No services defined", name)
                 sys.exit(200)
@@ -35,10 +38,9 @@ class BundleLinter(Linter):
         self.validate(data)
 
     def remote_proof(self, bundle):
-        # https://staging.jujucharms.com/api/3/bundle/proof deployer_file
         deployer_file = bundle.bundle_file(parse=False)
 
-        r = requests.post('http://staging.jujucharms.com/api/3/bundle/proof',
+        r = requests.post('https://manage.jujucharms.com/api/3/bundle/proof',
                           data={'deployer_file': deployer_file})
         proof_output = r.json
 
