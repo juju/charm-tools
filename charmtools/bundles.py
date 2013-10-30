@@ -42,7 +42,7 @@ class BundleLinter(Linter):
 
         r = requests.post('https://manage.jujucharms.com/api/3/bundle/proof',
                           data={'deployer_file': deployer_file})
-        proof_output = r.json
+        proof_output = r.json()
 
         # Loop through errors for verbose outputing.
         # http://paste.mitechie.com/show/1048/

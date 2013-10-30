@@ -11,7 +11,7 @@ ez_setup.use_setuptools()
 
 from setuptools import setup, find_packages
 
-__version__ = '1.1.0-rc2'
+__version__ = '1.1.0-rc3'
 
 
 setup(
