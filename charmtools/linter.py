@@ -1,8 +1,9 @@
 
 class Linter(object):
-    def __init__(self):
+    def __init__(self, debug=False):
         self.lint = []
         self.exit_code = 0
+        self.debug = debug
 
     def crit(self, msg):
         """Called when checking cannot continue."""

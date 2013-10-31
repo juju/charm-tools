@@ -2,6 +2,7 @@ import os
 import sys
 import yaml
 import glob
+import json
 import requests
 
 from linter import Linter
@@ -46,15 +47,19 @@ class BundleLinter(Linter):
 
         # Loop through errors for verbose outputing.
         # http://paste.mitechie.com/show/1048/
+        if self.debug:
+            print json.dumps(proof_output, 2)
+
         if 'error_messages' in proof_output:
             for message in proof_output['error_messages']:
                 self.err(message)
 
 
 class Bundle(object):
-    def __init__(self, path):
+    def __init__(self, path, debug=False):
         self.bundle_path = os.path.abspath(path)
         self.supported_files = ['bundles.yaml', 'bundles.json']
+        self.debug = debug
         if not self.is_bundle():
             raise Exception('Not a bundle')
 
@@ -79,7 +84,7 @@ class Bundle(object):
         raise Exception('No bundle.json or bundle.yaml file found')
 
     def proof(self, remote=True):
-        lint = BundleLinter()
+        lint = BundleLinter(self.debug)
         lint.local_proof(self)
         if remote:
             lint.remote_proof(self)

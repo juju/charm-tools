@@ -11,7 +11,7 @@ ez_setup.use_setuptools()
 
 from setuptools import setup, find_packages
 
-__version__ = '1.1.0-rc3'
+__version__ = '1.1.0-rc4'
 
 
 setup(
@@ -34,6 +34,7 @@ setup(
         'console_scripts': [
             'charm = charmtools:main',
             'juju-charm = charmtools:main',
+            'juju-bundle = charmtools:bundle',
             'charm-get = charmtools.get:main',
             'charm-getall = charmtools.getall:main',
             'charm-proof = charmtools.proof:main',

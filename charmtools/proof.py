@@ -25,13 +25,12 @@ from charms import Charm
 
 def get_args():
     parser = argparse.ArgumentParser(
-        description='Performs static analysis on charms')
-    parser.add_argument('-b', '--bundle', action='store_true',
-                        help='Process as a bundle')
-    parser.add_argument('-n', '--offline', action='store_false',
+        description='Performs static analysis on charms and bundles')
+    parser.add_argument('-n', '--offline', action='store_true',
                         help='Only perform offline proofing')
     parser.add_argument('charm_name', nargs='?', default=os.getcwd(),
                         help='path of charm dir to check. Defaults to PWD')
+    parser = parser_defaults(parser)
     args = parser.parse_args()
 
     return args
@@ -42,14 +41,19 @@ def main():
     name = args.charm_name
     if not args.bundle:
         try:
-            c = Charm(os.path.abspath(name))
+            c = Charm(os.path.abspath(name), args.debug)
         except:
             try:
-                c = Bundle(os.path.abspath(name))
-            except:
-                raise Exception("Not a bundle or a charm")
+                c = Bundle(os.path.abspath(name), args.debug)
+            except Exception as e:
+                print "Not a Bundle or a Charm, can not proof"
+                sys.exit(1)
     else:
-        c = Bundle(os.path.abspath(name))
+        try:
+            c = Bundle(os.path.abspath(name), args.debug)
+        except Exception as e:
+            print e.msg
+            sys.exit(1)
 
     lint, exit_code = c.proof()
     if lint:
