@@ -21,6 +21,7 @@ import glob
 import subprocess
 
 from . import cli
+from . import version
 
 
 def charm():
@@ -35,6 +36,10 @@ def charm():
 
     if sub == '--help':
         cli.usage(0)
+
+    if sub == '--version':
+        version.main()
+        sys.exit(0)
 
     sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
                             "charm-%s%s" % (sub, cli.ext()))
