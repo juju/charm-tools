@@ -9,14 +9,13 @@ import ez_setup
 
 ez_setup.use_setuptools()
 
+from charmtools.version import __VERSION__
 from setuptools import setup, find_packages
-
-__version__ = '1.1.0-rc4'
 
 
 setup(
     name='charmtools',
-    version=__version__,
+    version=__VERSION__,
     packages=['charmtools'],
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko', 'bzr'],
@@ -47,6 +46,7 @@ setup(
             'charm-subscribers = charmtools.subscribers:main',
             'charm-unpromulgate = charmtools.unpromulgate:main',
             'charm-update = charmtools.update:main',
+            'charm-version = charmtools.version:main',
         ],
     },
 )
