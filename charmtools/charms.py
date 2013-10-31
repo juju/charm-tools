@@ -393,9 +393,7 @@ class Charm(object):
             lint.exit_code = -1
 
         rev_path = os.path.join(charm_path, 'revision')
-        if not os.path.exists(rev_path):
-            lint.err("revision file in root of charm is required")
-        else:
+        if os.path.exists(rev_path):
             with open(rev_path, 'r') as rev_file:
                 content = rev_file.read().rstrip()
                 try:
