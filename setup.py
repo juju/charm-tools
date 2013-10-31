@@ -32,8 +32,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'charm = charmtools:main',
-            'juju-charm = charmtools:main',
+            'charm = charmtools:charm',
+            'juju-charm = charmtools:charm',
             'juju-bundle = charmtools:bundle',
             'charm-get = charmtools.get:main',
             'charm-getall = charmtools.getall:main',

@@ -21,7 +21,7 @@ import argparse
 
 from bundles import Bundle
 from charms import Charm
-
+from cli import parser_defaults
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -41,7 +41,7 @@ def main():
     name = args.charm_name
     if not args.bundle:
         try:
-            c = Charm(os.path.abspath(name), args.debug)
+            c = Charm(os.path.abspath(name))
         except:
             try:
                 c = Bundle(os.path.abspath(name), args.debug)
