@@ -47,6 +47,7 @@ setup(
             'charm-unpromulgate = charmtools.unpromulgate:main',
             'charm-update = charmtools.update:main',
             'charm-version = charmtools.version:main',
+            'charm-help = charmtools.cli:usage',
         ],
     },
 )
