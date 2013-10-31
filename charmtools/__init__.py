@@ -20,52 +20,52 @@ import glob
 
 import subprocess
 
-ext = ''
-if os.name == 'nt':
-    ext = '.exe'
+from . import cli
 
-
-def usage(exit_code=0):
-    sys.stderr.write('usage: %s subcommand\n' % sys.argv[0])
-    subs = subcommands(os.path.dirname(os.path.realpath(__file__)))
-    sys.stderr.write('\n  Available subcommands are:\n    ')
-    sys.stderr.write('\n    '.join(subs))
-    sys.stderr.write('\n')
-    sys.exit(exit_code)
-
-
-def subcommands(scripts_dir):
-    subs = []
-    for path in os.environ['PATH'].split(os.pathsep):
-        path = path.strip('"')
-        for cmd in glob.glob(os.path.join(path, 'charm-*%s' % ext)):
-            sub = os.path.basename(cmd)
-            sub = sub.split('charm-')[1].replace(ext, '')
-            subs.append(sub)
-
-    subs = sorted(set(subs))
-    # Removes blacklisted items from the subcommands list.
-    return filter(lambda s: s not in ['mr', 'charms'], subs)
-
-
-def main():
+def charm():
     if len(sys.argv) < 2:
-        usage(1)
+        cli.usage(1)
 
     sub = sys.argv[1]
     opts = sys.argv[2:]
     if sub == '--description':
-        sys.stdout.write("Set of tools for authoring and maintaining charms\n")
+        sys.stdout.write("Tools for authoring and maintaining charms\n")
         sys.exit(0)
 
+
+    if sub == '--help':
+        cli.usage(0)
+
     sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
-               "charm-%s%s" % (sub, ext))
+               "charm-%s%s" % (sub, cli.ext()))
 
     if not os.path.exists(sub_exec):
         sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
-        usage(2)
+        cli.usage(2)
     subprocess.call([sub_exec] + opts)
 
+def bundle():
+    if len(sys.argv) < 2:
+        cli.usage(0)
+
+    sub = sys.argv[1]
+    opts = sys.argv[2:]
+
+    if sub == '--description':
+        sys.stdout.write("Tools for managing bundles\n")
+        sys.exit(0)
+
+    if sub == '--help':
+        cli.usage(0)
+
+    sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
+               "charm-%s%s" % (sub, cli.ext()))
+
+    if not os.path.exists(sub_exec):
+        sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
+        cli.usage(2)
+
+    subprocess.call([sub_exec, '--bundle'] + opts)
 
 if __name__ == '__main__':
-    main()
+    charm()
