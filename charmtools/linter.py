@@ -1,4 +1,5 @@
 
+
 class Linter(object):
     def __init__(self, debug=False):
         self.lint = []

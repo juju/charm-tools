@@ -23,6 +23,7 @@ from bundles import Bundle
 from charms import Charm
 from cli import parser_defaults
 
+
 def get_args():
     parser = argparse.ArgumentParser(
         description='Performs static analysis on charms and bundles')

@@ -25,7 +25,8 @@ from . import ext
 
 def setup_parser():
     parser = argparse.ArgumentParser(prog='juju charm getall',
-        description='Retrieves all charms from Launchpad')
+                                     description='Retrieves all charms from '
+                                                 'Launchpad')
     parser.add_argument('charms_directory', nargs='?',
                         help='Path to where all charms should be downloaded')
 
@@ -44,18 +45,17 @@ def main():
     if not os.path.exists(args.charms_directory):
         os.makedirs(args.charms_directory, 0o755)
 
-    charm_update = subprocess.call([os.path.join(os.path.dirname(
-                                    os.path.realpath(sys.argv[0])), 
-                                    'charm-update%s' % ext),
-                                    args.charms_directory])
+    update_cmd = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
+                              'charm-update%s' % ext)
+    charm_update = subprocess.call([update_cmd, args.charms_directory])
     if charm_update != 0:
         sys.stderr.write('Unable to perform `juju charm update`!\n')
         sys.exit(1)
 
     try:
         mr = Mr(directory=args.charms_directory)
-        sys.stderr.write('Grabbing %s charms from Charm Store\n' \
-                          % len(mr.list()))
+        sys.stderr.write('Grabbing %s charms from Charm Store\n' %
+                         len(mr.list()))
         for charm in mr.list():
             sys.stderr.write('Branching %s\n' % charm)
             try:

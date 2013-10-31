@@ -185,6 +185,6 @@ def main():
                 else:
                     print msg
                 if args.fix_unsubscribed:
-                    info('adding bug subscription to %s for %s'
-                          % (charm_name, maint_email))
+                    info('adding bug subscription to %s for %s' %
+                         (charm_name, maint_email))
                     pkg.addBugSubscription(subscriber=lp_maintainer)

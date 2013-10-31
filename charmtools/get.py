@@ -24,7 +24,8 @@ from . import charms
 
 def setup_parser():
     parser = argparse.ArgumentParser(prog='charm get',
-        description='Retrieves official charm branch from launchpad.net')
+                                     description='Retrieves official charm '
+                                                 'branch from launchpad.net')
     parser.add_argument('charm', nargs=1, help='Charm to branch',
                         metavar=('charm_name'))
     parser.add_argument('branch_to', nargs='?',

@@ -71,8 +71,8 @@ def apt_fill(package):
         c = apt.Cache()
         c.open()
         p = c[package]
-        print "Found " + package + " package in apt cache, as a result " \
-            + "charm contents have been pre-populated based on package metadata."
+        print "Found " + package + " package in apt cache, as a result charm" \
+              + " contents have been pre-populated based on package metadata."
 
         v['summary'] = p.summary
         v['description'] = textwrap.fill(p.description, width=72,

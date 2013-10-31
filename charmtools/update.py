@@ -25,7 +25,8 @@ from .mr import Mr
 
 def setup_parser():
     parser = argparse.ArgumentParser(prog='charm update',
-        description='Update charm_directory with latest from Charm Store')
+                                     description='Update charm_directory with '
+                                     'latest from Charm Store')
     parser.add_argument('charm_directory', nargs='?',
                         help='Path to where all charms are stored')
     parser.add_argument('-f', '--fix', action='store_true',

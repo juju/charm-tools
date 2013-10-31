@@ -34,5 +34,6 @@ def subcommands(scripts_dir):
     # Removes blacklisted items from the subcommands list.
     return filter(lambda s: s not in ['mr', 'charms'], subs)
 
+
 def ext():
     return '.exe' if os.name == 'nt' else ''

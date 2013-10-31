@@ -57,7 +57,7 @@ class Mr:
             self.config.add_section(name)
 
         self.config.set(name, 'checkout', "bzr branch %s %s" %
-                            ('/'.join([repository, name]), name))
+                        ('/'.join([repository, name]), name))
 
         if checkout:
             self.checkout(name)
@@ -68,7 +68,7 @@ class Mr:
             for name in self.config.sections():
                 charm_remote = self.__get_repository(name)
                 self.__checkout(charm_remote,
-                               os.path.join(self.directory, name))
+                                os.path.join(self.directory, name))
         else:
             # Move this, and the charm_* stuff to _checkout? Makes sense
             if not self.config.has_section(name):
@@ -76,7 +76,7 @@ class Mr:
 
             charm_remote = self.__get_repository(name)
             self.__checkout(charm_remote,
-                           os.path.join(self.directory, name))
+                            os.path.join(self.directory, name))
 
     def update(self, name=None, force=False):
         '''Update, or checkout, a charm in to directory'''

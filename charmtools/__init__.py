@@ -22,6 +22,7 @@ import subprocess
 
 from . import cli
 
+
 def charm():
     if len(sys.argv) < 2:
         cli.usage(1)
@@ -32,17 +33,17 @@ def charm():
         sys.stdout.write("Tools for authoring and maintaining charms\n")
         sys.exit(0)
 
-
     if sub == '--help':
         cli.usage(0)
 
     sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
-               "charm-%s%s" % (sub, cli.ext()))
+                            "charm-%s%s" % (sub, cli.ext()))
 
     if not os.path.exists(sub_exec):
         sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
         cli.usage(2)
     subprocess.call([sub_exec] + opts)
+
 
 def bundle():
     if len(sys.argv) < 2:
@@ -59,13 +60,14 @@ def bundle():
         cli.usage(0)
 
     sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
-               "charm-%s%s" % (sub, cli.ext()))
+                            "charm-%s%s" % (sub, cli.ext()))
 
     if not os.path.exists(sub_exec):
         sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
         cli.usage(2)
 
     subprocess.call([sub_exec, '--bundle'] + opts)
+
 
 if __name__ == '__main__':
     charm()

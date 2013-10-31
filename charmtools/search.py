@@ -24,8 +24,8 @@ from . import charms
 
 def setup_parser():
     parser = argparse.ArgumentParser(prog='charm search',
-        description='Match name against all charms (official and personal) in \
-                     store')
+                                     description='Match name against all '
+                                     'charms (official and personal) in store')
     parser.add_argument('name', nargs=1, help='Name which to search by')
 
     return parser
