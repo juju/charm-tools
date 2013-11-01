@@ -14,11 +14,11 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='charmtools',
+    name='charm-tools',
     version=__VERSION__,
     packages=['charmtools'],
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
-                      'pycrypto', 'paramiko', 'bzr'],
+                      'pycrypto', 'paramiko', 'bzr', 'requests', 'markdown'],
     package_data={'charmtools': ['templates/*/*.*', 'templates/*/hooks/*']},
     maintainer='Marco Ceppi',
     maintainer_email='marco@ceppi.net',
