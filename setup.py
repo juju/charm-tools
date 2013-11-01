@@ -21,6 +21,7 @@ setup(
                       'pycrypto', 'paramiko', 'bzr'],
     package_data={'charmtools': ['templates/*/*.*', 'templates/*/hooks/*']},
     maintainer='Marco Ceppi',
+    maintainer_email='marco@ceppi.net',
     description=('Tools for maintaining Juju charms'),
     license='GPL v3',
     url='https://launchpad.net/charm-tools',
