@@ -27,7 +27,7 @@ from cli import parser_defaults
 def get_args(args):
     parser = argparse.ArgumentParser(
         description='Performs static analysis on charms and bundles')
-    parser.add_argument('-n', '--offline', action='store_true',
+    parser.add_argument('-n', '--offline', action='store_false',
                         help='Only perform offline proofing')
     parser.add_argument('charm_name', nargs='?', default=os.getcwd(),
                         help='path of charm dir to check. Defaults to PWD')
@@ -54,7 +54,7 @@ def proof(args=None):
         except Exception as e:
             return "FATAL: %s" % e.strerror, 1
 
-    lint, err_code = c.proof()
+    lint, err_code = c.proof(args.offline)
     return lint, err_code
 
 
