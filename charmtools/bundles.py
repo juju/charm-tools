@@ -13,7 +13,7 @@ class BundleLinter(Linter):
         for name, bdata in contents.items():
             if name == 'envExport':
                 self.warn('envExport is the default export name. Please '
-                         'use a unique name')
+                          'use a unique name')
             if not 'services' in bdata:
                 self.err("%s: No services defined", name)
                 return
