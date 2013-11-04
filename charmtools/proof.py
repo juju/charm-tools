@@ -24,7 +24,7 @@ from charms import Charm
 from cli import parser_defaults
 
 
-def get_args():
+def get_args(args):
     parser = argparse.ArgumentParser(
         description='Performs static analysis on charms and bundles')
     parser.add_argument('-n', '--offline', action='store_true',
@@ -32,13 +32,13 @@ def get_args():
     parser.add_argument('charm_name', nargs='?', default=os.getcwd(),
                         help='path of charm dir to check. Defaults to PWD')
     parser = parser_defaults(parser)
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     return args
 
 
-def main():
-    args = get_args()
+def proof(args=None):
+    args = get_args(args)
     name = args.charm_name
     if not args.bundle:
         try:
@@ -56,10 +56,16 @@ def main():
             print e.msg
             sys.exit(1)
 
-    lint, exit_code = c.proof()
+    lint, err_code = c.proof()
+    return lint, err_code
+
+
+def main():
+    lint, exit_code = proof()
     if lint:
         print "\n".join(lint)
     sys.exit(exit_code)
+
 
 if __name__ == "__main__":
     main()
