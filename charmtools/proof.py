@@ -24,10 +24,10 @@ from charms import Charm
 from cli import parser_defaults
 
 
-def get_args(args):
+def get_args(args=None):
     parser = argparse.ArgumentParser(
         description='Performs static analysis on charms and bundles')
-    parser.add_argument('-n', '--offline', action='store_true',
+    parser.add_argument('-n', '--offline', action='store_false',
                         help='Only perform offline proofing')
     parser.add_argument('charm_name', nargs='?', default=os.getcwd(),
                         help='path of charm dir to check. Defaults to PWD')
@@ -37,31 +37,30 @@ def get_args(args):
     return args
 
 
-def proof(args=None):
-    args = get_args(args)
-    name = args.charm_name
-    if not args.bundle:
+def proof(path, is_bundle=False, with_remote=True, debug=False):
+    path = os.path.abspath(path)
+    if not is_bundle:
         try:
-            c = Charm(os.path.abspath(name))
+            c = Charm(path)
         except:
             try:
-                c = Bundle(os.path.abspath(name), args.debug)
+                c = Bundle(path, debug)
             except Exception as e:
-                print "Not a Bundle or a Charm, can not proof"
-                sys.exit(1)
+                return ["FATAL: Not a Bundle or a Charm, can not proof"], 200
     else:
         try:
-            c = Bundle(os.path.abspath(name), args.debug)
+            c = Bundle(path, debug)
         except Exception as e:
-            print e.msg
-            sys.exit(1)
+            return ["FATAL: %s" % e.strerror], 200
 
-    lint, err_code = c.proof()
+    lint, err_code = c.proof(with_remote)
     return lint, err_code
 
 
 def main():
-    lint, exit_code = proof()
+    args = get_args()
+    lint, exit_code = proof(args.charm_name, args.bundle, args.offline,
+                            args.debug)
     if lint:
         print "\n".join(lint)
     sys.exit(exit_code)

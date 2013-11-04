@@ -12,11 +12,11 @@ class BundleLinter(Linter):
     def validate(self, contents):
         for name, bdata in contents.items():
             if name == 'envExport':
-                self.err('envExport is the default export name. Please '
-                         'use a unique name')
+                self.warn('envExport is the default export name. Please '
+                          'use a unique name')
             if not 'services' in bdata:
-                self.crit("%s: No services defined", name)
-                sys.exit(200)
+                self.err("%s: No services defined", name)
+                return
 
             if not 'series' in bdata:
                 self.info("%s: No series defined" % name)
