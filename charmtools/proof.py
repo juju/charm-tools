@@ -46,12 +46,12 @@ def proof(path, is_bundle=False, with_remote=True, debug=False):
             try:
                 c = Bundle(path, debug)
             except Exception as e:
-                return ["FATAL: Not a Bundle or a Charm, can not proof"], 1
+                return ["FATAL: Not a Bundle or a Charm, can not proof"], 200
     else:
         try:
             c = Bundle(path, debug)
         except Exception as e:
-            return ["FATAL: %s" % e.strerror], 1
+            return ["FATAL: %s" % e.strerror], 200
 
     lint, err_code = c.proof(with_remote)
     return lint, err_code
