@@ -47,14 +47,12 @@ def proof(args=None):
             try:
                 c = Bundle(os.path.abspath(name), args.debug)
             except Exception as e:
-                print "Not a Bundle or a Charm, can not proof"
-                sys.exit(1)
+                return "FATAL: Not a Bundle or a Charm, can not proof", 1
     else:
         try:
             c = Bundle(os.path.abspath(name), args.debug)
         except Exception as e:
-            print e.msg
-            sys.exit(1)
+            return "FATAL: %s" % e.strerror, 1
 
     lint, err_code = c.proof()
     return lint, err_code
