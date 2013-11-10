@@ -201,7 +201,7 @@ class Charm(object):
     def is_charm(self):
         return os.path.isfile(os.path.join(self.charm_path, 'metadata.yaml'))
 
-    def proof(self):
+    def proof(self, remote=True):
         lint = CharmLinter()
         charm_name = self.charm_path
         if os.path.isdir(charm_name):
