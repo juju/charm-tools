@@ -35,6 +35,7 @@ setup(
             'charm = charmtools:charm',
             'juju-charm = charmtools:charm',
             'juju-bundle = charmtools:bundle',
+            'juju-test = charmtools:test',
             'charm-get = charmtools.get:main',
             'charm-getall = charmtools.getall:main',
             'charm-proof = charmtools.proof:main',
@@ -49,6 +50,7 @@ setup(
             'charm-update = charmtools.update:main',
             'charm-version = charmtools.version:main',
             'charm-help = charmtools.cli:usage',
+            'charm-test = charmtools:test',
         ],
     },
 )

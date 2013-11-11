@@ -1,1 +1,2 @@
 tests/proof/results/*
+.coverage
