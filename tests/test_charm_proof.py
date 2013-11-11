@@ -15,21 +15,23 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+
 from os.path import abspath, dirname, join
 from shutil import rmtree
-import sys
 from tempfile import mkdtemp
 from textwrap import dedent
 from unittest import main, TestCase
 
 proof_path = dirname(dirname(dirname(abspath(__file__))))
 proof_path = join(proof_path, 'charmtools')
+
 sys.path.append(proof_path)
-from proof import Linter
+
+from charmtools.charms import CharmLinter as Linter
 
 
-class TestProof(TestCase):
-
+class TestCharmProof(TestCase):
     def setUp(self):
         self.charm_dir = mkdtemp()
         self.config_path = join(self.charm_dir, 'config.yaml')

@@ -24,19 +24,29 @@ install:
 	cp -rf scripts templates $(datadir)
 	cp -rf helpers/* $(helperdir)
 
-check:
-	tests/helpers/helpers.sh || sh -x tests/helpers/helpers.sh timeout
+integration:
+	tests_functional/helpers/helpers.sh || sh -x tests_functional/helpers/helpers.sh timeout
 	@echo Test shell helpers with dash
-	bash tests/helpers/helpers.sh || bash -x tests/helpers/helpers.sh timeout
-	tests/helpers/helpers.bash || sh -x tests/helpers/helpers.bash timeout
+	bash tests_functional/helpers/helpers.sh || bash -x tests_functional/helpers/helpers.sh timeout
+	tests_functional/helpers/helpers.bash || sh -x tests_functional/helpers/helpers.bash timeout
 	@echo Test shell helpers with bash
-	bash tests/helpers/helpers.bash || bash -x tests/helpers/helpers.bash timeout
+	bash tests_functional/helpers/helpers.bash || bash -x tests_functional/helpers/helpers.bash timeout
 	@echo Test charm proof
-	tests/proof/test.sh
-	tests/create/test.sh
-	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
-#	@echo PEP8 Lint of Python files
-#	@echo `grep -rl '^#!/.*python' .` | xargs -r -n1 pep8
+	tests_functional/proof/test.sh
+	tests_functional/create/test.sh
+#	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
+
+lint:
+	@echo PEP8 Lint of Python files
+	@pep8 charmtools && echo OK
+
+test:
+	@nosetests -s tests/test_*.py
+
+coverage:
+	@nosetests --with-coverage --cover-package=charmtools --cover-tests -s tests/test_*.py
+
+check: integration test lint
 
 clean:
 	find . -name '*.pyc' -delete
