@@ -25,7 +25,7 @@ from unittest import main, TestCase
 proof_path = dirname(dirname(dirname(abspath(__file__))))
 proof_path = join(proof_path, 'charmtools')
 sys.path.append(proof_path)
-from proof import Linter
+from charmtools.charms import CharmLinter
 
 
 class TestProof(TestCase):
@@ -33,7 +33,7 @@ class TestProof(TestCase):
     def setUp(self):
         self.charm_dir = mkdtemp()
         self.config_path = join(self.charm_dir, 'config.yaml')
-        self.linter = Linter()
+        self.linter = CharmLinter()
 
     def tearDown(self):
         rmtree(self.charm_dir)
