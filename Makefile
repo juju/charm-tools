@@ -35,7 +35,8 @@ build: deps bin/python bin/pip develop bin/test
 
 sysdeps:
 	sudo apt-get update
-	sudo apt-get install -y build-essential bzr python-dev python-virtualenv 
+	sudo apt-get install -y build-essential bzr python-dev \
+	    python-virtualenv 
 
 # We use a "canary" file to tell us if the Python packages have been installed.
 PYTHON_PACKAGE_CANARY := lib/python2.7/site-packages/___canary
@@ -63,7 +64,7 @@ test: build bin/test
 lint: sources = setup.py charmtools
 lint: build
 	@find $(sources) -name '*.py' -print0 | xargs -r0 \
-		bin/flake8 --ignore=E125,E127
+	    bin/flake8 --ignore=E125,E127
 
 tags:
 	ctags --tag-relative --python-kinds=-iv -Rf tags --sort=yes \
@@ -92,10 +93,12 @@ install:
 check:
 	tests/helpers/helpers.sh || sh -x tests/helpers/helpers.sh timeout
 	@echo Test shell helpers with dash
-	bash tests/helpers/helpers.sh || bash -x tests/helpers/helpers.sh timeout
+	bash tests/helpers/helpers.sh \
+	    || bash -x tests/helpers/helpers.sh timeout
 	tests/helpers/helpers.bash || sh -x tests/helpers/helpers.bash timeout
 	@echo Test shell helpers with bash
-	bash tests/helpers/helpers.bash || bash -x tests/helpers/helpers.bash timeout
+	bash tests/helpers/helpers.bash \
+	    || bash -x tests/helpers/helpers.bash timeout
 	@echo Test charm proof
 	tests/proof/test.sh
 	tests/create/test.sh
