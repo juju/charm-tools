@@ -123,7 +123,10 @@ def main():
     charms = []
     if len(args.charms):
         for charm_name in args.charms:
-            charm = charmdistro.getSourcePackage(name=charm_name)
+            # XXX Shouldn't "charm" be appended to "charms" instead of
+            # "charm_name"?  If so, remove the "noqa" comment after fixing the
+            # code so lint will report future errors with this line of code.
+            charm = charmdistro.getSourcePackage(name=charm_name)  # noqa
             charms.append(charm_name)
     else:
         branches = charmdistro.getBranchTips()

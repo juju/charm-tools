@@ -52,5 +52,5 @@ def main():
         mr.save()
     except Exception as e:
         # Got this from http://stackoverflow.com/q/5574702/196832
-        print >> sys.stderr,  ".mrconfig not saved: ", e
+        print >> sys.stderr, ".mrconfig not saved: ", e
         sys.exit(1)

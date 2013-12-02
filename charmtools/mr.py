@@ -16,7 +16,7 @@
 import os
 import ConfigParser
 
-from bzrlib import errors, trace
+from bzrlib import trace
 from bzrlib.bzrdir import BzrDir
 from bzrlib.branch import Branch
 from bzrlib.plugin import load_plugins
