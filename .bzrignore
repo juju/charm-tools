@@ -3,3 +3,8 @@ tests/proof/results/*
 charm_tools.egg-info
 dependencies
 tags
+bin
+include
+lib
+local
+man
