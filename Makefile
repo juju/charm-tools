@@ -38,19 +38,18 @@ sysdeps:
 	sudo apt-get install -y build-essential bzr python-dev \
 	    python-virtualenv 
 
+dependencies:
+	bzr checkout lp:~juju-jitsu/charm-tools/dependencies
+
 # We use a "canary" file to tell us if the Python packages have been installed.
 PYTHON_PACKAGE_CANARY := lib/python2.7/site-packages/___canary
 python-deps: $(PYTHON_PACKAGE_CANARY)
-$(PYTHON_PACKAGE_CANARY): requirements.txt | bin/pip
-	if test -d dependencies; \
-	    then bzr up dependencies; \
-	    else bzr checkout lp:~juju-jitsu/charm-tools/dependencies; \
-	fi
+$(PYTHON_PACKAGE_CANARY): requirements.txt | bin/pip dependencies
 	bin/pip install --no-index --no-dependencies --find-links \
 	    file:///$(WD)/dependencies/python -r requirements.txt
 	touch $(PYTHON_PACKAGE_CANARY)
 
-deps: python-deps
+deps: python-deps | dependencies
 
 bin/nosetests: python-deps
 
