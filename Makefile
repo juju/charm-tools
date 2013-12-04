@@ -42,11 +42,10 @@ sysdeps:
 PYTHON_PACKAGE_CANARY := lib/python2.7/site-packages/___canary
 python-deps: $(PYTHON_PACKAGE_CANARY)
 $(PYTHON_PACKAGE_CANARY): requirements.txt | bin/pip
-	# TODO uncomment this if block before committing
-	#if test -d dependencies; \
-	#    then bzr up dependencies; \
-	#    else bzr checkout lp:~juju-jitsu/charm-tools/dependencies; \
-	#fi
+	if test -d dependencies; \
+	    then bzr up dependencies; \
+	    else bzr checkout lp:~juju-jitsu/charm-tools/dependencies; \
+	fi
 	bin/pip install --no-index --no-dependencies --find-links \
 	    file:///$(WD)/dependencies/python -r requirements.txt
 	touch $(PYTHON_PACKAGE_CANARY)
@@ -63,8 +62,7 @@ test: build bin/test
 
 lint: sources = setup.py charmtools
 lint: build
-	@find $(sources) -name '*.py' -print0 | xargs -r0 \
-	    bin/flake8 --ignore=E125,E127
+	@find $(sources) -name '*.py' -print0 | xargs -r0 bin/flake8
 
 tags:
 	ctags --tag-relative --python-kinds=-iv -Rf tags --sort=yes \
