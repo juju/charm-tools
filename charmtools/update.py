@@ -34,23 +34,33 @@ def setup_parser():
 
     return parser
 
-
-def main():
-    parser = setup_parser()
-    args = parser.parse_args()
-
-    sys.stderr.write('Pulling charm list from Launchpad\n')
-    mr = Mr(args.charm_directory)
+def update(charm_dir, fix=False):
+    mr = Mr(charm_dir)
     for charm in charms.remote():
         if re.match('^lp:charms\/', charm):
             charm_name = os.path.basename(charm)
-            if mr.exists(charm_name) and args.fix:
+            if mr.exists(charm_name) and fix:
                 mr.update(charm_name, force=True)
                 continue
             mr.add(charm_name)
     try:
         mr.save()
     except Exception as e:
+        raise Exception(".mrconfig not saved: %s" % e.strerror)
+
+def main():
+    parser = setup_parser()
+    args = parser.parse_args()
+
+    print 'Pulling charm list from Launchpad'
+
+    try:
+        update(args.charm_directory, args.fix)
+    except Exception as e:
         # Got this from http://stackoverflow.com/q/5574702/196832
         print >> sys.stderr,  ".mrconfig not saved: ", e
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

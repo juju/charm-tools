@@ -392,6 +392,10 @@ class Charm(object):
             lint.err("could not find metadata file for " + charm_name)
             lint.exit_code = -1
 
+        # Should not have autogen test
+        if os.path.exists(os.path.join(charm_dir, 'tests', '00-autogen')):
+            lint.warn('has templated 00-autogen test file')
+
         rev_path = os.path.join(charm_path, 'revision')
         if os.path.exists(rev_path):
             with open(rev_path, 'r') as rev_file:
@@ -403,6 +407,13 @@ class Charm(object):
 
         lint.check_config_file(charm_path)
         return lint.lint, lint.exit_code
+
+    def metadata(self):
+        metadata = None
+        with open(os.path.join(charm_path, 'metadata.yaml')) as f:
+            metadata = yaml.safe_load(f.read())
+
+        return metadata
 
     def promulgate(self):
         pass

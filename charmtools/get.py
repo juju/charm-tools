@@ -33,6 +33,10 @@ def setup_parser():
 
     return parser
 
+def get(source, to):
+    if not os.path.exists(to):
+        os.makedirs(to)
+
 
 def main():
     parser = setup_parser()

@@ -6,6 +6,7 @@ import json
 import requests
 
 from linter import Linter
+from charmworldlib import bundle as cw_bundle
 
 
 class BundleLinter(Linter):
@@ -39,11 +40,9 @@ class BundleLinter(Linter):
         self.validate(data)
 
     def remote_proof(self, bundle):
-        deployer_file = bundle.bundle_file(parse=False)
-
-        r = requests.post('https://manage.jujucharms.com/api/3/bundle/proof',
-                          data={'deployer_file': deployer_file})
-        proof_output = r.json()
+        bundles = cw_bundle.Bundles()
+        deployer_file = bundle.bundle_file(parse=True)
+        proof_output = bundles.proof(deployer_file)
 
         # Loop through errors for verbose outputing.
         # http://paste.mitechie.com/show/1048/
