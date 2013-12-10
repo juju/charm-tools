@@ -393,7 +393,7 @@ class Charm(object):
             lint.exit_code = -1
 
         # Should not have autogen test
-        if os.path.exists(os.path.join(charm_dir, 'tests', '00-autogen')):
+        if os.path.exists(os.path.join(charm_path, 'tests', '00-autogen')):
             lint.warn('has templated 00-autogen test file')
 
         rev_path = os.path.join(charm_path, 'revision')
@@ -410,7 +410,7 @@ class Charm(object):
 
     def metadata(self):
         metadata = None
-        with open(os.path.join(charm_path, 'metadata.yaml')) as f:
+        with open(os.path.join(self.charm_path, 'metadata.yaml')) as f:
             metadata = yaml.safe_load(f.read())
 
         return metadata

@@ -19,13 +19,13 @@ import os
 import sys
 import argparse
 
-from Cheetah.template import Template
+from Cheetah.Template import Template
 
 from cli import parser_defaults
 from charms import Charm
 from charmworldlib import charm as cwc
 
-TPL_DIR = os.path.join(os.path.abspath(path.dirname(__file__)), 'templates')
+TPL_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
 TPL = {'deploy': os.path.join(TPL_DIR, 'tests', 'deploy.tpl'),
        'body': os.path.join(TPL_DIR, 'tests', 'body.tpl'),
        'relate': os.path.join(TPL_DIR, 'tests', 'relate.tpl')}
@@ -53,10 +53,10 @@ def tests(charm_dir, is_bundle=False, debug=False):
 
     for rel_type in ['provides', 'requires']:
         if rel_type in mdata:
-            relations[rel_type] = {}
+            interfaces[rel_type] = {}
             for rel, data in mdata[rel_type].iteritems():
                 iface = data['interface']
-                if iface and iface not in relations[rel_type]:
+                if iface and iface not in interfaces[rel_type]:
                     r = graph(iface, rel_type)
                     interfaces[rel_type][iface] = r
                     deploy.append(r.url)
@@ -72,7 +72,7 @@ def tests(charm_dir, is_bundle=False, debug=False):
         os.mkdir(os.path.join(charm_dir, 'tests'))
 
     with open(os.path.join(charm_dir, 'tests', '00-autogen'), 'w') as f:
-        f.write(t)
+        f.write(str(t))
 
     if not os.path.exists(os.path.join(charm_dir, 'tests', '00-setup')):
         with open(os.path.join(charm_dir, 'tests', '00-setup'), 'w') as f:
@@ -83,6 +83,9 @@ add-apt-repository ppa:juju/stable
 apt-get update
 apt-get install amulet
 """)
+
+    os.chmod(os.path.join(charm_dir, 'tests', '00-autogen'), 0755)
+    os.chmod(os.path.join(charm_dir, 'tests', '00-setup'), 0755)
 
 
 def parser(args=None):

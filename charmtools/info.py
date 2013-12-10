@@ -44,7 +44,6 @@ def setup_parser(args=None):
 
 def main():
     a = setup_parser()
-    print a
     charm_id = a.charm[0].replace('cs:', '')
 
     try:
