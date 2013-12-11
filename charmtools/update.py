@@ -42,7 +42,7 @@ def update(charm_dir, fix=False):
             if mr.exists(charm_name) and fix:
                 mr.update(charm_name, force=True)
                 continue
-            mr.add(charm_name)
+            mr.add(charm_name, charm)
     try:
         mr.save()
     except Exception as e:
