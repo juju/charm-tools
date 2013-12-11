@@ -18,8 +18,8 @@ import os
 import sys
 import argparse
 
-from .mr import Mr
-from . import charms
+from mr import Mr
+from charmworldlib import charm as cwc
 
 
 def setup_parser():
@@ -33,6 +33,7 @@ def setup_parser():
 
     return parser
 
+
 def get(source, to):
     if not os.path.exists(to):
         os.makedirs(to)
@@ -42,15 +43,19 @@ def main():
     parser = setup_parser()
     args = parser.parse_args()
 
-    charm = args.charm[0]
+    charm_id = args.charm[0]
+    if charm_id.startswith('cs:'):
+        charm_id = charm_id.replace('cs:', '')
+
     ldir = args.branch_to
     branch_dir = os.path.realpath(ldir) if ldir else os.getcwd()
-
-    if "lp:charms/%s" % charm not in charms.remote():
-        sys.stderr.write('Error: %s not found in charm store.\n' % charm)
+    try:
+        charm = cwc.Charm(charm_id)
+    except:
+        sys.stderr.write('Error: Could not locate charm in store.\n')
         sys.exit(1)
 
-    charm_dir = os.path.join(branch_dir, charm)
+    charm_dir = os.path.join(branch_dir, charm.name)
     if os.path.exists(charm_dir) and os.listdir(charm_dir):
         sys.stderr.write('Error: %s exists and is not empty\n' % charm_dir)
 
@@ -59,7 +64,12 @@ def main():
 
     try:
         mr = Mr(branch_dir, mr_compat=False)
-        sys.stderr.write('Branching %s to %s\n' % (charm, branch_dir))
-        mr.add(charm, checkout=True)
+        sys.stderr.write('Branching %s (%s) to %s/%s\n' % (charm.name,
+                         charm.code_source['location'], branch_dir,
+                         charm.name))
+        mr.add(charm.name, charm.code_source['location'], checkout=True)
     except Exception as e:
         print >> sys.stderr, "Error during branching: ", e
+
+if __name__ == '__main__':
+    main()
