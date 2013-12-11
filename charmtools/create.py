@@ -118,10 +118,15 @@ def main():
 
     v.update(apt_fill(args.charmname))
 
+    ignore_parsing = ['README.ex']
+
     for root, dirs, files in os.walk(output_dir):
         for outfile in files:
             full_outfile = path.join(root, outfile)
             mode = os.stat(full_outfile)[ST_MODE]
+            if outfile in ignore_parsing:
+                continue
+
             try:
                 t = Template(file=full_outfile, searchList=(v))
                 o = tempfile.NamedTemporaryFile(dir=root, delete=False)
