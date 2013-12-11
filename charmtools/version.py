@@ -1,5 +1,5 @@
 
-__VERSION__ = "1.2.1"
+__VERSION__ = "1.2.3"
 
 
 def main():
