@@ -1,14 +1,12 @@
+## Overview
+
 Describe the intended usage of this charm and anything unique about how this charm relates to others here. 
 
 This README will be displayed in the Charm Store, it should be either Markdown or RST. Ideal READMEs include instructions on how to use the charm, expected usage, and charm features that your audience might be interested in. For an example of a well written README check out Hadoop: http://jujucharms.com/charms/precise/hadoop
 
 Use this as a Markdown reference if you need help with the formatting of this README: http://askubuntu.com/editing-help
 
-Here's an example you might wish to template off of:
-
-## Overview
-
-This charm provides (service) from (service homepage). Add a description here of what the service itself actually does. 
+This charm provides [service](http://example.com). Add a description here of what the service itself actually does.
 
 ## Usage
 
@@ -41,14 +39,11 @@ Though this will be listed in the charm store itself don't assume a user will kn
 - Upstream website
 - Upstream bug tracker
 - Upstream mailing list or contact information
+- Feel free to add things if it's useful for users
 
+### Charm Contact
 
-### Charm Contact Information
-
-- Author: (your contact information)
-- Report bugs at: http://bugs.launchpad.net/charms/+source/charmname
-- Location: http://jujucharms.com/charms/distro/charmname
-
+Though the charm store lists a maintainer, a URL, and where to report bugs you might want to use this area to expand on different contact information if you want. 
 
 * Be sure to remove the templated parts before submitting to https://launchpad.net/charms for inclusion in the charm store.
 
