@@ -310,7 +310,7 @@ class Charm(object):
                     with open(TEMPLATE_README) as tr:
                         bad_lines = []
                         for line in tr:
-                            if len(line) >= 25:
+                            if len(line) >= 40:
                                 bad_lines.append(line.strip())
                         for readme in found_readmes:
                             readme_path = os.path.join(charm_path, readme)
