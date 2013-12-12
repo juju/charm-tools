@@ -17,6 +17,7 @@
 
 import os
 import sys
+import shutil
 import argparse
 
 from Cheetah.Template import Template
@@ -26,9 +27,10 @@ from charms import Charm
 from charmworldlib import charm as cwc
 
 TPL_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
-TPL = {'deploy': os.path.join(TPL_DIR, 'tests', 'deploy.tpl'),
-       'body': os.path.join(TPL_DIR, 'tests', 'body.tpl'),
-       'relate': os.path.join(TPL_DIR, 'tests', 'relate.tpl')}
+ATPL = {'deploy': os.path.join(TPL_DIR, 'tests', 'deploy.tpl'),
+        'body': os.path.join(TPL_DIR, 'tests', 'body.tpl'),
+        'relate': os.path.join(TPL_DIR, 'tests', 'relate.tpl')}
+CHARM_TPL = os.path.join(TPL_DIR, 'charm')
 
 
 def graph(interface, endpoint, series='precise'):
@@ -37,6 +39,15 @@ def graph(interface, endpoint, series='precise'):
     charms = c.search({matches[endpoint]: interface, 'series': series})
 
     return charms[0]
+
+
+def readme(charm_dir, is_bundle=False, debug=False):
+    c = Charm(charm_dir)
+
+    if not c.is_charm():
+        raise Exception('%s is not a charm' % charm_dir)
+
+    shutil.copy(os.path.join(CHARM_TPL, 'README.ex'), charm_dir)
 
 
 def tests(charm_dir, is_bundle=False, debug=False):
@@ -63,10 +74,10 @@ def tests(charm_dir, is_bundle=False, debug=False):
 
                 relations.append(['%s:%s' % (mdata['name'], rel), r.name])
 
-    d = Template(file=TPL['deploy'], searchList=[{'services': deploy}])
-    s = Template(file=TPL['relate'], searchList=[{'relations': relations}])
+    d = Template(file=ATPL['deploy'], searchList=[{'services': deploy}])
+    s = Template(file=ATPL['relate'], searchList=[{'relations': relations}])
 
-    t = Template(file=TPL['body'], searchList=[{'deploy': d, 'relate': s}])
+    t = Template(file=ATPL['body'], searchList=[{'deploy': d, 'relate': s}])
 
     if not os.path.exists(os.path.join(charm_dir, 'tests')):
         os.mkdir(os.path.join(charm_dir, 'tests'))
@@ -76,8 +87,7 @@ def tests(charm_dir, is_bundle=False, debug=False):
 
     if not os.path.exists(os.path.join(charm_dir, 'tests', '00-setup')):
         with open(os.path.join(charm_dir, 'tests', '00-setup'), 'w') as f:
-            f.write("""
-#!/bin/bash
+            f.write("""#!/bin/bash
 
 add-apt-repository ppa:juju/stable
 apt-get update
@@ -91,7 +101,7 @@ apt-get install amulet
 def parser(args=None):
     parser = argparse.ArgumentParser(
         description='Builds portions of a charm or bundle')
-    parser.add_argument('subcommand', choices=['tests'],
+    parser.add_argument('subcommand', choices=['tests', 'readme'],
                         help='Which type of generator to run')
     parser = parser_defaults(parser)
     return parser.parse_args(args)
@@ -101,6 +111,8 @@ def main():
     a = parser()
     if a.subcommand == 'tests':
         tests(os.getcwd(), is_bundle=a.bundle, debug=a.debug)
+    elif a.subcommand == 'readme':
+        readme(os.getcwd(), is_bundle=a.bundle, debug=a.debug)
     else:
         raise Exception('No subcommand found')
 
