@@ -49,13 +49,13 @@ class RelationError(Exception):
 
 
 class CharmLinter(Linter):
-    def check_hook(self, hook, hooks_path, required=True, recommended=False):
+    def check_hook(self, hook, hooks_path, recommended=False):
         hook_path = os.path.join(hooks_path, hook)
 
         try:
             mode = os.stat(hook_path)[ST_MODE]
             if not mode & S_IXUSR:
-                self.warn(hook + " not executable")
+                self.info(hook + " not executable")
             with open(hook_path, 'r') as hook_file:
                 count = 0
                 for line in hook_file:
@@ -71,10 +71,8 @@ class CharmLinter(Linter):
             return True
 
         except OSError:
-            if required:
-                self.err("missing hook " + hook)
-            elif recommended:
-                self.warn("missing recommended hook " + hook)
+            if recommended:
+                self.info("missing recommended hook " + hook)
             return False
 
     def check_relation_hooks(self, relations, subordinate, hooks_path):
@@ -111,13 +109,13 @@ class CharmLinter(Linter):
 
             has_one = False
             has_one = has_one or self.check_hook(
-                r + '-relation-changed', hooks_path, required=False)
+                r + '-relation-changed', hooks_path)
             has_one = has_one or self.check_hook(
-                r + '-relation-departed', hooks_path, required=False)
+                r + '-relation-departed', hooks_path)
             has_one = has_one or self.check_hook(
-                r + '-relation-joined', hooks_path, required=False)
+                r + '-relation-joined', hooks_path)
             has_one = has_one or self.check_hook(
-                r + '-relation-broken', hooks_path, required=False)
+                r + '-relation-broken', hooks_path)
 
             if not has_one and not subordinate:
                 self.info("relation " + r + " has no hooks")
@@ -283,19 +281,19 @@ class Charm(object):
                         with open(os.path.join(charm_path, 'icon.svg')) as ci:
                             icon_sha1.update(ci.read())
                     if template_sha1.hexdigest() == icon_sha1.hexdigest():
-                        lint.err("Includes template icon.svg file.")
+                        lint.warn("Includes template icon.svg file.")
                 except IOError as e:
-                    lint.err(
+                    lint.warn(
                         "Error while opening %s (%s)" %
                         (e.filename, e.strerror))
 
             # Must have a hooks dir
             if not os.path.exists(hooks_path):
-                lint.err("no hooks directory")
+                lint.info("no hooks directory")
 
             # Must have a copyright file
             if not os.path.exists(os.path.join(charm_path, 'copyright')):
-                lint.err("no copyright file")
+                lint.warn("no copyright file")
 
             # should have a readme
             root_files = os.listdir(charm_path)
@@ -305,7 +303,7 @@ class Charm(object):
                     found_readmes.add(filename)
             if len(found_readmes):
                 if 'README.ex' in found_readmes:
-                    lint.err("Includes template README.ex file")
+                    lint.warn("Includes template README.ex file")
                 try:
                     with open(TEMPLATE_README) as tr:
                         bad_lines = []
@@ -324,9 +322,9 @@ class Charm(object):
                                     if l in readme_content:
                                         err_msg = ('%s Includes boilerplate '
                                                    'README.ex line %d')
-                                        lint.err(err_msg % (readme, lc))
+                                        lint.warn(err_msg % (readme, lc))
                 except IOError as e:
-                    lint.err(
+                    lint.warn(
                         "Error while opening %s (%s)" %
                         (e.filename, e.strerror))
             else:
@@ -342,7 +340,7 @@ class Charm(object):
                 lint.check_relation_hooks(provides, subordinate, hooks_path)
             else:
                 if not subordinate:
-                    lint.warn("all charms should provide at least one thing")
+                    lint.info("all charms should provide at least one thing")
 
             if subordinate:
                 try:
@@ -382,19 +380,20 @@ class Charm(object):
                 except (TypeError, ValueError):
                     lint.warn("revision should be a positive integer")
 
-            lint.check_hook('install', hooks_path)
-            lint.check_hook('start', hooks_path, required=False,
-                            recommended=True)
-            lint.check_hook('stop', hooks_path, required=False,
-                            recommended=True)
-            lint.check_hook('config-changed', hooks_path, required=False)
+            lint.check_hook('install', hooks_path, recommended=True)
+            lint.check_hook('start', hooks_path, recommended=True)
+            lint.check_hook('stop', hooks_path, recommended=True)
+            if os.path.exists(os.path.join(charm_path, 'config.yaml')):
+                lint.check_hook('config-changed', hooks_path, recommended=True)
+            else:
+                lint.check_hook('config-changed', hooks_path)
         except IOError:
             lint.err("could not find metadata file for " + charm_name)
             lint.exit_code = -1
 
         # Should not have autogen test
         if os.path.exists(os.path.join(charm_path, 'tests', '00-autogen')):
-            lint.warn('has templated 00-autogen test file')
+            lint.warn('Includes template test file, tests/00-autogen')
 
         rev_path = os.path.join(charm_path, 'revision')
         if os.path.exists(rev_path):
