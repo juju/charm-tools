@@ -1,0 +1,61 @@
+=======
+HACKING
+=======
+
+Herein lay instructions on how to contribute to this project.
+
+
+Developer install
+=================
+
+This codebase requires a few system-wide dependencies be installed.  The
+"sysdeps" make target will install them::
+
+    make sysdeps
+
+Next the build needs to be run::
+
+    make
+
+Tests can be run my make or as a script (which allows for command-line options
+to be passed).
+
+::
+
+  make test
+  bin/test
+
+
+Submitting a branch
+===================
+
+In order to submit code for review we use a tool called lbox. If you are using
+Ubuntu < 13.04 you can install lbox by::
+
+  sudo apt-get install lbox
+
+If you are using a newer version you will have to build it from source. First
+step is to install Go lang, you can find the instructions on installing it
+here http://golang.org/doc/install#bsd_linux , making sure to set your GOROOT
+environment variable appropriately. After that, you should set up an install
+directory that you can access, such as $HOME/bin/go which you can set as your
+GOPATH directory (see `go help gopath` for more information). For ease of
+use, you can append $GOROOT/bin and $GOPATH/bin to your PATH environment
+variable. Then follow the instructions::
+
+  sudo go get launchpad.net/lbox
+  sudo go install launchpad.net/lbox
+
+To submit for review::
+
+  lbox propose
+
+After review, to merge into trunk::
+
+  lbox submit
+
+
+Filing Bugs
+===========
+
+Please file bugs here: https://bugs.launchpad.net/charm-tools/+filebug

@@ -1,7 +1,6 @@
 import os
 import sys
 import glob
-import argparse
 
 
 def parser_defaults(parser):

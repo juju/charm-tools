@@ -123,7 +123,8 @@ def main():
     charms = []
     if len(args.charms):
         for charm_name in args.charms:
-            charm = charmdistro.getSourcePackage(name=charm_name)
+            # XXX Is this line really neccesary?
+            charmdistro.getSourcePackage(name=charm_name)
             charms.append(charm_name)
     else:
         branches = charmdistro.getBranchTips()

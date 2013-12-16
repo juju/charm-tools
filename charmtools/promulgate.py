@@ -24,12 +24,10 @@ from lazr.restfulclient.errors import BadRequest, NotFound
 
 import os
 import sys
-import string
 
 from optparse import OptionParser
 
 from bzrlib import bzrdir
-from bzrlib.plugins.launchpad import lp_api
 
 import yaml
 
