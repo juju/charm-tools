@@ -106,8 +106,10 @@ class JujuTestPluginTest(unittest.TestCase):
 
         self.assertEqual(results, None)
 
-    def test_conductor_find_tests_exception(self):
-        args = Arguments(tests = None)
+    @patch.object(juju_test.Conductor, 'find_tests')
+    def test_conductor_find_tests_exception(self, mfind_tests):
+        mfind_tests.return_value = None
+        args = Arguments(tests=None)
         self.assertRaises(juju_test.NoTests, juju_test.Conductor, args)
 
     @patch('subprocess.check_output')
