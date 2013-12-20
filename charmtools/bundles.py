@@ -14,17 +14,19 @@ class BundleLinter(Linter):
             if name == 'envExport':
                 self.warn('envExport is the default export name. Please '
                           'use a unique name')
-            if not 'services' in bdata:
-                self.err("%s: No services defined", name)
-                return
 
-            if not 'series' in bdata:
+            if 'series' not in bdata and 'inherits' not in bdata:
                 self.info("%s: No series defined" % name)
 
-            for svc, sdata in bdata['services'].items():
-                if not 'annotations' in sdata:
-                    self.warn('%s: %s: No annotations found, will render '
-                              'bad in GUI' % (name, svc))
+            if 'services' in bdata:
+                for svc, sdata in bdata['services'].items():
+                    if not 'annotations' in sdata:
+                        self.warn('%s: %s: No annotations found, will render '
+                                  'bad in GUI' % (name, svc))
+            else:
+                if 'inherits' not in bdata:
+                    self.err("%s: No services defined" % name)
+                    return
 
     def local_proof(self, bundle):
         try:
