@@ -392,6 +392,21 @@ class JujuVersion(object):
         return '.'.join(str(v) for v in [self.major, self.minor, self.patch])
 
 
+class TestCfg(object):
+    _keys = ['timeout', 'set-e', 'on-timeout', 'fail-on-skip', 'tests']
+
+    def __init__(self, config_file):
+        if not os.path.exists(config_file):
+            raise OSError("%s not found" % config_file)
+
+        with open(config_file) as f:
+            cfg = yaml.safe_load(f.read())
+
+        for key, val in cfg['options'].iteritems():
+            if key in self._keys:
+                setattr(self, key, val)
+
+
 def get_juju_version():
     jv = JujuVersion()
     cmd = ['juju', 'version']
@@ -548,6 +563,17 @@ def main():
     logger = setup_logging(level=args.v, quiet=args.quiet, logdir=args.logdir)
     logger.info('Starting test run on %s using Juju %s'
                 % (args.juju_env, get_juju_version()))
+    logger.debug('Loading configuration options from testplan YAML')
+    test_plans = glob.glob(os.path.join(os.getcwd(), 'tests', 'testplan.y*ml'))
+    test_plan = test_plan[0] if test_plans else None
+    if test_plan:
+        cfg = TestCfg(test_plan)
+        for key, val in args.iteritems():
+            logger.debug('Overwriting %s to %s from cmd' % (key, val))
+            setattr(cfg, key, val)
+    else:
+        cfg = args
+
     logger.debug('Creating a new Conductor')
     try:
         tester = Conductor(args)
