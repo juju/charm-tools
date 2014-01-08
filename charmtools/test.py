@@ -44,6 +44,10 @@ class DestroyUnreliable(Exception):
     pass
 
 
+class SubstrateMismatch(Exception):
+    pass
+
+
 class TimeoutError(Exception):
     def __init__(self, value="Timed Out"):
         self.value = value
@@ -402,9 +406,18 @@ class TestCfg(object):
         with open(config_file) as f:
             cfg = yaml.safe_load(f.read())
 
-        for key, val in cfg['options'].iteritems():
-            if key in self._keys:
-                setattr(self, key, val)
+        if 'options' in cfg:
+            for key, val in cfg['options'].iteritems():
+                if key in self._keys:
+                    setattr(self, key, val)
+        if 'substrates' in cfg:
+            self.substrates = {}
+            if 'allow' in cfg:
+                self.substrates['inclusive'] = True
+                self.substrates['values'] = cfg['substrates']['allow']
+            elif 'skip' in cfg:
+                self.substrates['inclusive'] = False
+                self.substrates['values'] = cfg['substrates']['skip']
 
 
 def get_juju_version():
@@ -564,8 +577,9 @@ def main():
     logger.info('Starting test run on %s using Juju %s'
                 % (args.juju_env, get_juju_version()))
     logger.debug('Loading configuration options from testplan YAML')
-    test_plans = glob.glob(os.path.join(os.getcwd(), 'tests', 'testplan.y*ml'))
-    test_plan = test_plan[0] if test_plans else None
+    test_plans = glob.glob(os.path.join(os.getcwd(), 'tests',
+                                        'test_config.y*ml'))
+    test_plan = test_plans[0] if test_plans else None
     if test_plan:
         cfg = TestCfg(test_plan)
         for key, val in args.iteritems():
@@ -577,9 +591,22 @@ def main():
     logger.debug('Creating a new Conductor')
     try:
         tester = Conductor(args)
+        env_yaml = tester.get_environment(self.juju_env)
+        if 'substrates' in cfg:
+            # We have substrate configuration data.
+            substrate_match = env_yaml['type'] in cfg.substrates['values']
+            if cfg.substrates['inclusive'] and not substrate_match:
+                pass
+            if not cfg.substrates['inclusive'] and substrate_match:
+                raise Exception('%s is not in allowed substrates: %s' %
+                                (env_yaml['type'],
+                                 cfg.substrates['values'].join(', ')))
         errors, failures, passes = tester.run()
     except NoTests:
         logger.critical('No tests were found')
+        sys.exit(1)
+    except Exception as e:
+        logger.critical(str(e))
         sys.exit(1)
     except:
         raise
