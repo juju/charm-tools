@@ -3,7 +3,6 @@
 
 import os
 import sys
-import uuid
 import yaml
 import time
 import glob
@@ -12,7 +11,6 @@ import logging
 import argparse
 import subprocess
 
-from tempfile import mkdtemp
 from datetime import timedelta
 from contextlib import contextmanager
 
@@ -118,7 +116,7 @@ class Conductor(object):
                 self.destroy(self.juju_env)
             except DestroyUnreliable:
                 self.log.warn('Unable to destroy bootstrap, trying again')
-                sleep(2)
+                time.sleep(2)
                 try:
                     self.destroy(self.juju_env)
                 except:
@@ -262,6 +260,7 @@ class Orchestra(object):
         try:
             with timeout(self.conductor.args.timeout):
                 output = subprocess.check_output(self.test, env=self.env)
+                self.log.debug(output)
         except TimeoutError, e:
             self.log.debug('Killed by timeout after %s seconds',
                            self.conductor.args.timeout)
@@ -283,7 +282,7 @@ class Orchestra(object):
             try:
                 self.archive_logs()
             except OrchestraError, e:
-                juju.log.error(e)
+                self.log.error(e)
 
         if error:
             raise error
@@ -297,7 +296,7 @@ class Orchestra(object):
             raise OrchestraError('Unable to query juju status')
 
         services = status['services']
-        machines = status['machines']
+        # machines = status['machines']
 
         if self.conductor.juju_version.major == 0:
             logs.append('/var/lib/juju/units/./*/charm.log')
@@ -591,7 +590,7 @@ def main():
     logger.debug('Creating a new Conductor')
     try:
         tester = Conductor(args)
-        env_yaml = tester.get_environment(self.juju_env)
+        env_yaml = tester.get_environment(cfg.juju_env)
         if 'substrates' in cfg:
             # We have substrate configuration data.
             substrate_match = env_yaml['type'] in cfg.substrates['values']

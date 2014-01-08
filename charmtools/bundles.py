@@ -2,7 +2,6 @@ import os
 import yaml
 import glob
 import json
-import requests
 
 from linter import Linter
 from charmworldlib import bundle as cw_bundle
