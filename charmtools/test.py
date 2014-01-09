@@ -398,17 +398,16 @@ class JujuVersion(object):
 class TestCfg(object):
     _keys = ['timeout', 'set-e', 'on-timeout', 'fail-on-skip', 'tests']
 
-    def __init__(self, config_file):
-        if not os.path.exists(config_file):
-            raise OSError("%s not found" % config_file)
-
-        with open(config_file) as f:
-            cfg = yaml.safe_load(f.read())
+    def __init__(self, cfg):
+        if isinstance(cfg, basestring):
+            cfg = yaml.safe_load(cfg)
 
         if 'options' in cfg:
             for key, val in cfg['options'].iteritems():
                 if key in self._keys:
                     setattr(self, key, val)
+        if 'substrates' in cfg:
+            self.substrates = cfg.substrates
 
 
 def get_juju_version():
@@ -635,9 +634,12 @@ def main():
     logger.debug('Loading configuration options from testplan YAML')
     test_plans = glob.glob(os.path.join(os.getcwd(), 'tests',
                                         'test_config.y*ml'))
-    test_plan = test_plans[0] if test_plans else None
-    if test_plan:
-        cfg = TestCfg(test_plan)
+    if test_plans:
+        with open(test_plans[0]) as f:
+            test_cfg = f.read()
+
+    if test_cfg:
+        cfg = TestCfg(test_cfg)
         for key, val in args.iteritems():
             logger.debug('Overwriting %s to %s from cmd' % (key, val))
             setattr(cfg, key, val)
