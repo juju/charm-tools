@@ -1,6 +1,11 @@
 
-__VERSION__ = "1.2.6-dev"
+import pkg_resources
 
 
 def main():
-    print "%s %s" % ('charm-tools', __VERSION__)
+    version = pkg_resources.get_distribution("charm-tools").version
+    print "%s %s" % ('charm-tools', version)
+
+
+if __name__ == '__main__':
+    main()

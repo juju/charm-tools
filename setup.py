@@ -8,13 +8,12 @@ import ez_setup
 
 ez_setup.use_setuptools()
 
-from charmtools.version import __VERSION__
 from setuptools import setup
 
 
 setup(
     name='charm-tools',
-    version=__VERSION__,
+    version="1.2.6-dev",
     packages=['charmtools'],
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko', 'bzr', 'requests', 'markdown',
