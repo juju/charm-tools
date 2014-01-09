@@ -1,16 +1,16 @@
 #!/usr/bin/python
 # coding=latin-1
 
-import os
-import sys
-import yaml
-import time
-import glob
-import signal
-import logging
 import argparse
+import glob
+import logging
+import os
+import re
+import signal
 import subprocess
-
+import sys
+import time
+import yaml
 from datetime import timedelta
 from contextlib import contextmanager
 
@@ -409,15 +409,6 @@ class TestCfg(object):
             for key, val in cfg['options'].iteritems():
                 if key in self._keys:
                     setattr(self, key, val)
-        if 'substrates' in cfg:
-            self.substrates = {}
-            if 'allow' in cfg:
-                self.substrates['inclusive'] = True
-                self.substrates['values'] = cfg['substrates']['allow']
-            elif 'skip' in cfg:
-                self.substrates['inclusive'] = False
-                self.substrates['values'] = cfg['substrates']['skip']
-
 
 def get_juju_version():
     jv = JujuVersion()
@@ -465,6 +456,71 @@ def setup_logging(level=0, quiet=False, logdir=None):
         logger.addHandler(ch)
 
     return logger
+
+
+class SubstrateFilter(object):
+    def __init__(self, spec):
+        self.order = spec.get('order', ['include', 'skip'])
+        self.include = spec.get('include', ['*'])
+        self.skip = spec.get('skip', [])
+
+        if isinstance(self.order, str):
+            self.order = [s.strip() for s in self.order.split(',')]
+        if self.order != ['include', 'skip'] and \
+                self.order != ['skip', 'include']:
+            raise ValueError(
+                'order should be defined using only include and skip')
+
+        if isinstance(self.include, str):
+            self.include = [self.include]
+        self.include = set(self.include)
+
+        if isinstance(self.skip, str):
+            self.skip = [self.skip]
+        self.skip = set(self.skip)
+
+    def filter(self, substrates):
+        """
+        Filter a list of substrates relative to the rules generated on class
+        creation.
+        """
+        if isinstance(substrates, str):
+            substrates = [s.strip() for s in re.split('[,\s]', substrates)]
+
+        # Apply the rules to the list of substrates returning anything that
+        # matches
+        if self.order == ['include', 'skip']:
+            result = self._filter_includes(substrates, True)
+            result = self._filter_skips(result)
+        else:
+            result = self._filter_skips(substrates, True)
+            result = self._filter_includes(result)
+        return result
+
+    def _filter_includes(self, inputList, priority=False):
+        if priority and '*' in self.include:
+            return inputList
+        return sorted(list(set(inputList).intersection(self.include)))
+
+    def _filter_skips(self, inputList, priority=False):
+        if priority and '*' in self.skip:
+            return list(self.include.intersection(inputList))
+        return sorted(list(set(inputList).difference(self.skip)))
+
+
+def parse_substrates(spec):
+    if isinstance(spec, basestring):
+        spec = yaml.safe_load(spec)
+    if not spec or 'substrates' not in spec:
+        raise ValueError(
+            "Invalid data passed to parse_substrates: {}".format(spec))
+
+    specRules = SubstrateFilter(spec['substrates'])
+    return specRules
+
+
+def allowed_substrates(spec, possible_substrates):
+    return parse_substrates(spec).filter(possible_substrates)
 
 
 def setup_parser():
@@ -592,14 +648,12 @@ def main():
         tester = Conductor(args)
         env_yaml = tester.get_environment(cfg.juju_env)
         if 'substrates' in cfg:
-            # We have substrate configuration data.
-            substrate_match = env_yaml['type'] in cfg.substrates['values']
-            if cfg.substrates['inclusive'] and not substrate_match:
-                pass
-            if not cfg.substrates['inclusive'] and substrate_match:
-                raise Exception('%s is not in allowed substrates: %s' %
+            rules = parse_substrates(cfg)
+            allowed = rules.filter(env_yaml['type'])
+            if env_yaml['type'] not in allowed:
+                raise Exception('%s is not an allowed substrate: %s' %
                                 (env_yaml['type'],
-                                 cfg.substrates['values'].join(', ')))
+                                 allowed.join(', ')))
         errors, failures, passes = tester.run()
     except NoTests:
         logger.critical('No tests were found')
