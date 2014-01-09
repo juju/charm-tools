@@ -122,7 +122,7 @@ class CharmLinter(Linter):
     def check_config_file(self, charm_path):
         config_path = os.path.join(charm_path, 'config.yaml')
         if not os.path.isfile(config_path):
-            self.warn('File config.yaml not found.')
+            self.info('File config.yaml not found.')
             return
         try:
             with open(config_path) as config_file:
@@ -148,6 +148,10 @@ class CharmLinter(Linter):
             return
 
         for option_name, option_value in options.items():
+            if not re.match('^[a-z0-9]+[\w-]+[a-z0-9]+$', option_name,
+                            flags=re.IGNORECASE):
+                self.err('config.yaml: %s does not conform to naming pattern'
+                         % option_name)
             if not isinstance(option_value, dict):
                 self.err(
                     'config.yaml: data for option %s is not a dict'
