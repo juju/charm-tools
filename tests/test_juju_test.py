@@ -30,12 +30,15 @@ environments:
 
 PARSED_ENVIRONMENTS_YAML = yaml.safe_load(RAW_ENVIRONMENTS_YAML)
 
+
 class Arguments(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
     def __getattr__(self, name):
         return None
+
 
 class JujuTestPluginTest(unittest.TestCase):
     @patch('subprocess.check_output')
@@ -77,7 +80,7 @@ class JujuTestPluginTest(unittest.TestCase):
         self.assertEqual(100, juju_test.convert_to_timedelta('100s'))
         self.assertEqual(100, juju_test.convert_to_timedelta(100))
         self.assertEqual(60, juju_test.convert_to_timedelta('1m'))
-        self.assertEqual(60*60, juju_test.convert_to_timedelta('1h'))
+        self.assertEqual(60 * 60, juju_test.convert_to_timedelta('1h'))
 
     @patch('glob.glob')
     @patch('os.path.isfile')
@@ -89,7 +92,7 @@ class JujuTestPluginTest(unittest.TestCase):
         mock_isfile.side_effect = files_exist
         mock_glob.return_value = tests_directory
 
-        args = Arguments(tests = 'dummy')
+        args = Arguments(tests='dummy')
         c = juju_test.Conductor(args)
         results = c.find_tests()
 
@@ -100,7 +103,7 @@ class JujuTestPluginTest(unittest.TestCase):
     def test_conductor_find_tests_fails(self, mock_glob):
         mock_glob.return_value = []
 
-        args = Arguments(tests = 'dummy')
+        args = Arguments(tests='dummy')
         c = juju_test.Conductor(args)
         results = c.find_tests()
 
@@ -126,7 +129,7 @@ class JujuTestPluginTest(unittest.TestCase):
 
         mcheck_output.side_effect = [yml_output, Exception('not bootstrapped')]
         juju_env = 'test'
-        args = Arguments(tests = 'dummy')
+        args = Arguments(tests='dummy')
         c = juju_test.Conductor(args)
         results = c.status(juju_env)
 
@@ -193,7 +196,7 @@ class JujuTestPluginTest(unittest.TestCase):
 
     @patch('subprocess.check_call')
     def test_conductor_destroy(self, mock_check_call):
-        args = Arguments(tests = 'dummy')
+        args = Arguments(tests='dummy')
         c = juju_test.Conductor(args)
         c.juju_version = juju_test.JujuVersion(major=1, minor=1, patch=1)
         good_env = 'valid'
@@ -216,7 +219,7 @@ class JujuTestPluginTest(unittest.TestCase):
 
         bad_env = 'invalid'
 
-        args = Arguments(tests = 'dummy')
+        args = Arguments(tests='dummy')
         c = juju_test.Conductor(args)
         c.juju_version = juju_test.JujuVersion(major=1, minor=8, patch=0)
         self.assertRaises(juju_test.DestroyUnreliable, c.destroy, bad_env)
@@ -448,7 +451,7 @@ class JujuTestPluginTest(unittest.TestCase):
         o.log.status.assert_called_with('%s (%s)' % (juju_test.TEST_FAIL,
                                                      juju_test.TEST_TIMEOUT))
 
-        o.conductor.args.on_timeout='skip'
+        o.conductor.args.on_timeout = 'skip'
         o.log.status.reset_mock()
         o.print_status(124)
         o.log.status.assert_called_with('%s (%s)' % (juju_test.TEST_FAIL,
@@ -583,7 +586,7 @@ class JujuTestPluginTest(unittest.TestCase):
         goyml_parsed = yaml.safe_load(goyml_output)
         mstatus.return_value = goyml_parsed
 
-        juju_env='testing'
+        juju_env = 'testing'
         args = Arguments(tests='dummy', juju_env=juju_env, logdir='/tmp')
         c = juju_test.Conductor(args)
         c.juju_version = juju_test.JujuVersion(major=1, minor=10, patch=0)
@@ -623,7 +626,7 @@ class JujuTestPluginTest(unittest.TestCase):
         pyyml_parsed = yaml.safe_load(pyyml_output)
         mstatus.return_value = pyyml_parsed
 
-        juju_env='testing'
+        juju_env = 'testing'
         args = Arguments(tests='dummy', juju_env=juju_env, logdir='/tmp')
         c = juju_test.Conductor(args)
         c.juju_version = juju_test.JujuVersion(major=0, minor=7, patch=0)

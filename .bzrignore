@@ -9,3 +9,5 @@ include
 lib
 local
 man
+tests/.ropeproject/
+charmtools/.ropeproject/

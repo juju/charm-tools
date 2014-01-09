@@ -34,6 +34,7 @@ def setup_parser():
 
     return parser
 
+
 def update(charm_dir, fix=False):
     mr = Mr(charm_dir)
     for charm in charms.remote():
@@ -47,6 +48,7 @@ def update(charm_dir, fix=False):
         mr.save()
     except Exception as e:
         raise Exception(".mrconfig not saved: %s" % e.strerror)
+
 
 def main():
     parser = setup_parser()
