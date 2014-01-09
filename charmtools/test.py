@@ -410,6 +410,7 @@ class TestCfg(object):
                 if key in self._keys:
                     setattr(self, key, val)
 
+
 def get_juju_version():
     jv = JujuVersion()
     cmd = ['juju', 'version']
