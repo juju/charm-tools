@@ -4,6 +4,7 @@ import unittest
 import yaml
 from charmtools.test import parse_substrates, allowed_substrates
 
+
 class JujuTestSubstrateTests(unittest.TestCase):
     INCLUDE_SKIP = '''
 substrates:
