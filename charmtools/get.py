@@ -67,6 +67,7 @@ def main(args):
     if not charm:
         sys.stderr.write('Error: %s not found in charm store\n'
                          % args.charm[0])
+        sys.exit(1)
 
     ldir = args.branch_to
     branch_dir = os.path.realpath(ldir) if ldir else os.getcwd()
