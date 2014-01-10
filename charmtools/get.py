@@ -34,42 +34,52 @@ def setup_parser():
     return parser
 
 
-def get(source, to):
-    if not os.path.exists(to):
-        os.makedirs(to)
-
-
-def main():
-    parser = setup_parser()
-    args = parser.parse_args()
-
-    charm_id = args.charm[0]
+def parse_charm_id(charm_id):
     if charm_id.startswith('cs:'):
         charm_id = charm_id.replace('cs:', '')
 
-    ldir = args.branch_to
-    branch_dir = os.path.realpath(ldir) if ldir else os.getcwd()
     try:
         charm = cwc.Charm(charm_id)
     except:
-        sys.stderr.write('Error: Could not locate charm in store.\n')
-        sys.exit(1)
+        return None
 
-    charm_dir = os.path.join(branch_dir, charm.name)
+    return charm
+
+
+def download(charm, to):
+    charm_dir = os.path.join(to, charm.name)
     if os.path.exists(charm_dir) and os.listdir(charm_dir):
-        sys.stderr.write('Error: %s exists and is not empty\n' % charm_dir)
+        raise ValueError('%s exists and is not empty' % charm_dir)
 
-    if not os.path.exists(branch_dir):
-        os.makedirs(branch_dir)
+    if not os.path.exists(to):
+        os.makedirs(to)
+
+    mr = Mr(to, mr_compat=False)
+    mr.add(charm.name, charm.code_source['location'], checkout=True)
+
+
+def main(args):
+    parser = setup_parser()
+    args = parser.parse_args(args)
+
+    charm = parse_charm_id(args.charm[0])
+
+    if not charm:
+        sys.stderr.write('Error: %s not found in charm store\n'
+                         % args.charm[0])
+
+    ldir = args.branch_to
+    branch_dir = os.path.realpath(ldir) if ldir else os.getcwd()
+
+    sys.stderr.write('Branching %s (%s) to %s/%s\n' % (charm.name,
+                     charm.code_source['location'], branch_dir,
+                     charm.name))
 
     try:
-        mr = Mr(branch_dir, mr_compat=False)
-        sys.stderr.write('Branching %s (%s) to %s/%s\n' % (charm.name,
-                         charm.code_source['location'], branch_dir,
-                         charm.name))
-        mr.add(charm.name, charm.code_source['location'], checkout=True)
+        download(charm, branch_dir)
     except Exception as e:
-        print >> sys.stderr, "Error during branching: ", e
+        sys.stderr.write('Error: %s' % str(e))
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
