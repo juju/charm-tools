@@ -47,7 +47,7 @@ class TestCharmProof(TestCase):
     def test_config_yaml_missing(self):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(
-            ['W: File config.yaml not found.'], self.linter.lint)
+            ['I: File config.yaml not found.'], self.linter.lint)
 
     def test_clean_config(self):
         self.write_config("""
