@@ -79,6 +79,8 @@ class CharmLinter(Linter):
         template_relations = ('relation-name')
 
         for r in relations.items():
+            if r[0].startswith('juju-'):
+                self.info('juju-* is a reserved relation name')
             if type(r[1]) != dict:
                 self.err("relation %s is not a map" % (r[0]))
             else:
