@@ -101,8 +101,8 @@ integration:
 	tests_functional/create/test.sh
 #	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
 
-coverage:
-	@nosetests --with-coverage --cover-package=charmtools --cover-tests -s tests/test_*.py
+coverage: build bin/test
+	bin/test --with-coverage --cover-package=charmtools --cover-tests
 
 check: integration test lint
 
