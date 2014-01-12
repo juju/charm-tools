@@ -58,7 +58,7 @@ def download(charm, to):
     mr.add(charm.name, charm.code_source['location'], checkout=True)
 
 
-def main(args):
+def main(args=None):
     parser = setup_parser()
     args = parser.parse_args(args)
 
