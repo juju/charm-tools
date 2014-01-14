@@ -9,5 +9,7 @@ include
 lib
 local
 man
+build
+dist
 tests/.ropeproject/
 charmtools/.ropeproject/
