@@ -40,6 +40,10 @@ def charm():
         version.main()
         sys.exit(0)
 
+    if sub == '--list':
+        print '\n'.join(cli.subcommands(os.path.realpath(__file__)))
+        sys.exit(0)
+
     sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
                             "charm-%s%s" % (sub, cli.ext()))
 
