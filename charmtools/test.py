@@ -184,8 +184,14 @@ class Conductor(object):
 
     def destroy(self, juju_env):
         self.log.debug('Tearing down %s juju environment' % juju_env)
-        cmd = ['juju', 'destroy-environment', '-e', juju_env]
+        cmd = ['juju', 'destroy-environment']
+
         if self.juju_version.major > 0:
+            if self.juju_version.minor < 17:
+                cmd.extend(['-y', '-e', juju_env])
+            else:
+                cmd.extend(['-y', juju_env])
+
             self.log.debug('Calling "%s"' % ' '.join(cmd))
             try:
                 subprocess.check_call(cmd)
@@ -194,6 +200,7 @@ class Conductor(object):
         else:
             # Probably should use Popen instead of Shell=True. I'm just not
             # confident on properly mocking a Popen call just yet.
+            cmd.extend(['-e', juju_env])
             pycmd = 'echo y | %s' % ' '.join(cmd)
             self.log.debug('Calling "%s"' % pycmd)
             try:
@@ -234,8 +241,8 @@ class Conductor(object):
                 if status['machines'][0]['agent-state'] == 'running':
                     bootstrapped = True
 
-    def load_environments_yaml(self, juju_home='~'):
-        env_yaml_file = os.path.join(os.path.expanduser(juju_home), '.juju',
+    def load_environments_yaml(self, juju_home='~/.juju'):
+        env_yaml_file = os.path.join(os.path.expanduser(juju_home),
                                      'environments.yaml')
         if not os.path.exists(env_yaml_file):
             raise IOError("%s file does not exist" % env_yaml_file)
@@ -624,6 +631,7 @@ logging.Logger.status = status
 def main():
     p = setup_parser()
     args = p.parse_args()
+    test_cfg = None
     if args.description:
         print p.description
         sys.exit()

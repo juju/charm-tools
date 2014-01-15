@@ -203,7 +203,14 @@ class JujuTestPluginTest(unittest.TestCase):
         c.destroy(good_env)
 
         mock_check_call.assert_called_once_with(['juju', 'destroy-environment',
-                                                 '-e', good_env])
+                                                 '-y', '-e', good_env])
+
+        mock_check_call.reset_mock()
+        c.juju_version = juju_test.JujuVersion(major=1, minor=17, patch=0)
+        c.destroy(good_env)
+
+        mock_check_call.assert_called_once_with(['juju', 'destroy-environment',
+                                                 '-y', good_env])
 
         mock_check_call.reset_mock()
         c.juju_version = juju_test.JujuVersion(major=0, minor=8, patch=0)
