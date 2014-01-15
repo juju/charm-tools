@@ -325,8 +325,8 @@ class Charm(object):
                                         continue
                                     lc += 1
                                     if l in readme_content:
-                                        err_msg = ('%s Includes boilerplate '
-                                                   'README.ex line %d')
+                                        err_msg = ('%s Includes line %d of '
+                                                   'boilerplate README.ex ')
                                         lint.warn(err_msg % (readme, lc))
                 except IOError as e:
                     lint.warn(
