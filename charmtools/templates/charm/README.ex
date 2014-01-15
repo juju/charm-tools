@@ -40,9 +40,3 @@ Though this will be listed in the charm store itself don't assume a user will kn
 - Upstream bug tracker
 - Upstream mailing list or contact information
 - Feel free to add things if it's useful for users
-
-## Charm Contact
-
-Though the charm store lists a maintainer, a URL, and where to report bugs you might want to use this area to expand on different contact information if you want. 
-
-* Be sure to remove the templated parts before submitting to https://launchpad.net/charms for inclusion in the charm store.
