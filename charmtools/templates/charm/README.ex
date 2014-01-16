@@ -8,6 +8,8 @@ Use this as a Markdown reference if you need help with the formatting of this RE
 
 This charm provides [service](http://example.com). Add a description here of what the service itself actually does.
 
+Also remember to check the [icon guidelines](https://juju.ubuntu.com/docs/authors-charm-icon.html) so that your charm looks good in the Juju GUI.
+
 # Usage
 
 Step by step instructions on using the charm:
