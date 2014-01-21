@@ -12,6 +12,7 @@ import sys
 import time
 import yaml
 from datetime import timedelta
+from collections import OrderedDict
 from contextlib import contextmanager
 
 TEST_PASS = '✔'
@@ -64,35 +65,30 @@ class Conductor(object):
         self.args = arguments
         self.env = {'JUJU_HOME': os.path.expanduser('~/.juju')}
         self.log = logging.getLogger('juju-test.conductor')
-        self.tests = self.args.tests or self.find_tests()
-        self.tests_supplied = bool(self.args.tests)
+        self.tests = self.find_tests()
+        self.tests_requested = self.args.tests
         self.juju_version = None
         self.juju_env = self.args.juju_env
         self.errors = 0
         self.fails = 0
         self.passes = 0
 
+        if self.tests_requested:
+            self.tests_requested = [os.path.basename(t) for t in
+                                    self.tests_requested]
+
         if not self.tests:
             raise NoTests()
 
     def run(self):
         self.juju_version = get_juju_version()
-        available_tests = self.find_tests()
+        requested_tests = self.tests
+        if self.tests_requested:
+            for test in self.tests:
+                if test not in self.tests_requested:
+                    del self.tests[test]
 
-        for test in self.tests:
-            if not os.path.basename(test) in available_tests:
-                self.log.error('%s is not an available test. Skipping' % test)
-                self.errors += 1
-                continue
-
-            if not os.path.isfile(test):
-                if not os.path.isfile(os.path.join('tests', test)):
-                    self.log.error('%s was not found. Skipping' % test)
-                    self.errors += 1
-                    continue
-                else:
-                    test = os.path.join('tests', test)
-
+        for test in requested_tests.values():
             try:
                 self.bootstrap(self.juju_env, self.args.setup_timeout)
             except Exception, e:
@@ -130,9 +126,16 @@ class Conductor(object):
             return None
 
         # Filter out only the files in tests/ then get the test names.
-        tests = [os.path.basename(t) for t in tests_dir if os.path.isfile(t)]
+        tests = [t for t in tests_dir if os.path.isfile(t)]
+        # only include executables
+        tests = [(os.path.basename(test), test) for test in tests if
+                 os.access(test, os.R_OK | os.X_OK)]
 
-        return sorted(tests)
+        result = OrderedDict()
+        # keep sort order as well as indexed lookups
+        for basename, test in sorted(tests):
+            result[basename] = test
+        return result
 
     def safe_test_name(self, test_name):
         return test_name
