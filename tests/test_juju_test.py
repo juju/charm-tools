@@ -4,6 +4,7 @@ import os
 import unittest
 import yaml
 
+from contextlib import contextmanager
 from charmtools import test as juju_test
 from mock import patch, call, Mock, MagicMock
 from StringIO import StringIO
@@ -29,6 +30,25 @@ environments:
     ssl-hostname-verification: true'''
 
 PARSED_ENVIRONMENTS_YAML = yaml.safe_load(RAW_ENVIRONMENTS_YAML)
+
+@contextmanager
+def cd(directory):
+    """A context manager to temporarily change current working dir, e.g.::
+
+        >>> import os
+        >>> os.chdir('/tmp')
+        >>> with cd('/bin'): print os.getcwd()
+        /bin
+        >>> print os.getcwd()
+        /tmp
+    """
+    cwd = os.getcwd()
+    os.chdir(directory)
+    try:
+        yield
+    finally:
+        os.chdir(cwd)
+
 
 
 class Arguments(object):
@@ -82,32 +102,18 @@ class JujuTestPluginTest(unittest.TestCase):
         self.assertEqual(60, juju_test.convert_to_timedelta('1m'))
         self.assertEqual(60 * 60, juju_test.convert_to_timedelta('1h'))
 
-    @patch('glob.glob')
-    @patch('os.path.isfile')
-    def test_conductor_find_tests(self, mock_isfile, mock_glob):
-        tests_directory = ['tests/00-test', 'tests/02-juju', 'tests/lib',
-                           'tests/01-ubuntu']
-        test_names = ['00-test', '01-ubuntu', '02-juju']
-        files_exist = [True, True, False, True]
-        mock_isfile.side_effect = files_exist
-        mock_glob.return_value = tests_directory
+    def test_conductor_find_tests(self):
+        with cd('tests_functional/charms/test/'):
+            args = Arguments(tests="dummy")
+            c = juju_test.Conductor(args)
+            results = c.find_tests()
+            self.assertIn('00_setup', results)
+            self.assertNotIn('helpers.bash', results)
 
-        args = Arguments(tests='dummy')
-        c = juju_test.Conductor(args)
-        results = c.find_tests()
-
-        mock_glob.assert_called_with('tests/*')
-        self.assertEqual(results, test_names)
-
-    @patch('glob.glob')
-    def test_conductor_find_tests_fails(self, mock_glob):
-        mock_glob.return_value = []
-
-        args = Arguments(tests='dummy')
-        c = juju_test.Conductor(args)
-        results = c.find_tests()
-
-        self.assertEqual(results, None)
+    def test_conductor_find_tests_fails(self):
+        with cd('tests_functional/charms/mod-spdy/'):
+            args = Arguments(tests="dummy")
+            self.assertRaises(juju_test.NoTests, juju_test.Conductor, args)
 
     @patch.object(juju_test.Conductor, 'find_tests')
     def test_conductor_find_tests_exception(self, mfind_tests):
