@@ -128,8 +128,8 @@ class Conductor(object):
         # Filter out only the files in tests/ then get the test names.
         tests = [t for t in tests_dir if os.path.isfile(t)]
         # only include executables
-        tests = [(os.path.basename(test), test) for test in tests if
-                 os.access(test, os.R_OK | os.X_OK)]
+        tests = [(os.path.basename(t), t) for t in tests if
+                 os.access(t, os.R_OK | os.X_OK)]
 
         result = OrderedDict()
         # keep sort order as well as indexed lookups
@@ -618,6 +618,7 @@ output:
     # TODO: Need to add some way to specify a particular test without
     #       colliding with CHARM
     parser.add_argument('tests', metavar="TEST", nargs='*',
+                        default=None,
                         help="tests to execute, relative to tests/ directory, \
                               default is all")
     return parser
