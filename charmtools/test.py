@@ -169,7 +169,7 @@ class Conductor(object):
 
         self.log.debug('Running the following: %s' % ' '.join(cmd))
         try:
-            subprocess.check_output(cmd)
+            subprocess.check_call(cmd)
         except subprocess.CalledProcessError:
             raise BootstrapError('Bootstrap returned with an exit > 0')
 
@@ -277,6 +277,7 @@ class Orchestra(object):
             self.print_status(124)
             error = e if not self.is_passing_code(124) else e
         except subprocess.CalledProcessError, e:
+            self.log.debug(e.output)
             self.log.debug('Got exit code: %s', e.returncode)
             self.print_status(e.returncode)
             error = TestingError(e.returncode) if not \
