@@ -116,9 +116,12 @@ class JujuTestPluginTest(unittest.TestCase):
             self.assertRaises(juju_test.NoTests, juju_test.Conductor, args)
 
     def test_conductor_has_path_set(self):
+        """Ensure that the conductor copies my environment."""
+        os.environ['CHARMTOOLS_TEST'] = 'FOOBAR';
         args = Arguments(tests="dummy")
         c = juju_test.Conductor(args)
-        self.assertIn('PATH', c.env)
+        self.assertIn('CHARMTOOLS_TEST', c.env)
+        self.assertEqual('FOOBAR', c.env['CHARMTOOLS_TEST'])
 
     @patch.object(juju_test.Conductor, 'find_tests')
     def test_conductor_find_tests_exception(self, mfind_tests):
