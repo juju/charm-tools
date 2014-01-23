@@ -115,6 +115,11 @@ class JujuTestPluginTest(unittest.TestCase):
             args = Arguments(tests="dummy")
             self.assertRaises(juju_test.NoTests, juju_test.Conductor, args)
 
+    def test_conductor_has_path_set(self):
+        args = Arguments(tests="dummy")
+        c = juju_test.Conductor(args)
+        self.assertIn('PATH', c.env)
+
     @patch.object(juju_test.Conductor, 'find_tests')
     def test_conductor_find_tests_exception(self, mfind_tests):
         mfind_tests.return_value = None
