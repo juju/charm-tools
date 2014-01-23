@@ -64,6 +64,7 @@ class Conductor(object):
     def __init__(self, arguments=None):
         self.args = arguments
         self.env = {'JUJU_HOME': os.path.expanduser('~/.juju')}
+        self.env.update(os.environ)
         self.log = logging.getLogger('juju-test.conductor')
         self.tests = self.find_tests()
         self.tests_requested = self.args.tests
