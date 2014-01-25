@@ -242,7 +242,7 @@ class JujuTestPluginTest(unittest.TestCase):
         self.assertRaises(juju_test.DestroyUnreliable, c.destroy, bad_env)
 
     @patch('time.sleep')
-    @patch('subprocess.check_output')
+    @patch('subprocess.check_call')
     @patch.object(juju_test.Conductor, 'status')
     def test_conductor_bootstrap(self, mock_status, mcheck_output, msleep):
         goyml_output = '''
@@ -292,7 +292,7 @@ class JujuTestPluginTest(unittest.TestCase):
         mcheck_output.assert_called_once_with(expected_cmd)
 
     @patch('time.sleep')
-    @patch('subprocess.check_output')
+    @patch('subprocess.check_call')
     @patch.object(juju_test.Conductor, 'status')
     def test_conductor_bootstrap_go_opts(self, mstatus, mcheck_output, msleep):
         goyml_output = '''
@@ -329,7 +329,7 @@ class JujuTestPluginTest(unittest.TestCase):
         c.bootstrap(juju_env)
         mcheck_output.assert_called_once_with(const_cmd)
 
-    @patch('subprocess.check_output')
+    @patch('subprocess.check_call')
     def test_conductor_bootstrap_error(self, mcheck_output):
         from subprocess import CalledProcessError
         mcheck_output.side_effect = CalledProcessError('err', 'err', 'err')
@@ -341,7 +341,7 @@ class JujuTestPluginTest(unittest.TestCase):
 
         self.assertRaises(juju_test.BootstrapError, c.bootstrap, juju_env)
 
-    @patch('subprocess.check_output')
+    @patch('subprocess.check_call')
     @patch.object(juju_test, 'timeout')
     @patch.object(juju_test.Conductor, 'status')
     def test_conductor_bootstrap_unreliable(self, mock_status, mtimeout,
