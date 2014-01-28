@@ -40,14 +40,13 @@ def graph(interface, endpoint, series='precise'):
     return charms[0]
 
 
-def readme(charm_dir, is_bundle=False, debug=False):
+def copy_file(tpl_file, charm_dir, is_bundle=False, debug=False):
     c = Charm(charm_dir)
 
     if not c.is_charm():
         raise Exception('%s is not a charm' % charm_dir)
 
-    shutil.copy(os.path.join(CHARM_TPL, 'README.ex'), charm_dir)
-
+    shutil.copy(os.path.join(CHARM_TPL, tpl_file), charm_dir)
 
 def tests(charm_dir, is_bundle=False, debug=False):
     c = Charm(charm_dir)
@@ -100,7 +99,7 @@ apt-get install amulet
 def parser(args=None):
     parser = argparse.ArgumentParser(
         description='Builds portions of a charm or bundle')
-    parser.add_argument('subcommand', choices=['tests', 'readme'],
+    parser.add_argument('subcommand', choices=['tests', 'readme', 'icon'],
                         help='Which type of generator to run')
     parser = parser_defaults(parser)
     return parser.parse_args(args)
@@ -111,7 +110,9 @@ def main():
     if a.subcommand == 'tests':
         tests(os.getcwd(), is_bundle=a.bundle, debug=a.debug)
     elif a.subcommand == 'readme':
-        readme(os.getcwd(), is_bundle=a.bundle, debug=a.debug)
+        copy_file('README.ex', os.getcwd(), is_bundle=a.bundle, debug=a.debug)
+    elif a.subcommand == 'icon':
+        copy_file('icon.svg', os.getcwd(), is_bundle=a.bundle, debug=a.debug)
     else:
         raise Exception('No subcommand found')
 
