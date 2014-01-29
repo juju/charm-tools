@@ -115,6 +115,24 @@ class JujuTestPluginTest(unittest.TestCase):
             args = Arguments(tests="dummy")
             self.assertRaises(juju_test.NoTests, juju_test.Conductor, args)
 
+    def test_conductor_ignores_arbitrary_env(self):
+        """Ensure that the conductor ignores other env vars."""
+        os.environ['CHARMTOOLS_TEST'] = 'FOOBAR';
+        args = Arguments(tests="dummy")
+        c = juju_test.Conductor(args)
+        self.assertNotIn('CHARMTOOLS_TEST', c.env)
+
+    def test_conductor_keeps_whitelist_env(self):
+        """Ensure that the conductor copies the environment whitelist."""
+        os.environ['PATH'] = 'FOOBAR';
+        os.environ['SSH_AGENT_PID'] = 'FOOBAR';
+        os.environ['SSH_AUTH_SOCK'] = 'FOOBAR';
+        args = Arguments(tests="dummy")
+        c = juju_test.Conductor(args)
+        self.assertEqual('FOOBAR', c.env['PATH'])
+        self.assertEqual('FOOBAR', c.env['SSH_AGENT_PID'])
+        self.assertEqual('FOOBAR', c.env['SSH_AUTH_SOCK'])
+
     @patch.object(juju_test.Conductor, 'find_tests')
     def test_conductor_find_tests_exception(self, mfind_tests):
         mfind_tests.return_value = None
