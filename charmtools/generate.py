@@ -23,7 +23,7 @@ from Cheetah.Template import Template
 
 from cli import parser_defaults
 from charms import Charm
-from charmworldlib import charm as cwc
+from charmworldlib.charm import Charms
 
 TPL_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
 ATPL = {'deploy': os.path.join(TPL_DIR, 'tests', 'deploy.tpl'),
@@ -34,10 +34,12 @@ CHARM_TPL = os.path.join(TPL_DIR, 'charm')
 
 def graph(interface, endpoint, series='precise'):
     matches = {'requires': 'provides', 'provides': 'requires'}
-    c = cwc.Charms()
+    c = Charms()
     charms = c.search({matches[endpoint]: interface, 'series': series})
-
-    return charms[0]
+    if charms:
+        return charms[0]
+    else:
+        return None
 
 
 def copy_file(tpl_file, charm_dir, is_bundle=False, debug=False):
@@ -47,6 +49,7 @@ def copy_file(tpl_file, charm_dir, is_bundle=False, debug=False):
         raise Exception('%s is not a charm' % charm_dir)
 
     shutil.copy(os.path.join(CHARM_TPL, tpl_file), charm_dir)
+
 
 def tests(charm_dir, is_bundle=False, debug=False):
     c = Charm(charm_dir)
@@ -67,6 +70,9 @@ def tests(charm_dir, is_bundle=False, debug=False):
                 iface = data['interface']
                 if iface and iface not in interfaces[rel_type]:
                     r = graph(iface, rel_type)
+                    # If we dont find an interface, do nothing
+                    if r is None:
+                        continue
                     interfaces[rel_type][iface] = r
                     deploy.append(r.url)
 
