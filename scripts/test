@@ -4,4 +4,4 @@ if [[ $* =~ --pdb( .*|$) ]]
 then
     extra_args="--pdb-failures"
 fi
-bin/nosetests --exe --with-id $extra_args $@
+bin/nosetests --nocapture --exe --with-id $extra_args $@
