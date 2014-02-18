@@ -20,7 +20,7 @@ import argparse
 import subprocess
 
 from .mr import Mr
-from . import ext
+from .cli import ext
 
 
 def setup_parser():
@@ -46,7 +46,7 @@ def main():
         os.makedirs(args.charms_directory, 0o755)
 
     update_cmd = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
-                              'charm-update%s' % ext)
+                              'charm-update%s' % ext())
     charm_update = subprocess.call([update_cmd, args.charms_directory])
     if charm_update != 0:
         sys.stderr.write('Unable to perform `juju charm update`!\n')
