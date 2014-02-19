@@ -1,10 +1,14 @@
-import os
-import yaml
 import glob
 import json
+import os
+import re
+import yaml
 
 from linter import Linter
 from charmworldlib import bundle as cw_bundle
+
+
+charm_url_includes_id = re.compile(r'-\d+$').search
 
 
 class BundleLinter(Linter):
@@ -19,9 +23,13 @@ class BundleLinter(Linter):
 
             if 'services' in bdata:
                 for svc, sdata in bdata['services'].items():
-                    if not 'annotations' in sdata:
+                    if 'annotations' not in sdata:
                         self.warn('%s: %s: No annotations found, will render '
-                                  'bad in GUI' % (name, svc))
+                                  'poorly in GUI' % (name, svc))
+                    if not charm_url_includes_id(sdata['charm']):
+                        self.warn(
+                            '%s: charm URL should include a revision' % svc)
+
             else:
                 if 'inherits' not in bdata:
                     self.err("%s: No services defined" % name)
