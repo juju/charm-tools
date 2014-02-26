@@ -25,7 +25,7 @@ TEST_RESERVED_EXITS = {0: 'pass', 100: 'skip', 124: 'timeout'}
 
 LOG_LEVELS = [logging.INFO, logging.DEBUG]
 TEST_RESULT_LEVELV_NUM = 51
-ENV_WHITELIST = ('PATH', 'SSH_AUTH_SOCK', 'SSH_AGENT_PID', 'PYTHONPATH')
+ENV_WHITELIST = ['PATH', 'SSH_AUTH_SOCK', 'SSH_AGENT_PID', 'PYTHONPATH']
 
 
 class NoTests(Exception):
@@ -65,6 +65,9 @@ class Conductor(object):
     def __init__(self, arguments=None):
         self.args = arguments
         self.env = {'JUJU_HOME': os.path.expanduser('~/.juju')}
+        if arguments.preserve_environment_variables:
+            for var in arguments.preserve_environment_variables.split(","):
+                ENV_WHITELIST.append(var)
         for var in ENV_WHITELIST:
             if var in os.environ:
                 self.env[var] = os.environ[var]
@@ -610,6 +613,10 @@ output:
                         help="make test more verbose")
     parser.add_argument('-q', '--quiet', default=False, action="store_true",
                         help="quiet all output")
+    parser.add_argument('-p', '--preserve-environment-variables',
+                        help="Comma separated list of environment variables "
+                        "to preserve.  This will be added to the default list "
+                        "of {}.".format(ENV_WHITELIST))
     # These are bootstrap/juju specific
     parser.add_argument('-e', '--environment', metavar='JUJU_ENV',
                         default=os.environ.get('JUJU_ENV'),
