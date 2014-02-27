@@ -7,7 +7,6 @@ import yaml
 from contextlib import contextmanager
 from charmtools import test as juju_test
 from mock import patch, call, Mock, MagicMock
-from StringIO import StringIO
 
 RAW_ENVIRONMENTS_YAML = '''
 default: gojuju
@@ -132,6 +131,16 @@ class JujuTestPluginTest(unittest.TestCase):
         self.assertEqual('FOOBAR', c.env['PATH'])
         self.assertEqual('FOOBAR', c.env['SSH_AGENT_PID'])
         self.assertEqual('FOOBAR', c.env['SSH_AUTH_SOCK'])
+
+    def test_conductor_allows_addition_to_whitelist_env(self):
+        """Ensure that the conductor copies the environment whitelist."""
+        os.environ['FOO'] = 'BAR';
+        os.environ['BAR'] = 'BAZ';
+        args = Arguments(tests="dummy")
+        args.preserve_environment_variables = "FOO,BAR"
+        c = juju_test.Conductor(args)
+        self.assertEqual('BAR', c.env['FOO'])
+        self.assertEqual('BAZ', c.env['BAR'])
 
     @patch.object(juju_test.Conductor, 'find_tests')
     def test_conductor_find_tests_exception(self, mfind_tests):
