@@ -13,6 +13,13 @@ charm_url_includes_id = re.compile(r'-\d+$').search
 
 class BundleLinter(Linter):
     def validate(self, contents):
+        """Validate the bundle.
+
+        Tests:
+          * name not 'envExport' (generic name for exports by Juju GUI),
+          * No series set and not inheriting,
+          * Position annotations give for each service.
+        """
         for name, bdata in contents.items():
             if name == 'envExport':
                 self.warn('envExport is the default export name. Please '
@@ -52,14 +59,14 @@ class BundleLinter(Linter):
         deployer_file = bundle.bundle_file(parse=True)
         proof_output = bundles.proof(deployer_file)
 
-        # Loop through errors for verbose outputing.
-        # http://paste.mitechie.com/show/1048/
         if self.debug:
             print json.dumps(proof_output, 2)
 
-        if 'error_messages' in proof_output:
-            for message in proof_output['error_messages']:
-                self.err(message)
+        for key, emitter in (('error_messages', self.err),
+                             ('warning_messages', self.warn)):
+            if key in proof_output:
+                for message in proof_output[key]:
+                    emitter(message)
 
 
 class Bundle(object):
