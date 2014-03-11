@@ -51,7 +51,7 @@ def proof(path, is_bundle=False, with_remote=True, debug=False):
         try:
             c = Bundle(path, debug)
         except Exception as e:
-            return ["FATAL: %s" % e.strerror], 200
+            return ["FATAL: %s" % e.message], 200
 
     lint, err_code = c.proof(with_remote)
     return lint, err_code

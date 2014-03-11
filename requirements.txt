@@ -12,4 +12,4 @@ oauth==1.0.1
 flake8==1.6.2
 mock==1.0.1
 coverage==3.7.1
-charmworldlib>=0.2.4
+charmworldlib>=0.3.0

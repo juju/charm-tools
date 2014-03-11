@@ -34,7 +34,6 @@ from charmtools.charms import CharmLinter as Linter
 class TestCharmProof(TestCase):
     def setUp(self):
         self.charm_dir = mkdtemp()
-        self.config_path = join(self.charm_dir, 'config.yaml')
         self.linter = Linter()
 
     def tearDown(self):
@@ -254,6 +253,7 @@ class TestCharmProof(TestCase):
             "E: Cannot parse config.yaml: could not determine a constructor "
             "for the tag 'tag:yaml.org,2002:python/name:__builtin__.int'")
         self.assertTrue(self.linter.lint[0].startswith(expected))
+
 
 if __name__ == '__main__':
     main()
