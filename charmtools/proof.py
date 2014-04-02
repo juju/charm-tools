@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-#    Copyright (C) 2011 - 2013  Canonical Ltd.
+#    Copyright (C) 2011 - 2014  Canonical Ltd.
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@ def get_args(args=None):
                         help='Only perform offline proofing')
     parser.add_argument('--server', default=None,
                         help=argparse.SUPPRESS)
-    parser.add_argument('--port', default=None, type=int, help=argparse.SUPPRESS)
+    parser.add_argument('--port', default=None, type=int,
+                        help=argparse.SUPPRESS)
     parser.add_argument('--secure', action='store_true',
                         help=argparse.SUPPRESS)
     parser.add_argument('charm_name', nargs='?', default=os.getcwd(),
