@@ -54,8 +54,15 @@ class BundleLinter(Linter):
 
         self.validate(data)
 
-    def remote_proof(self, bundle):
-        bundles = cw_bundle.Bundles()
+    def remote_proof(self, bundle, server, port, secure):
+        if server is not None or port is not None:
+            # Use the user-specified overrides for the remote server.
+            bundles = cw_bundle.Bundles(server=server, port=port,
+                                        secure=secure)
+        else:
+            # Otherwise use the defaults.
+            bundles = cw_bundle.Bundles()
+
         deployer_file = bundle.bundle_file(parse=True)
         proof_output = bundles.proof(deployer_file)
 
@@ -97,11 +104,11 @@ class Bundle(object):
 
         raise Exception('No bundle.json or bundle.yaml file found')
 
-    def proof(self, remote=True):
+    def proof(self, remote=True, server=None, port=None, secure=True):
         lint = BundleLinter(self.debug)
         lint.local_proof(self)
         if remote:
-            lint.remote_proof(self)
+            lint.remote_proof(self, server, port, secure)
         else:
             lint.info('No remote checks performed')
 
