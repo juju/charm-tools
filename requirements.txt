@@ -13,3 +13,4 @@ flake8==1.6.2
 mock==1.0.1
 coverage==3.7.1
 charmworldlib>=0.3.0
+bzr>=2.6.0
