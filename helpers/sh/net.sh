@@ -171,7 +171,7 @@ ch_get_ip()
 
 	if [ ! `ch_is_ip "$CHECK_IP"` ]; then
 		# Try a dig, why not?
-		CHECK_IP=$(dig +short $HOST | awk 'NR==1{ print $1 }')
+		CHECK_IP=$(dig +short $HOST | tac | awk 'NR==1{ print $1 }')
 
 		if [ ! `ch_is_ip "$CHECK_IP"` ]; then
 			return 1
