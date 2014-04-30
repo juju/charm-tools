@@ -180,7 +180,21 @@ class TestCharmProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'W: config.yaml: description of option foo should be a string')
+            'W: config.yaml: description of option foo should be a non-empty string')
+        self.assertEqual(expected, self.linter.lint[0])
+
+    def test_option_data_with_blank_descr(self):
+        self.write_config("""
+            options:
+              foo:
+                type: int
+                default: 3
+                description:
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            'W: config.yaml: description of option foo should be a non-empty string')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_option_data_with_invalid_option_type(self):
