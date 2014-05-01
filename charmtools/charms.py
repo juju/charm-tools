@@ -173,10 +173,11 @@ class CharmLinter(Linter):
                         option_name, ', '.join(invalid_keys)))
 
             if 'description' in existing_keys:
-                if not isinstance(option_value['description'], basestring):
+                if not isinstance(option_value['description'], basestring) or \
+                        option_value['description'].strip() == '':
                     self.warn(
                         'config.yaml: description of option %s should be a '
-                        'string' % option_name)
+                        'non-empty string' % option_name)
             option_type = option_value.get('type', 'string')
             if option_type not in KNOWN_OPTION_TYPES:
                 self.warn('config.yaml: option %s has an invalid type (%s)'
