@@ -59,7 +59,8 @@ def proof(path, is_bundle, with_remote, debug, server, port, secure):
         except Exception as e:
             return ["FATAL: %s" % e.message], 200
 
-    lint, err_code = c.proof(with_remote, server, port, secure)
+    lint, err_code = c.proof(
+        remote=with_remote, server=server, port=port, secure=secure)
     return lint, err_code
 
 

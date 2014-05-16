@@ -1,1 +1,2 @@
+I: missing recommended hook config-changed
 W: config.yaml: option foo has an invalid type (integer)

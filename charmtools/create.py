@@ -74,6 +74,11 @@ def apt_fill(package):
         print "Found " + package + " package in apt cache, as a result charm" \
               + " contents have been pre-populated based on package metadata."
 
+        # summary and description attrs moved to Version
+        # object in python-apt 0.7.9
+        if not hasattr(p, 'summary'):
+            p = p.versions[0]
+
         v['summary'] = p.summary
         v['description'] = textwrap.fill(p.description, width=72,
                                          subsequent_indent='  ')

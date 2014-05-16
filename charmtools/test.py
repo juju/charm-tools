@@ -417,6 +417,8 @@ class TestCfg(object):
     _keys = ['timeout', 'set-e', 'on-timeout', 'fail-on-skip', 'tests']
 
     def __init__(self, cfg):
+        self.log = logging.getLogger('juju-test.testcfg')
+
         if isinstance(cfg, basestring):
             cfg = yaml.safe_load(cfg)
 
@@ -425,7 +427,12 @@ class TestCfg(object):
                 if key in self._keys:
                     setattr(self, key, val)
         if 'substrates' in cfg:
-            self.substrates = cfg.substrates
+            self.substrates = cfg['substrates']
+
+    def update(self, **kw):
+        for key, val in kw.iteritems():
+            self.log.debug('Overwriting %s to %s from cmd' % (key, val))
+            setattr(self, key, val)
 
 
 def get_juju_version():
@@ -527,8 +534,20 @@ class SubstrateFilter(object):
 
 
 def parse_substrates(spec):
+    """Return a :class:`SubstrateFilter` object parsed from ``spec``.
+
+    :param spec:
+
+        Can be a yaml string, a dict with a 'substrates' key, or an object
+        with a 'substrates' attribute. The 'substrates' key or attribute
+        should contain a dict with optional 'order', 'skip', and 'include'
+        keys.
+
+    """
     if isinstance(spec, basestring):
         spec = yaml.safe_load(spec)
+    elif not hasattr(spec, '__getitem__'):
+        spec = vars(spec)
     if not spec or 'substrates' not in spec:
         raise ValueError(
             "Invalid data passed to parse_substrates: {}".format(spec))
@@ -664,9 +683,7 @@ def main():
 
     if test_cfg:
         cfg = TestCfg(test_cfg)
-        for key, val in args.iteritems():
-            logger.debug('Overwriting %s to %s from cmd' % (key, val))
-            setattr(cfg, key, val)
+        cfg.update(**vars(args))
     else:
         cfg = args
 
@@ -674,7 +691,7 @@ def main():
     try:
         tester = Conductor(args)
         env_yaml = tester.get_environment(cfg.juju_env)
-        if 'substrates' in cfg:
+        if getattr(cfg, 'substrates', None):
             rules = parse_substrates(cfg)
             allowed = rules.filter(env_yaml['type'])
             if env_yaml['type'] not in allowed:

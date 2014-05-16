@@ -24,9 +24,17 @@ substrates:
         self.assertRaises(ValueError,  parse_substrates, '')
         self.assertIsNotNone(parse_substrates(self.INCLUDE_SKIP))
 
-    def test_parse_substrate_object(self):
+    def test_parse_substrate_dict(self):
         data = yaml.load(self.INCLUDE_SKIP)
         self.assertIsNotNone(parse_substrates(data))
+
+    def test_parse_substrate_object(self):
+        class Object(object):
+            pass
+        data = yaml.load(self.INCLUDE_SKIP)
+        o = Object()
+        o.__dict__ = data
+        self.assertIsNotNone(parse_substrates(o))
 
     def test_parse_substrates_order(self):
         result = parse_substrates(self.INCLUDE_SKIP)

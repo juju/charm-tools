@@ -720,3 +720,29 @@ class JujuTestPluginTest(unittest.TestCase):
         o = juju_test.Orchestra(c, 'test/dummy')
         o.perform()
         mprint_status.assert_called_once()
+
+
+class TestCfgTest(unittest.TestCase):
+    test_config = '''\
+    options:
+      timeout: 500
+    substrates:
+      order: include, skip
+      include: local
+      skip: "*"
+    '''
+
+    def test_init_str(self):
+        t = juju_test.TestCfg(self.test_config)
+        self.assertEqual(t.timeout, 500)
+        self.assertEqual(t.substrates['include'], 'local')
+
+    def test_init_dict(self):
+        t = juju_test.TestCfg(yaml.safe_load(self.test_config))
+        self.assertEqual(t.timeout, 500)
+        self.assertEqual(t.substrates['include'], 'local')
+
+    def test_update(self):
+        t = juju_test.TestCfg(self.test_config)
+        t.update(timeout=400)
+        self.assertEqual(t.timeout, 400)
