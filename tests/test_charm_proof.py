@@ -241,8 +241,8 @@ class TestCharmProof(TestCase):
             'the type of the default value is str')
         self.assertEqual(expected, self.linter.lint[0])
 
-    def test_option_empty_default_value(self):
-        # An empty default value is treated as an error.
+    def test_option_empty_default_value_string(self):
+        # An empty default value is treated as INFO for strings
         self.write_config("""
             options:
               foo:
@@ -253,8 +253,52 @@ class TestCharmProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'E: config.yaml: type of option foo is specified as string, '
-            'but the type of the default value is NoneType')
+            'I: config.yaml: option foo has no default value')
+        self.assertEqual(expected, self.linter.lint[0])
+
+    def test_option_empty_default_value_int(self):
+        # An empty default value is treated as INFO for ints
+        self.write_config("""
+            options:
+              foo:
+                type: int
+                default:
+                description: blah
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            'I: config.yaml: option foo has no default value')
+        self.assertEqual(expected, self.linter.lint[0])
+
+    def test_option_empty_default_value_float(self):
+        # An empty default value is treated as INFO for floats
+        self.write_config("""
+            options:
+              foo:
+                type: float
+                default:
+                description: blah
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            'I: config.yaml: option foo has no default value')
+        self.assertEqual(expected, self.linter.lint[0])
+
+    def test_option_empty_default_value_boolean(self):
+        # An empty default value is treated as WARN for booleans
+        self.write_config("""
+            options:
+              foo:
+                type: boolean
+                default:
+                description: blah
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+            'W: config.yaml: option foo has no default value')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_yaml_with_python_objects(self):
