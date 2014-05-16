@@ -89,13 +89,13 @@ install:
 
 integration:
 	tests_functional/helpers/helpers.sh || sh -x tests_functional/helpers/helpers.sh timeout
-	@echo Test shell helpers with dash
-	bash tests/helpers/helpers.sh \
-	    || bash -x tests/helpers/helpers.sh timeout
-	tests/helpers/helpers.bash || sh -x tests/helpers/helpers.bash timeout
 	@echo Test shell helpers with bash
-	bash tests/helpers/helpers.bash \
-	    || bash -x tests/helpers/helpers.bash timeout
+	bash tests_functional/helpers/helpers.sh \
+	    || bash -x tests_functional/helpers/helpers.sh timeout
+	tests_functional/helpers/helpers.bash || sh -x tests_functional/helpers/helpers.bash timeout
+	@echo Test shell helpers with bash
+	bash tests_functional/helpers/helpers.bash \
+	    || bash -x tests_functional/helpers/helpers.bash timeout
 	@echo Test charm proof
 	tests_functional/proof/test.sh
 	tests_functional/create/test.sh

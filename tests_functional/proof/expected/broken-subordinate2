@@ -1,1 +1,2 @@
 E: subordinates must have at least one scope: container relation
+I: missing recommended hook config-changed

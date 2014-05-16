@@ -205,7 +205,7 @@ class Charm(object):
     def is_charm(self):
         return os.path.isfile(os.path.join(self.charm_path, 'metadata.yaml'))
 
-    def proof(self, remote=True):
+    def proof(self, remote=True, **kw):
         lint = CharmLinter()
         charm_name = self.charm_path
         if os.path.isdir(charm_name):
@@ -326,8 +326,8 @@ class Charm(object):
                                         continue
                                     lc += 1
                                     if l in readme_content:
-                                        err_msg = ('%s Includes line %d of '
-                                                   'boilerplate README.ex ')
+                                        err_msg = ('%s includes line %d of '
+                                                   'boilerplate README.ex')
                                         lint.warn(err_msg % (readme, lc))
                 except IOError as e:
                     lint.warn(
