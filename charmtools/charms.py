@@ -42,6 +42,8 @@ KNOWN_OPTION_TYPES = {
     'boolean': bool,
 }
 
+ALLOW_NONE_DEFAULT = (basestring, int, float)
+
 
 class RelationError(Exception):
     pass
@@ -184,12 +186,19 @@ class CharmLinter(Linter):
                           % (option_name, option_type))
             elif 'default' in option_value:
                 expected_type = KNOWN_OPTION_TYPES[option_value['type']]
-                if not isinstance(option_value['default'], expected_type):
+                actual_value = option_value['default']
+                if actual_value is None:
+                    notify = (self.info if expected_type in ALLOW_NONE_DEFAULT
+                              else self.warn)
+                    notify(
+                        'config.yaml: option %s has no default value'
+                        % option_name)
+                elif not isinstance(actual_value, expected_type):
                     self.err(
                         'config.yaml: type of option %s is specified as '
                         '%s, but the type of the default value is %s'
                         % (option_name, option_value['type'],
-                           type(option_value['default']).__name__))
+                           type(actual_value).__name__))
             else:
                 # Nothing to do: the option type is valid but no default
                 # value exists.
