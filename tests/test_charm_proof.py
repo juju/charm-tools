@@ -199,6 +199,19 @@ class TestCharmProof(TestCase):
             'W: config.yaml: description of option foo should be a non-empty string')
         self.assertEqual(expected, self.linter.lint[0])
 
+    def test_option_data_with_missing_option_type(self):
+        self.write_config("""
+            options:
+              foo:
+                default: foo
+                description: blah
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(1, len(self.linter.lint))
+        expected = (
+                'W: config.yaml: option foo does not have the keys: type')
+        self.assertEqual(expected, self.linter.lint[0])
+
     def test_option_data_with_invalid_option_type(self):
         self.write_config("""
             options:
