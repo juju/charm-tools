@@ -185,7 +185,7 @@ class CharmLinter(Linter):
                 self.warn('config.yaml: option %s has an invalid type (%s)'
                           % (option_name, option_type))
             elif 'default' in option_value:
-                expected_type = KNOWN_OPTION_TYPES[option_value['type']]
+                expected_type = KNOWN_OPTION_TYPES[option_type]
                 actual_value = option_value['default']
                 if actual_value is None:
                     notify = (self.info if expected_type in ALLOW_NONE_DEFAULT
@@ -197,7 +197,7 @@ class CharmLinter(Linter):
                     self.err(
                         'config.yaml: type of option %s is specified as '
                         '%s, but the type of the default value is %s'
-                        % (option_name, option_value['type'],
+                        % (option_name, option_type,
                            type(actual_value).__name__))
             else:
                 # Nothing to do: the option type is valid but no default
