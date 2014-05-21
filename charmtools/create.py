@@ -114,7 +114,7 @@ def main():
 
     if path.exists(output_dir):
         print output_dir + " exists. Please move it out of the way."
-        sys.exit(1)
+        return 1
 
     shutil.copytree(path.join(template_dir, 'charm'), output_dir)
 
@@ -153,4 +153,4 @@ def main():
                 raise
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
