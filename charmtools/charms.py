@@ -198,7 +198,7 @@ class CharmLinter(Linter):
                     self.err(
                         'config.yaml: type of option %s is specified as '
                         '%s, but the type of the default value is %s'
-                        % (option_name, option_value['type'],
+                        % (option_name, option_type,
                            type(actual_value).__name__))
             else:
                 # Nothing to do: the option type is valid but no default

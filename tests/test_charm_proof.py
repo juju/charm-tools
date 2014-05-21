@@ -73,6 +73,20 @@ class TestCharmProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual([], self.linter.lint)
 
+    def test_missing_type_defaults_to_string(self):
+        # A warning is issued but no failure.
+        self.write_config("""
+            options:
+              string_opt:
+                description: A string option
+                default: some text
+            """)
+        self.linter.check_config_file(self.charm_dir)
+        self.assertEqual(
+            ['W: config.yaml: option string_opt does not have the keys: '
+             'type'],
+            self.linter.lint)
+
     def test_config_with_invalid_yaml(self):
         self.write_config("""
             options:
