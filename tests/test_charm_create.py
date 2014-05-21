@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+#    Copyright (C) 2013  Canonical Ltd.
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import os
+import shutil
+import tempfile
+
+from mock import patch
+from os.path import join
+from unittest import TestCase
+
+import pkg_resources
+import yaml
+
+from charmtools.create import main
+
+
+def flatten(path):
+    for root, dirs, files in os.walk(path):
+        for f in sorted(files):
+            yield join(root[len(path):], f).lstrip('/')
+
+
+class CreateTest(TestCase):
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    @patch('charmtools.create.setup_parser')
+    def test_main(self, setup_parser):
+        """Functional test of a full 'charm create' run."""
+        class args(object):
+            charmname = 'testcharm'
+            charmhome = self.tempdir
+
+        setup_parser.return_value.parse_args.return_value = args
+
+        main()
+
+        outputdir = join(self.tempdir, args.charmname)
+        actual_files = list(flatten(outputdir))
+        expected_files = list(flatten(pkg_resources.resource_filename(
+            'charmtools', 'templates/charm')))
+        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
+
+        self.assertEqual(expected_files, actual_files)
+        self.assertEqual(metadata['name'], args.charmname)
