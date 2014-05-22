@@ -1,6 +1,7 @@
 #!/usr/bin/python
-
+#
 #    Copyright (C) 2014  Canonical Ltd.
+#    Author: Clint Byrum <clint.byrum@canonical.com>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -15,23 +16,4 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import tempfile
-from unittest import TestCase
-
-from charmtools.generators import CharmGenerator
-from charmtools.templates.bash import BashCharm
-
-
-class CharmGeneratorTest(TestCase):
-    def setUp(self):
-        class opts(object):
-            charmname = 'testcharm'
-            charmhome = tempfile.mkdtemp()
-            template = 'bash'
-
-        self.c = CharmGenerator(opts)
-
-    def test_load_plugin(self):
-        plugin = self.c._load_plugin()
-
-        self.assertIsInstance(plugin, BashCharm)
+from .template import BashCharm  # noqa

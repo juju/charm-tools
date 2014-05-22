@@ -29,10 +29,11 @@ KNOWN_SCOPES = ['global', 'container']
 
 TEMPLATE_PATH = os.path.abspath(os.path.dirname(__file__))
 
-TEMPLATE_README = os.path.join(TEMPLATE_PATH, 'templates', 'charm',
-                               'README.ex')
+TEMPLATE_README = os.path.join(
+    TEMPLATE_PATH, 'templates', 'bash', 'files', 'README.ex')
 
-TEMPLATE_ICON = os.path.join(TEMPLATE_PATH, 'templates', 'charm', 'icon.svg')
+TEMPLATE_ICON = os.path.join(
+    TEMPLATE_PATH, 'templates', 'bash', 'files', 'icon.svg')
 
 KNOWN_OPTION_KEYS = set(('description', 'type', 'default'))
 

@@ -15,9 +15,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import socket
 import textwrap
+
+log = logging.getLogger(__name__)
 
 
 def apt_fill(package):
@@ -27,8 +30,9 @@ def apt_fill(package):
         c = apt.Cache()
         c.open()
         p = c[package]
-        print "Found " + package + " package in apt cache, as a result charm" \
-              + " contents have been pre-populated based on package metadata."
+        log.info(
+            "Found %s in apt cache; charm contents have been pre-populated "
+            "from package metadata.", package)
 
         # summary and description attrs moved to Version
         # object in python-apt 0.7.9
@@ -39,8 +43,8 @@ def apt_fill(package):
         v['description'] = textwrap.fill(p.description, width=72,
                                          subsequent_indent='  ')
     except:
-        print "Failed to find " + package + " in apt cache, creating " \
-            + "an empty charm instead."
+        log.info(
+            "No %s in apt cache; creating an empty charm instead.", package)
         v['summary'] = '<Fill in summary here>'
         v['description'] = '<Multi-line description here>'
 

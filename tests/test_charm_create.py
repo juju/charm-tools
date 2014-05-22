@@ -56,12 +56,12 @@ class CreateTest(TestCase):
 
         setup_parser.return_value.parse_args.return_value = args
 
-        main()
+        main(args)
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
         expected_files = list(flatten(pkg_resources.resource_filename(
-            'charmtools', 'templates/charm')))
+            'charmtools', 'templates/bash/files')))
         metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
         self.assertEqual(expected_files, actual_files)
@@ -78,12 +78,12 @@ class CreateTest(TestCase):
         setup_parser.return_value.parse_args.return_value = args
 
         with patch.dict('os.environ', {'CHARM_HOME': self.tempdir}):
-            main()
+            main(args)
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
         expected_files = list(flatten(pkg_resources.resource_filename(
-            'charmtools', 'templates/charm')))
+            'charmtools', 'templates/bash/files')))
         metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
         self.assertEqual(expected_files, actual_files)
@@ -99,7 +99,7 @@ class CreateTest(TestCase):
         setup_parser.return_value.parse_args.return_value = args
         os.mkdir(join(self.tempdir, args.charmname))
 
-        self.assertEqual(1, main())
+        self.assertEqual(1, main(args))
 
 
 class ParserTest(TestCase):
