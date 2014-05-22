@@ -7,4 +7,4 @@
 # failing to account for a debconf question on a dependency, or trying to pull
 # from github without installing git first.
 
-apt-get install -y $package
+apt-get install -y $metadata.package

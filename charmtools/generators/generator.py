@@ -15,15 +15,26 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-generator = CharmGenerator(cmdline_opts)
-generator.create_charm()
-
-"""
-
+import logging
+import os
 import shutil
+import tempfile
 
+import pkg_resources
 import yaml
+
+from .utils import apt_fill
+
+try:
+    from ubuntutools.config import ubu_email as get_maintainer
+except ImportError:
+    from .utils import portable_get_maintainer as get_maintainer  # noqa
+
+log = logging.getLogger(__name__)
+
+
+class CharmGeneratorException(Exception):
+    pass
 
 
 class CharmGenerator(object):
@@ -33,28 +44,46 @@ class CharmGenerator(object):
         self.opts = cmdline_opts
         self.plugin = self._load_plugin()
 
-    def _load_plugin(self, template_name):
+    def _load_plugin(self):
         """Instantiate and return the plugin defined by the ``template_name``
         entry point.
 
         """
-        # instantiate plugin via pkg_resources.load_entry_point()
-        # using self.opts.template
-        pass
+        return pkg_resources.load_entry_point(
+            'charm-tools', 'template_plugins', self.opts.template)()
 
     def create_charm(self):
         """Gather user configuration and hand it off to the template plugin to
         create the files and directories for the new charm.
 
         """
-        user_config = self._get_user_config()
         output_path = self._get_output_path()
+        if os.path.exists(output_path):
+            raise CharmGeneratorException(
+                '{} exists. Please move it out of the way.'.format(
+                    output_path))
+
+        log.info('Generating template for %s in %s',
+                 self.opts.charmname, output_path)
+
+        metadata = self._get_metadata()
+        user_config = self._get_user_config()
+        user_config.update(metadata=metadata)
         tempdir = self._get_tempdir()
         try:
             self.plugin.create_charm(user_config, tempdir)
             shutil.copytree(tempdir, output_path)
         finally:
-            self._cleanup()
+            self._cleanup(tempdir)
+
+    def _get_metadata(self):
+        d = {
+            'package': self.opts.charmname,
+            'maintainer': '%s <%s>' % get_maintainer(),
+        }
+        d.update(apt_fill(self.opts.charmname))
+
+        return d
 
     def _get_user_config(self):
         """Get user configuration by prompting for it interactively, loading
@@ -123,3 +152,12 @@ class CharmGenerator(object):
         except ValueError as e:
             print(str(e))
             return self._prompt(prompt, config)
+
+    def _get_output_path(self):
+        return os.path.join(self.opts.charmhome, self.opts.charmname)
+
+    def _get_tempdir(self):
+        return tempfile.mkdtemp()
+
+    def _cleanup(self, tempdir):
+        shutil.rmtree(tempdir)

@@ -15,6 +15,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .generator import CharmGenerator  # noqa
-from .template import CharmTemplate    # noqa
-from .prompt import Prompt             # noqa
+from .generator import CharmGenerator           # noqa
+from .generator import CharmGeneratorException  # noqa
+from .template import CharmTemplate             # noqa
+from .prompt import Prompt                      # noqa
