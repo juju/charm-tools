@@ -52,11 +52,11 @@ class CreateTest(TestCase):
             charmname = 'testcharm'
             charmhome = self.tempdir
             template = 'bash'
-            config = None
+            verbose = False
 
         setup_parser.return_value.parse_args.return_value = args
 
-        main(args)
+        main()
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
@@ -73,12 +73,12 @@ class CreateTest(TestCase):
             charmname = 'testcharm'
             charmhome = None
             template = 'bash'
-            config = None
+            verbose = False
 
         setup_parser.return_value.parse_args.return_value = args
 
         with patch.dict('os.environ', {'CHARM_HOME': self.tempdir}):
-            main(args)
+            main()
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
@@ -95,11 +95,12 @@ class CreateTest(TestCase):
             charmname = 'testcharm'
             charmhome = self.tempdir
             template = 'bash'
+            verbose = False
 
         setup_parser.return_value.parse_args.return_value = args
         os.mkdir(join(self.tempdir, args.charmname))
 
-        self.assertEqual(1, main(args))
+        self.assertEqual(1, main())
 
 
 class ParserTest(TestCase):

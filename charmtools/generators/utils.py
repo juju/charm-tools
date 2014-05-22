@@ -20,7 +20,14 @@ import os
 import socket
 import textwrap
 
+import pkg_resources
+
 log = logging.getLogger(__name__)
+
+
+def get_installed_templates():
+    for ep in pkg_resources.iter_entry_points('charmtools.templates'):
+        yield ep.name
 
 
 def apt_fill(package):

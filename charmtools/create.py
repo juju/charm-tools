@@ -26,6 +26,7 @@ import argparse
 from charmtools.generators import (
     CharmGenerator,
     CharmGeneratorException,
+    get_installed_templates,
 )
 
 log = logging.getLogger(__name__)
@@ -44,9 +45,8 @@ def setup_parser():
     )
     parser.add_argument(
         '-t', '--template', default='bash',
-    )
-    parser.add_argument(
-        '-c', '--config',
+        help='Name of charm template to use; default is bash. '
+             'Installed templates: ' + ','.join(get_installed_templates()),
     )
     parser.add_argument(
         '-v', '--verbose',
@@ -57,20 +57,11 @@ def setup_parser():
     return parser
 
 
-def main(args):
-    args.charmhome = args.charmhome or os.getenv('CHARM_HOME', '.')
-
-    generator = CharmGenerator(args)
-    try:
-        generator.create_charm()
-    except CharmGeneratorException as e:
-        log.error(e)
-        return 1
-
-
-if __name__ == "__main__":
+def main():
     parser = setup_parser()
     args = parser.parse_args()
+    args.charmhome = args.charmhome or os.getenv('CHARM_HOME', '.')
+    args.config = None
 
     if args.verbose:
         logging.basicConfig(
@@ -83,4 +74,13 @@ if __name__ == "__main__":
             level=logging.INFO,
         )
 
-    sys.exit(main(args))
+    generator = CharmGenerator(args)
+    try:
+        generator.create_charm()
+    except CharmGeneratorException as e:
+        log.error(e)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

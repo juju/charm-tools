@@ -54,7 +54,7 @@ setup(
             'charm-generate = charmtools.generate:main',
             'charm-add = charmtools.generate:main',
         ],
-        'template_plugins': [
+        'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharm',
         ]
     },

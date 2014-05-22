@@ -49,8 +49,9 @@ class CharmGenerator(object):
         entry point.
 
         """
-        return pkg_resources.load_entry_point(
-            'charm-tools', 'template_plugins', self.opts.template)()
+        for ep in pkg_resources.iter_entry_points('charmtools.templates'):
+            if ep.name == self.opts.template:
+                return ep.load()()
 
     def create_charm(self):
         """Gather user configuration and hand it off to the template plugin to
