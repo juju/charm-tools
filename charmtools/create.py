@@ -31,6 +31,10 @@ import argparse
 from Cheetah.Template import Template
 from stat import ST_MODE
 
+from charmtools.generators import (
+    CharmTemplate,
+)
+
 
 def portable_get_maintainer():
     """ Portable best effort to determine a maintainer """
@@ -123,34 +127,41 @@ def main():
 
     v.update(apt_fill(args.charmname))
 
-    ignore_parsing = ['README.ex']
+    BashCharm().create_charm(v, output_dir)
 
-    for root, dirs, files in os.walk(output_dir):
-        for outfile in files:
-            full_outfile = path.join(root, outfile)
-            mode = os.stat(full_outfile)[ST_MODE]
-            if outfile in ignore_parsing:
-                continue
 
-            try:
-                t = Template(file=full_outfile, searchList=(v))
-                o = tempfile.NamedTemporaryFile(dir=root, delete=False)
-                os.chmod(o.name, mode)
-                o.write(str(t))
-                o.close()
-                backupname = full_outfile + str(time.time())
-                os.rename(full_outfile, backupname)
+class BashCharm(CharmTemplate):
+    def create_charm(self, config, output_dir):
+        ignore_parsing = ['README.ex']
+
+        for root, dirs, files in os.walk(output_dir):
+            for outfile in files:
+                full_outfile = path.join(root, outfile)
+                mode = os.stat(full_outfile)[ST_MODE]
+                if outfile in ignore_parsing:
+                    continue
+
                 try:
-                    os.rename(o.name, full_outfile)
-                    os.unlink(backupname)
+                    t = Template(file=full_outfile, searchList=(config))
+                    o = tempfile.NamedTemporaryFile(dir=root, delete=False)
+                    os.chmod(o.name, mode)
+                    o.write(str(t))
+                    o.close()
+                    backupname = full_outfile + str(time.time())
+                    os.rename(full_outfile, backupname)
+                    try:
+                        os.rename(o.name, full_outfile)
+                        os.unlink(backupname)
+                    except Exception, e:
+                        print("WARNING: Could not enable templated file: " +
+                              str(e))
+                        os.rename(backupname, full_outfile)
+                        raise
                 except Exception, e:
-                    print "WARNING: Could not enable templated file: " + str(e)
-                    os.rename(backupname, full_outfile)
+                    print("WARNING: could not process template for " +
+                          full_outfile + ": " + str(e))
                     raise
-            except Exception, e:
-                print "WARNING: could not process template for " \
-                    + full_outfile + ": " + str(e)
-                raise
+
 
 if __name__ == "__main__":
     sys.exit(main())
