@@ -32,39 +32,37 @@ log = logging.getLogger(__name__)
 
 
 class BashCharmTemplate(CharmTemplate):
+    skip_parsing = ['README.ex']
+
     def create_charm(self, config, output_dir):
+        self._copy_files(output_dir)
+
+        for root, dirs, files in os.walk(output_dir):
+            for outfile in files:
+                if outfile in self.skip_parsing:
+                    continue
+
+                self._template_file(config, path.join(root, outfile))
+
+    def _copy_files(self, output_dir):
         here = path.abspath(path.dirname(__file__))
         template_dir = path.join(here, 'files')
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
-        shutil.copytree(template_dir, output_dir)
+        shutil.copytree(template_dir, output_dir, symlinks=True)
 
-        ignore_parsing = ['README.ex']
+    def _template_file(self, config, outfile):
+        if path.islink(outfile):
+            return
 
-        for root, dirs, files in os.walk(output_dir):
-            for outfile in files:
-                full_outfile = path.join(root, outfile)
-                mode = os.stat(full_outfile)[ST_MODE]
-                if outfile in ignore_parsing:
-                    continue
-
-                try:
-                    t = Template(file=full_outfile, searchList=(config))
-                    o = tempfile.NamedTemporaryFile(dir=root, delete=False)
-                    os.chmod(o.name, mode)
-                    o.write(str(t))
-                    o.close()
-                    backupname = full_outfile + str(time.time())
-                    os.rename(full_outfile, backupname)
-                    try:
-                        os.rename(o.name, full_outfile)
-                        os.unlink(backupname)
-                    except Exception, e:
-                        print("WARNING: Could not enable templated file: " +
-                              str(e))
-                        os.rename(backupname, full_outfile)
-                        raise
-                except Exception, e:
-                    print("WARNING: could not process template for " +
-                          full_outfile + ": " + str(e))
-                    raise
+        mode = os.stat(outfile)[ST_MODE]
+        t = Template(file=outfile, searchList=(config))
+        o = tempfile.NamedTemporaryFile(
+            dir=path.dirname(outfile), delete=False)
+        os.chmod(o.name, mode)
+        o.write(str(t))
+        o.close()
+        backupname = outfile + str(time.time())
+        os.rename(outfile, backupname)
+        os.rename(o.name, outfile)
+        os.unlink(backupname)
