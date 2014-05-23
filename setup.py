@@ -55,7 +55,8 @@ setup(
             'charm-add = charmtools.generate:main',
         ],
         'charmtools.templates': [
-            'bash = charmtools.templates.bash:BashCharm',
+            'bash = charmtools.templates.bash:BashCharmTemplate',
+            'python = charmtools.templates.python:PythonCharmTemplate',
         ]
     },
 )

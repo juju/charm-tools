@@ -73,7 +73,7 @@ class CharmGenerator(object):
         tempdir = self._get_tempdir()
         try:
             self.plugin.create_charm(user_config, tempdir)
-            shutil.copytree(tempdir, output_path)
+            shutil.copytree(tempdir, output_path, symlinks=True)
         finally:
             self._cleanup(tempdir)
 

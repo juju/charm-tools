@@ -46,7 +46,7 @@ def setup_parser():
     parser.add_argument(
         '-t', '--template', default='bash',
         help='Name of charm template to use; default is bash. '
-             'Installed templates: ' + ','.join(get_installed_templates()),
+             'Installed templates: ' + ', '.join(get_installed_templates()),
     )
     parser.add_argument(
         '-v', '--verbose',

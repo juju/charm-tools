@@ -31,7 +31,7 @@ from charmtools.generators import CharmTemplate
 log = logging.getLogger(__name__)
 
 
-class BashCharm(CharmTemplate):
+class BashCharmTemplate(CharmTemplate):
     def create_charm(self, config, output_dir):
         here = path.abspath(path.dirname(__file__))
         template_dir = path.join(here, 'files')
