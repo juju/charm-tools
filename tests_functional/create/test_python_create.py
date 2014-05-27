@@ -18,6 +18,7 @@
 import os
 import shutil
 import tempfile
+import unittest
 
 from mock import patch
 from os.path import join
@@ -28,13 +29,12 @@ import yaml
 
 from charmtools.create import (
     main,
-    setup_parser,
 )
 
 
 def flatten(path):
     for root, dirs, files in os.walk(path):
-        for f in sorted(files):
+        for f in files:
             yield join(root[len(path):], f).lstrip('/')
 
 
@@ -45,13 +45,53 @@ class BashCreateTest(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
+    def _expected_files(self, symlinked=False):
+        static_files = list(flatten(pkg_resources.resource_filename(
+            'charmtools', 'templates/python/files')))
+        static_files = [f for f in static_files
+                        if not f.startswith('hooks_symlinked/')]
+        if symlinked:
+            static_files.append('hooks/hooks.py')
+        dynamic_files = [
+            'lib/charmhelpers/__init__.py',
+            'lib/charmhelpers/core/__init__.py',
+            'lib/charmhelpers/core/hookenv.py',
+            'lib/charmhelpers/core/host.py',
+        ]
+        return sorted(static_files + dynamic_files)
+
+    @patch('__builtin__.raw_input')
     @patch('charmtools.create.setup_parser')
-    def test_main(self, setup_parser):
+    def test_interactive(self, setup_parser, raw_input_):
         """Functional test of a full 'charm create' run."""
         class args(object):
             charmname = 'testcharm'
             charmhome = self.tempdir
-            template = 'bash'
+            template = 'python'
+            accept_defaults = False
+            verbose = False
+
+        setup_parser.return_value.parse_args.return_value = args
+        raw_input_.side_effect = ['Y']
+
+        main()
+
+        outputdir = join(self.tempdir, args.charmname)
+        actual_files = sorted(flatten(outputdir))
+        expected_files = self._expected_files(symlinked=True)
+        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
+
+        self.assertEqual(expected_files, actual_files)
+        self.assertEqual(metadata['name'], args.charmname)
+
+    @patch('charmtools.create.setup_parser')
+    def test_defaults(self, setup_parser):
+        """Functional test of a full 'charm create' run."""
+        class args(object):
+            charmname = 'testcharm'
+            charmhome = self.tempdir
+            template = 'python'
+            accept_defaults = True
             verbose = False
 
         setup_parser.return_value.parse_args.return_value = args
@@ -59,54 +99,13 @@ class BashCreateTest(TestCase):
         main()
 
         outputdir = join(self.tempdir, args.charmname)
-        actual_files = list(flatten(outputdir))
-        expected_files = list(flatten(pkg_resources.resource_filename(
-            'charmtools', 'templates/bash/files')))
+        actual_files = sorted(flatten(outputdir))
+        expected_files = self._expected_files()
         metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
         self.assertEqual(expected_files, actual_files)
         self.assertEqual(metadata['name'], args.charmname)
 
-    @patch('charmtools.create.setup_parser')
-    def test_charmhome_from_environ(self, setup_parser):
-        class args(object):
-            charmname = 'testcharm'
-            charmhome = None
-            template = 'bash'
-            verbose = False
 
-        setup_parser.return_value.parse_args.return_value = args
-
-        with patch.dict('os.environ', {'CHARM_HOME': self.tempdir}):
-            main()
-
-        outputdir = join(self.tempdir, args.charmname)
-        actual_files = list(flatten(outputdir))
-        expected_files = list(flatten(pkg_resources.resource_filename(
-            'charmtools', 'templates/bash/files')))
-        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
-
-        self.assertEqual(expected_files, actual_files)
-        self.assertEqual(metadata['name'], args.charmname)
-
-    @patch('charmtools.create.setup_parser')
-    def test_dest_dir_exists(self, setup_parser):
-        class args(object):
-            charmname = 'testcharm'
-            charmhome = self.tempdir
-            template = 'bash'
-            verbose = False
-
-        setup_parser.return_value.parse_args.return_value = args
-        os.mkdir(join(self.tempdir, args.charmname))
-
-        self.assertEqual(1, main())
-
-
-class ParserTest(TestCase):
-    def test_parser(self):
-        p = setup_parser()
-        args = p.parse_args(['testcharm', '/tmp/testcharm'])
-
-        self.assertEqual(args.charmname, 'testcharm')
-        self.assertEqual(args.charmhome, '/tmp/testcharm')
+if __name__ == '__main__':
+    unittest.main()

@@ -44,9 +44,14 @@ def setup_parser():
         help='Dir to create charm in. Defaults to CHARM_HOME env var or PWD',
     )
     parser.add_argument(
-        '-t', '--template', default='bash',
-        help='Name of charm template to use; default is bash. '
+        '-t', '--template', default='python',
+        help='Name of charm template to use; default is python. '
              'Installed templates: ' + ', '.join(get_installed_templates()),
+    )
+    parser.add_argument(
+        '-a', '--accept-defaults',
+        help='Accept all template configuration defaults without prompting.',
+        action='store_true', default=False,
     )
     parser.add_argument(
         '-v', '--verbose',

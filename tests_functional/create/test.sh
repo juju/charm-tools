@@ -1,7 +1,7 @@
 #!/bin/sh
 
 TESTDIR=`dirname $0`
-CREATE=$TESTDIR/../../charmtools/create.py
+CREATE="$TESTDIR/../../charmtools/create.py -t bash"
 
 cleanup() {
     if [ -n "$workdir" ] && [ -d "$workdir" ] ; then
@@ -47,6 +47,9 @@ if python -c 'import apt' ; then
 else
     echo SKIP python apt module not present, skipping apt tests
 fi
+
+echo ===== Testing python charm template =====
+$TESTDIR/test_python_create.py
 
 echo ===== All tests passed! =====
 echo PASS

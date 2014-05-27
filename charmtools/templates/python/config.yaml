@@ -1,0 +1,5 @@
+prompts:
+  symlink:
+    prompt: Symlink all hooks to one python source file? [yN]
+    default: n
+    type: boolean

@@ -16,15 +16,45 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+def get_validator(type_):
+    return {
+        'str': str,
+        'string': str,
+        'int': int,
+        'integer': int,
+        'float': float,
+        'bool': boolean_validator,
+        'boolean': boolean_validator,
+    }[type_]
+
+
+def boolean_validator(s):
+    return s and s.lower() == 'true' or s.lower()[0] == 'y'
+
+
+class PromptList(list):
+    def __init__(self, prompt_dicts=None):
+        prompts = []
+        for k, v in (prompt_dicts or {}).items():
+            prompts.append(Prompt(
+                k,
+                v['prompt'],
+                v['default'],
+                v.get('type', 'string'),
+            ))
+        super(PromptList, self).__init__(prompts)
+
+
 class Prompt(object):
-    def __init__(self, name, text, default):
+    def __init__(self, name, prompt, default, type_='string'):
         self.name = name
-        self.text = text
+        self.prompt = prompt.strip() + ' '
         self.default = default
+        self.type_ = type_
 
     def validate(self, value):
-        """Return the (possibly modified) validated value, or raise ValueError
-        with a message explaining why the value is invalid.
+        """Return the (possibly modified) validated value, or raise an
+        Exception with a message explaining why the value is invalid.
 
         """
-        return value
+        return get_validator(self.type_)(value)

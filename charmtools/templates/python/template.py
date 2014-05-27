@@ -1,7 +1,6 @@
 #!/usr/bin/python
 #
 #    Copyright (C) 2014  Canonical Ltd.
-#    Author: Clint Byrum <clint.byrum@canonical.com>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -47,6 +46,7 @@ class PythonCharmTemplate(CharmTemplate):
 
                 self._template_file(config, path.join(root, outfile))
 
+        self._cleanup_hooks(config, output_dir)
         self._install_charmhelpers(output_dir)
 
     def _copy_files(self, output_dir):
@@ -71,6 +71,15 @@ class PythonCharmTemplate(CharmTemplate):
         os.rename(outfile, backupname)
         os.rename(o.name, outfile)
         os.unlink(backupname)
+
+    def _cleanup_hooks(self, config, output_dir):
+        rmdir = 'hooks' if config['symlink'] else 'hooks_symlinked'
+        shutil.rmtree(os.path.join(output_dir, rmdir))
+        if rmdir == 'hooks':
+            os.rename(
+                os.path.join(output_dir, 'hooks_symlinked'),
+                os.path.join(output_dir, 'hooks')
+            )
 
     def _install_charmhelpers(self, output_dir):
         cmd = './scripts/charm_helpers_sync.py -c charm-helpers.yaml'

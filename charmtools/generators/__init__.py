@@ -19,4 +19,5 @@ from .generator import CharmGenerator           # noqa
 from .generator import CharmGeneratorException  # noqa
 from .template import CharmTemplate             # noqa
 from .prompt import Prompt                      # noqa
+from .prompt import PromptList                  # noqa
 from .utils import get_installed_templates      # noqa

@@ -15,19 +15,40 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .prompt import Prompt
+import inspect
+import os
+import yaml
+
+from .prompt import PromptList
 
 
 class CharmTemplate(object):
     """Base plugin for creating a new charm."""
 
-    @property
     def prompts(self):
         """Return a list :class:`Prompt` objects that will be used for
         configuring the charm created by this plugin.
 
         """
-        return []
+        return PromptList(self.config().get('prompts'))
+
+    def config(self):
+        """Return default configuration for this template, loaded from a
+        config.yaml file.
+
+        """
+        path = self.config_path()
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return yaml.safe_load(f.read())
+        return {}
+
+    def config_path(self):
+        """Return path to the config yaml file for this template.
+
+        """
+        class_file = inspect.getfile(self.__class__)
+        return os.path.join(os.path.dirname(class_file), 'config.yaml')
 
     def create_charm(self, config, output_path):
         """Create charm files
@@ -49,7 +70,7 @@ class CharmTemplate(object):
         the default value for the prompt is accepted. This gives the plugin
         a chance to reconfigure a prompt in any way necessary based on the
         results of prior prompts (contained in ``config``), including
-        changing its :attr:`text` or :attr:`default`.
+        changing its :attr:`prompt` or :attr:`default`.
 
         Valid return values are the original prompt (modified or not), an
         entirely new :class:`Prompt` object, or None if this prompt should
@@ -72,17 +93,3 @@ class CharmTemplate(object):
 
         """
         return prompt.validate(input_value)
-
-
-class PythonCharmTemplate(CharmTemplate):
-    """Python charm template plugin."""
-
-    @property
-    def prompts(self):
-        return [
-            Prompt('helpers', 'Include charmhelpers? [Y/n]: ', 'y')
-        ]
-
-    def create_charm(self, config, output_path):
-        # Create all the charm files
-        pass
