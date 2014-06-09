@@ -165,7 +165,7 @@ class Conductor(object):
 
         return env_yaml['environments'][juju_env]
 
-    def bootstrap(self, juju_env=None, wait_for=400):
+    def bootstrap(self, juju_env, wait_for=400):
         self.log.debug('Starting a bootstrap for %s, kill after %s'
                        % (juju_env, wait_for))
         cmd = ['juju', 'bootstrap']
@@ -178,7 +178,7 @@ class Conductor(object):
 
         self.log.debug('Running the following: %s' % ' '.join(cmd))
         try:
-            subprocess.check_call(cmd, self.juju_env, env=self.env)
+            subprocess.check_call(cmd, env=self.env)
         except subprocess.CalledProcessError:
             raise BootstrapError('Bootstrap returned with an exit > 0')
 
