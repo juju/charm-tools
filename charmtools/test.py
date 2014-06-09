@@ -231,7 +231,7 @@ class Conductor(object):
 
         return yaml.safe_load(output)
 
-    def wait_for_bootstrap(self, juju_env=None):
+    def wait_for_bootstrap(self, juju_env):
         bootstrapped = False
         while not bootstrapped:
             self.log.debug('Still not bootstrapped')
