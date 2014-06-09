@@ -64,6 +64,7 @@ class OrchestraError(Exception):
 class Conductor(object):
     def __init__(self, arguments=None):
         self.args = arguments
+        # Default home to what juju defaults to, can be overridden with "-p"
         self.env = {'JUJU_HOME': os.path.expanduser('~/.juju')}
         if arguments.preserve_environment_variables:
             for var in arguments.preserve_environment_variables.split(","):
