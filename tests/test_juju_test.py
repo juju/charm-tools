@@ -592,7 +592,7 @@ class JujuTestPluginTest(unittest.TestCase):
         o = juju_test.Orchestra(c, 'test/dummy')
 
         expected_cmd = ['rsync', '-a', '-v', '-z', '-R', '-e', 'ssh',
-                        'ubuntu@%s:%s' % (dns_name, path), logdir, ]
+                        'ubuntu@%s:%s' % (dns_name, path), logdir]
         o.build_env()
         o.rsync(machine, path, logdir)
 
