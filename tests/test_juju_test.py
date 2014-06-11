@@ -166,7 +166,8 @@ class JujuTestPluginTest(unittest.TestCase):
         c = juju_test.Conductor(args)
         results = c.status(juju_env)
 
-        mcheck_output.assert_called_with(['juju', 'status', '-e', juju_env])
+        mcheck_output.assert_called_with(
+            ['juju', 'status', '-e', juju_env], env=c.env)
         self.assertEqual(results, yaml.safe_load(yml_output))
 
         # Check to make sure we get None with juju status fails
@@ -235,22 +236,23 @@ class JujuTestPluginTest(unittest.TestCase):
         good_env = 'valid'
         c.destroy(good_env)
 
-        mock_check_call.assert_called_once_with(['juju', 'destroy-environment',
-                                                 '-y', '-e', good_env])
+        mock_check_call.assert_called_once_with(
+            ['juju', 'destroy-environment', '-y', '-e', good_env], env=c.env)
 
         mock_check_call.reset_mock()
         c.juju_version = juju_test.JujuVersion(major=1, minor=17, patch=0)
         c.destroy(good_env)
 
-        mock_check_call.assert_called_once_with(['juju', 'destroy-environment',
-                                                 '-y', good_env])
+        mock_check_call.assert_called_once_with(
+            ['juju', 'destroy-environment', '-y', good_env], env=c.env)
 
         mock_check_call.reset_mock()
         c.juju_version = juju_test.JujuVersion(major=0, minor=8, patch=0)
         c.destroy(good_env)
 
         expected_cmd = 'echo y | juju destroy-environment -e %s' % good_env
-        mock_check_call.assert_called_once_with(expected_cmd, shell=True)
+        mock_check_call.assert_called_once_with(
+            expected_cmd, shell=True, env=c.env)
 
     @patch('subprocess.check_call')
     def test_conductor_destroy_failed(self, mock_check_call):
@@ -304,7 +306,7 @@ class JujuTestPluginTest(unittest.TestCase):
         c.juju_version = juju_test.JujuVersion(major=1, minor=8, patch=0)
 
         c.bootstrap(juju_env)
-        mcheck_output.assert_called_once_with(expected_cmd)
+        mcheck_output.assert_called_once_with(expected_cmd, env=c.env)
 
         # Cover python as well.
         mcheck_output.reset_mock()
@@ -316,7 +318,7 @@ class JujuTestPluginTest(unittest.TestCase):
         c.juju_version = juju_test.JujuVersion(major=0, minor=8, patch=0)
 
         c.bootstrap(juju_env)
-        mcheck_output.assert_called_once_with(expected_cmd)
+        mcheck_output.assert_called_once_with(expected_cmd, env=c.env)
 
     @patch('time.sleep')
     @patch('subprocess.check_call')
@@ -342,7 +344,7 @@ class JujuTestPluginTest(unittest.TestCase):
         c.juju_version = juju_test.JujuVersion(major=1, minor=8, patch=0)
 
         c.bootstrap(juju_env)
-        mcheck_output.assert_called_once_with(expected_cmd)
+        mcheck_output.assert_called_once_with(expected_cmd, env=c.env)
 
         mcheck_output.reset_mock()
         const_cmd = ['juju', 'bootstrap', '--constraints', 'mem=8G,arch=arm',
@@ -354,7 +356,7 @@ class JujuTestPluginTest(unittest.TestCase):
         c.juju_version = juju_test.JujuVersion(major=1, minor=8, patch=0)
 
         c.bootstrap(juju_env)
-        mcheck_output.assert_called_once_with(const_cmd)
+        mcheck_output.assert_called_once_with(const_cmd, env=c.env)
 
     @patch('subprocess.check_call')
     def test_conductor_bootstrap_error(self, mcheck_output):
@@ -546,7 +548,7 @@ class JujuTestPluginTest(unittest.TestCase):
         o.build_env()
         o.rsync(machine, path, logdir)
 
-        mcheck_call.assert_called_once_with(expected_cmd)
+        mcheck_call.assert_called_once_with(expected_cmd, env=o.env)
 
     @patch('subprocess.check_call')
     @patch.object(juju_test.Conductor, 'status')
@@ -594,7 +596,7 @@ class JujuTestPluginTest(unittest.TestCase):
         o.build_env()
         o.rsync(machine, path, logdir)
 
-        mcheck_call.assert_called_once_with(expected_cmd)
+        mcheck_call.assert_called_once_with(expected_cmd, env=o.env)
 
     @patch.object(juju_test.Orchestra, 'rsync')
     @patch.object(juju_test.Conductor, 'status')

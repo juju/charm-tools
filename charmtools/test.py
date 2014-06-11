@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# coding=latin-1
+# coding=utf-8
 
 import argparse
 import glob
@@ -64,6 +64,7 @@ class OrchestraError(Exception):
 class Conductor(object):
     def __init__(self, arguments=None):
         self.args = arguments
+        # Default home to what juju defaults to, can be overridden with "-p"
         self.env = {'JUJU_HOME': os.path.expanduser('~/.juju')}
         if arguments.preserve_environment_variables:
             for var in arguments.preserve_environment_variables.split(","):
@@ -151,7 +152,8 @@ class Conductor(object):
         # Should probably do something other than NotImplementedError...
         raise NotImplementedError()
 
-    def get_environment(self, juju_env, juju_home='~/.juju'):
+    def get_environment(self, juju_env):
+        juju_home = self.env['JUJU_HOME']
         try:
             env_yaml = self.load_environments_yaml(juju_home)
         except IOError:
@@ -163,7 +165,7 @@ class Conductor(object):
 
         return env_yaml['environments'][juju_env]
 
-    def bootstrap(self, juju_env=None, wait_for=400):
+    def bootstrap(self, juju_env, wait_for=400):
         self.log.debug('Starting a bootstrap for %s, kill after %s'
                        % (juju_env, wait_for))
         cmd = ['juju', 'bootstrap']
@@ -176,7 +178,7 @@ class Conductor(object):
 
         self.log.debug('Running the following: %s' % ' '.join(cmd))
         try:
-            subprocess.check_call(cmd)
+            subprocess.check_call(cmd, env=self.env)
         except subprocess.CalledProcessError:
             raise BootstrapError('Bootstrap returned with an exit > 0')
 
@@ -204,7 +206,7 @@ class Conductor(object):
 
             self.log.debug('Calling "%s"' % ' '.join(cmd))
             try:
-                subprocess.check_call(cmd)
+                subprocess.check_call(cmd, env=self.env)
             except subprocess.CalledProcessError:
                 raise DestroyUnreliable('Unable to destroy %s' % juju_env)
         else:
@@ -214,7 +216,7 @@ class Conductor(object):
             pycmd = 'echo y | %s' % ' '.join(cmd)
             self.log.debug('Calling "%s"' % pycmd)
             try:
-                subprocess.check_call(pycmd, shell=True)
+                subprocess.check_call(pycmd, shell=True, env=self.env)
             except subprocess.CalledProcessError:
                 raise DestroyUnreliable('Unable to destroy %s' % juju_env)
 
@@ -222,14 +224,14 @@ class Conductor(object):
         cmd = ['juju', 'status', '-e', juju_env]
         self.log.debug('Running the following: %s' % ' '.join(cmd))
         try:
-            output = subprocess.check_output(cmd)
+            output = subprocess.check_output(cmd, env=self.env)
         except:
             self.log.debug('Status command failed, returning nothing')
             return None
 
         return yaml.safe_load(output)
 
-    def wait_for_bootstrap(self, juju_env=None):
+    def wait_for_bootstrap(self, juju_env):
         bootstrapped = False
         while not bootstrapped:
             self.log.debug('Still not bootstrapped')
@@ -398,7 +400,7 @@ class Orchestra(object):
             cmd = ['rsync', '-a', '-v', '-z', '-R', '-e', 'ssh',
                    'ubuntu@%s:%s' % (dns_name, path), dest]
 
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, env=self.env)
 
 
 # Build Juju class instead? Move bootstrap, wait_for_bootstrap, teardown?
