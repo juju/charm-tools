@@ -55,6 +55,7 @@ class BashCreateTest(TestCase):
         dynamic_files = [
             'lib/charmhelpers/__init__.py',
             'lib/charmhelpers/core/__init__.py',
+            'lib/charmhelpers/core/fstab.py',
             'lib/charmhelpers/core/hookenv.py',
             'lib/charmhelpers/core/host.py',
         ]
