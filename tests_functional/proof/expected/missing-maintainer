@@ -1,5 +1,5 @@
 W: metadata name (test) must match directory name (missing-maintainer) exactly for local deployment.
-E: Charms need a maintainer (See RFC2822) - Name <email>
+E: Charm must have either a maintainer or maintainers field
 W: no copyright file
 W: Includes template README.ex file
 W: README.ex includes line 1 of boilerplate README.ex

@@ -14,6 +14,7 @@ from launchpadlib.launchpad import Launchpad
 KNOWN_METADATA_KEYS = ['name',
                        'summary',
                        'maintainer',
+                       'maintainers',
                        'description',
                        'categories',
                        'subordinate',
@@ -254,23 +255,8 @@ class Charm(object):
             if len(charm['summary']) > 72:
                 lint.warn('summary sould be less than 72')
 
-            # need a maintainer field
-            if 'maintainer' not in charm:
-                lint.err('Charms need a maintainer (See RFC2822) - '
-                         'Name <email>')
-            else:
-                if type(charm['maintainer']) == list:  # It's a list
-                    maintainers = charm['maintainer']
-                else:
-                    maintainers = [charm['maintainer']]
-                for maintainer in maintainers:
-                    (name, address) = email.utils.parseaddr(maintainer)
-                    formatted = email.utils.formataddr((name, address))
-                    if formatted != maintainer:
-                        warn_msg = ("Maintainer address should contain a "
-                                    "real-name and email only. [%s]" % (
-                                        formatted))
-                        lint.warn(warn_msg)
+            # validate maintainer info
+            validate_maintainer(charm, lint)
 
             if 'categories' not in charm:
                 lint.warn('Metadata is missing categories.')
@@ -431,6 +417,45 @@ class Charm(object):
 
     def promulgate(self):
         pass
+
+
+def validate_maintainer(charm, linter):
+    """Validate maintainer info in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'maintainer' in charm and 'maintainers' in charm:
+        linter.err(
+            'Charm must not have both maintainer and maintainers fields')
+        return
+
+    if 'maintainer' not in charm and 'maintainers' not in charm:
+        linter.err(
+            'Charm must have either a maintainer or maintainers field')
+        return
+
+    maintainers = []
+    if 'maintainer' in charm:
+        if isinstance(charm['maintainer'], list):
+            linter.err('Maintainer field must not be a list')
+            return
+        maintainers = [charm['maintainer']]
+    elif 'maintainers' in charm:
+        if not isinstance(charm['maintainers'], list):
+            linter.err('Maintainers field must be a list')
+            return
+        maintainers = charm['maintainers']
+
+    for maintainer in maintainers:
+        (name, address) = email.utils.parseaddr(maintainer)
+        formatted = email.utils.formataddr((name, address))
+        if formatted != maintainer:
+            linter.warn(
+                'Maintainer format should be "Name <Email>", '
+                'not "%s"' % formatted)
 
 
 def remote():

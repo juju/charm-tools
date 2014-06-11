@@ -1,5 +1,5 @@
 W: metadata name (test) must match directory name (broken-maintainer) exactly for local deployment.
-W: Maintainer address should contain a real-name and email only. [test@testhost]
+W: Maintainer format should be "Name <Email>", not "test@testhost"
 W: no copyright file
 W: Includes template README.ex file
 W: README.ex includes line 1 of boilerplate README.ex

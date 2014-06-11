@@ -22,6 +22,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from textwrap import dedent
 from unittest import main, TestCase
+from mock import Mock
 
 proof_path = dirname(dirname(dirname(abspath(__file__))))
 proof_path = join(proof_path, 'charmtools')
@@ -29,6 +30,7 @@ proof_path = join(proof_path, 'charmtools')
 sys.path.append(proof_path)
 
 from charmtools.charms import CharmLinter as Linter
+from charmtools.charms import validate_maintainer
 
 
 class TestCharmProof(TestCase):
@@ -325,6 +327,91 @@ class TestCharmProof(TestCase):
             "E: Cannot parse config.yaml: could not determine a constructor "
             "for the tag 'tag:yaml.org,2002:python/name:__builtin__.int'")
         self.assertTrue(self.linter.lint[0].startswith(expected))
+
+
+class MaintainerValidationTest(TestCase):
+    def test_two_maintainer_fields(self):
+        """Charm has maintainer AND maintainers."""
+        linter = Mock()
+        charm = {
+            'maintainer': 'Tester <tester@example.com>',
+            'maintainers': ['Tester <tester@example.com>'],
+        }
+        validate_maintainer(charm, linter)
+        linter.err.assert_called_once_with(
+            'Charm must not have both maintainer and maintainers fields')
+
+    def test_no_maintainer_fields(self):
+        """Charm has neither maintainer nor maintainers field."""
+        linter = Mock()
+        charm = {}
+        validate_maintainer(charm, linter)
+        linter.err.assert_called_once_with(
+            'Charm must have either a maintainer or maintainers field')
+
+    def test_maintainers_not_list(self):
+        """Error if maintainers field is NOT a list."""
+        linter = Mock()
+        charm = {
+            'maintainers': 'Tester <tester@example.com>',
+        }
+        validate_maintainer(charm, linter)
+        linter.err.assert_called_once_with(
+            'Maintainers field must be a list')
+
+    def test_maintainer_list(self):
+        """Error if maintainer field IS a list."""
+        linter = Mock()
+        charm = {
+            'maintainer': ['Tester <tester@example.com>'],
+        }
+        validate_maintainer(charm, linter)
+        linter.err.assert_called_once_with(
+            'Maintainer field must not be a list')
+
+    def test_maintainer_bad_format(self):
+        """Warn if format of maintainer string not RFC2822 compliant."""
+        linter = Mock()
+        charm = {
+            'maintainer': 'Tester tester@example.com',
+        }
+        validate_maintainer(charm, linter)
+        linter.warn.assert_called_once_with(
+            'Maintainer format should be "Name <Email>", not '
+            '"Testertester@example.com"')
+        self.assertFalse(linter.err.called)
+
+    def test_maintainers_bad_format(self):
+        """Warn if format of a maintainers string not RFC2822 compliant."""
+        linter = Mock()
+        charm = {
+            'maintainers': ['Tester tester@example.com'],
+        }
+        validate_maintainer(charm, linter)
+        linter.warn.assert_called_once_with(
+            'Maintainer format should be "Name <Email>", not '
+            '"Testertester@example.com"')
+        self.assertFalse(linter.err.called)
+
+    def test_good_maintainer(self):
+        """Maintainer field happy path."""
+        linter = Mock()
+        charm = {
+            'maintainer': 'Tester <tester@example.com>',
+        }
+        validate_maintainer(charm, linter)
+        self.assertFalse(linter.err.called)
+        self.assertFalse(linter.warn.called)
+
+    def test_good_maintainers(self):
+        """Maintainers field happy path."""
+        linter = Mock()
+        charm = {
+            'maintainers': ['Tester <tester@example.com>'],
+        }
+        validate_maintainer(charm, linter)
+        self.assertFalse(linter.err.called)
+        self.assertFalse(linter.warn.called)
 
 
 if __name__ == '__main__':
