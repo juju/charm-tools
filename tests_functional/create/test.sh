@@ -1,7 +1,8 @@
 #!/bin/sh
 
 TESTDIR=`dirname $0`
-CREATE="$TESTDIR/../../charmtools/create.py -t bash"
+PYTHON=$TESTDIR/../../bin/python
+CREATE="$PYTHON $TESTDIR/../../charmtools/create.py -t bash"
 
 cleanup() {
     if [ -n "$workdir" ] && [ -d "$workdir" ] ; then
@@ -41,7 +42,7 @@ if $CREATE no-package-exists $workdir ; then
 fi
 
 echo ===== Now try with apt package information populated. =====
-if python -c 'import apt' ; then
+if $PYTHON -c 'import apt' >/dev/null 2>&1 ; then
     $CREATE python-apt $workdir
     compare_charms $workdir/python-apt
 else
@@ -49,7 +50,7 @@ else
 fi
 
 echo ===== Testing python charm template =====
-$TESTDIR/test_python_create.py
+$PYTHON $TESTDIR/test_python_create.py
 
 echo ===== All tests passed! =====
 echo PASS

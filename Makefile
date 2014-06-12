@@ -33,11 +33,6 @@ $(DEVELOP_CANARY): | bin/python
 
 build: deps bin/python bin/pip develop bin/test
 
-sysdeps:
-	sudo apt-get update
-	sudo apt-get install -y build-essential bzr python-dev \
-	    python-virtualenv 
-
 dependencies:
 	bzr checkout lp:~juju-jitsu/charm-tools/dependencies
 
@@ -45,6 +40,9 @@ dependencies:
 PYTHON_PACKAGE_CANARY := lib/python2.7/site-packages/___canary
 python-deps: $(PYTHON_PACKAGE_CANARY)
 $(PYTHON_PACKAGE_CANARY): requirements.txt | bin/pip dependencies
+	sudo apt-get update
+	sudo apt-get install -y build-essential bzr python-dev \
+	    python-virtualenv 
 	bin/pip install --no-index --no-dependencies --find-links \
 	    file:///$(WD)/dependencies/python -r requirements.txt
 	touch $(PYTHON_PACKAGE_CANARY)
@@ -87,7 +85,7 @@ install:
 	cp -rf scripts templates $(datadir)
 	cp -rf helpers/* $(helperdir)
 
-integration:
+integration: build
 	tests_functional/helpers/helpers.sh || sh -x tests_functional/helpers/helpers.sh timeout
 	@echo Test shell helpers with bash
 	bash tests_functional/helpers/helpers.sh \
@@ -104,7 +102,7 @@ integration:
 coverage: build bin/test
 	bin/test --with-coverage --cover-package=charmtools --cover-tests
 
-check: integration test lint
+check: build integration test lint
 
 define phony
   build
