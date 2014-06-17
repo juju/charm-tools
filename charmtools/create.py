@@ -31,6 +31,8 @@ from charmtools.generators import (
 
 log = logging.getLogger(__name__)
 
+DEFAULT_TEMPLATE = 'python'
+
 
 def setup_parser():
     parser = argparse.ArgumentParser()
@@ -44,9 +46,9 @@ def setup_parser():
         help='Dir to create charm in. Defaults to CHARM_HOME env var or PWD',
     )
     parser.add_argument(
-        '-t', '--template', default='python',
-        help='Name of charm template to use; default is python. '
-             'Installed templates: ' + ', '.join(get_installed_templates()),
+        '-t', '--template', default=None,
+        help='Name of charm template to use; default is ' + DEFAULT_TEMPLATE +
+             '. Installed templates: ' + ', '.join(get_installed_templates()),
     )
     parser.add_argument(
         '-a', '--accept-defaults',
@@ -78,6 +80,12 @@ def main():
             format='%(levelname)s: %(message)s',
             level=logging.INFO,
         )
+
+    if not args.template:
+        log.info(
+            "Using default charm template (%s). To select a different "
+            "template, use the -t option.", DEFAULT_TEMPLATE)
+        args.template = DEFAULT_TEMPLATE
 
     generator = CharmGenerator(args)
     try:

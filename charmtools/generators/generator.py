@@ -63,7 +63,7 @@ class CharmGenerator(object):
                 '{} exists. Please move it out of the way.'.format(
                     output_path))
 
-        log.info('Generating template for %s in %s',
+        log.info('Generating charm for %s in %s',
                  self.opts.charmname, output_path)
 
         metadata = self._get_metadata()
