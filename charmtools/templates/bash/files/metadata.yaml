@@ -1,8 +1,8 @@
-name: $package
-summary: $summary
-maintainer: $maintainer
+name: $metadata.package
+summary: $metadata.summary
+maintainer: $metadata.maintainer
 description: |
-  $description
+  $metadata.description
 categories:
   - misc
 subordinate: false

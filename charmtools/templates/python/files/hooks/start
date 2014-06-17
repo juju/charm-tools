@@ -1,0 +1,26 @@
+#!/usr/bin/python
+
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.environ['CHARM_DIR'], 'lib'))
+
+from charmhelpers.core import (
+    hookenv,
+    host,
+)
+
+hooks = hookenv.Hooks()
+log = hookenv.log
+
+SERVICE = '$metadata.package'
+
+
+@hooks.hook('start')
+def start():
+    host.service_restart(SERVICE) or host.service_start(SERVICE)
+
+
+if __name__ == "__main__":
+    # execute a hook based on the name the program is called by
+    hooks.execute(sys.argv)
