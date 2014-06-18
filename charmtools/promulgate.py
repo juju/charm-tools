@@ -46,7 +46,7 @@ def parse_options():
         'from the bzr configuration if omitted.')
 
     parser.add_option(
-        '-s', '--series', dest='series', default=None, required=True
+        '-s', '--series', dest='series', default=None, required=True,
         help='The distribution series on which to set the official branch. '
         'Defaults to setting it in the current development series.')
 
