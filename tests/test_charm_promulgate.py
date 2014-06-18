@@ -46,6 +46,6 @@ class TestCharmProof(unittest.TestCase):
     def test_get_lp_charm_series_404(self):
         lp = Mock()
         charms = Mock()
-        charms.getSeries.side_effect = NotFound('No such disstribution series:')
+        charms.getSeries.side_effect = NotFound('No such distribution series:')
         lp.distributions = {'charms': charms}
-        self.assertRaises(ValueError, get_lp_charm_series, lp, None)
+        self.assertRaises(NotFound, get_lp_charm_series, lp, 'not-series')
