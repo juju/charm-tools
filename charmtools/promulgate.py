@@ -19,21 +19,17 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from launchpadlib.launchpad import Launchpad
-from lazr.restfulclient.errors import BadRequest, NotFound
-
 import os
 import sys
+import yaml
+import logging
+import subprocess
 
 from optparse import OptionParser
-
 from bzrlib import bzrdir
 
-import yaml
-
-import logging
-
-import subprocess
+from launchpadlib.launchpad import Launchpad
+from lazr.restfulclient.errors import BadRequest, NotFound
 
 DISTRIBUTION = 'charms'
 REVIEW_TEAM_NAME = 'charmers'
@@ -50,7 +46,7 @@ def parse_options():
         'from the bzr configuration if omitted.')
 
     parser.add_option(
-        '-s', '--series', dest='series', default=None,
+        '-s', '--series', dest='series', default=None, required=True
         help='The distribution series on which to set the official branch. '
         'Defaults to setting it in the current development series.')
 
@@ -151,19 +147,18 @@ def find_branch_to_promulgate(lp, charm_dir, branch_url):
 def get_lp_charm_series(lp, series):
     charm_distro = lp.distributions[DISTRIBUTION]
     if series is None:
-        charm_series = charm_distro.current_series
-    else:
-        try:
-            charm_series = charm_distro.getSeries(
-                name_or_version=series)
-        except (BadRequest, NotFound), e:
-            # XXX flacoste 2011-06-15 bug=797917
-            # Should only be NotFound.
-            if e.content.startswith('No such distribution series:'):
-                logging.error("can't find series '%s'", series)
-                raise
-            else:
-                raise
+        raise ValueError("Series can not be None")
+    try:
+        charm_series = charm_distro.getSeries(
+            name_or_version=series)
+    except (BadRequest, NotFound), e:
+        # XXX flacoste 2011-06-15 bug=797917
+        # Should only be NotFound.
+        if e.content.startswith('No such distribution series:'):
+            logging.error("can't find series '%s'", series)
+            raise
+        else:
+            raise
     return charm_series
 
 
