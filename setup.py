@@ -13,7 +13,7 @@ from setuptools import setup
 
 setup(
     name='charm-tools',
-    version="1.2.9-1",
+    version="1.3.0",
     packages=['charmtools'],
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko', 'bzr', 'requests',
