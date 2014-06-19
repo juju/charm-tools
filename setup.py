@@ -8,17 +8,17 @@ import ez_setup
 
 ez_setup.use_setuptools()
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
     name='charm-tools',
     version="1.3.0",
-    packages=['charmtools'],
+    packages=find_packages(),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko', 'bzr', 'requests',
                       'charmworldlib'],
-    package_data={'charmtools': ['templates/*/*.*', 'templates/*/hooks/*']},
+    include_package_data=True,
     maintainer='Marco Ceppi',
     maintainer_email='marco@ceppi.net',
     description=('Tools for maintaining Juju charms'),
