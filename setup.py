@@ -14,7 +14,8 @@ from setuptools import setup, find_packages
 setup(
     name='charm-tools',
     version="1.3.1",
-    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+    packages=find_packages(
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko', 'bzr', 'requests',
                       'charmworldlib'],

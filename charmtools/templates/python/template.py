@@ -54,7 +54,7 @@ class PythonCharmTemplate(CharmTemplate):
         template_dir = path.join(here, 'files')
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
-        shutil.copytree(template_dir, output_dir, symlinks=True)
+        shutil.copytree(template_dir, output_dir)
 
     def _template_file(self, config, outfile):
         if path.islink(outfile):
@@ -75,12 +75,23 @@ class PythonCharmTemplate(CharmTemplate):
     def _cleanup_hooks(self, config, output_dir):
         rmdir = 'hooks' if config['symlink'] else 'hooks_symlinked'
         shutil.rmtree(os.path.join(output_dir, rmdir))
-        if rmdir == 'hooks':
+
+        if config['symlink']:
             os.rename(
                 os.path.join(output_dir, 'hooks_symlinked'),
                 os.path.join(output_dir, 'hooks')
             )
+            for link in ['config-changed', 'install', 'start', 'stop',
+                         'upgrade-charm']:
+                os.symlink(
+                    os.path.join(output_dir, 'hooks', 'hooks.py'),
+                    os.path.join(output_dir, 'hooks', link)
+                )
 
     def _install_charmhelpers(self, output_dir):
+        helpers_dest = os.path.join(output_dir, 'lib', 'charmhelpers')
+        if not os.path.exists(helpers_dest):
+            os.makedirs(helpers_dest)
+
         cmd = './scripts/charm_helpers_sync.py -c charm-helpers.yaml'
         subprocess.check_call(cmd.split(), cwd=output_dir)
