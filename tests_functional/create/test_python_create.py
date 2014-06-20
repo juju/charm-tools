@@ -38,7 +38,7 @@ def flatten(path):
             yield join(root[len(path):], f).lstrip('/')
 
 
-class BashCreateTest(TestCase):
+class PythonCreateTest(TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
 
