@@ -49,7 +49,7 @@ class BashCharmTemplate(CharmTemplate):
         template_dir = path.join(here, 'files')
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
-        shutil.copytree(template_dir, output_dir, symlinks=True)
+        shutil.copytree(template_dir, output_dir)
 
     def _template_file(self, config, outfile):
         if path.islink(outfile):
