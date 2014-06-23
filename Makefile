@@ -92,6 +92,7 @@ integration: build
 	@echo Test charm proof
 	tests_functional/proof/test.sh
 	tests_functional/create/test.sh
+	tests_functional/add/test.sh
 #	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
 
 coverage: build bin/test
