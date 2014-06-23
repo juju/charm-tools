@@ -14,13 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import sys
-import subprocess
+
+from .promulgate import parse_options, main_
 
 
 def main():
-    exit_code = subprocess.call([sys.executable, os.path.join(os.path.dirname(
-                                 os.path.realpath(__file__)), 'promulgate'),
-                                '--unpromulgate'] + sys.argv[1:])
-    sys.exit(exit_code)
+    options, args = parse_options(unprom_opt=False)
+    return main_(options, args)
+
+
+if __name__ == '__main__':
+    sys.exit(main())

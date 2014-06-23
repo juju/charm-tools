@@ -37,7 +37,7 @@ OFFICIAL_BRANCH_POCKET = 'Release'
 OFFICIAL_BRANCH_STATUS = 'Mature'
 
 
-def parse_options():
+def parse_options(unprom_opt=True):
     parser = OptionParser(usage='usage: %prog [options] <charm_dir>')
 
     parser.add_option(
@@ -46,7 +46,7 @@ def parse_options():
         'from the bzr configuration if omitted.')
 
     parser.add_option(
-        '-s', '--series', dest='series', default=None, required=True,
+        '-s', '--series', dest='series', default=None,
         help='The distribution series on which to set the official branch. '
         'Defaults to setting it in the current development series.')
 
@@ -59,10 +59,11 @@ def parse_options():
         '-v', '--verbose', dest='verbose', action='count', default=0,
         help='Increase verbosity level.')
 
-    parser.add_option(
-        '-u', '--unpromulgate', dest='unpromulgate', action='store_true',
-        default=False,
-        help='Un-promulgate this branch instead of promulgating it')
+    if unprom_opt:
+        parser.add_option(
+            '-u', '--unpromulgate', dest='unpromulgate', action='store_true',
+            default=False,
+            help='Un-promulgate this branch instead of promulgating it')
 
     parser.add_option(
         '-f', '--force', dest='force', action='store_true', default=False,
@@ -199,8 +200,7 @@ def is_valid_owner(charm_branch, promulgate_owner_branch):
     return promulgate_owner_branch or branch_owner(charm_branch) == '~charmers'
 
 
-def main():
-    options, args = parse_options()
+def main_(options, args):
     logging.basicConfig(level=log_level(options.verbose),
                         format='%(levelname)s:%(message)s')
 
@@ -234,6 +234,11 @@ def main():
                                  charm_name_from_metadata(charm_dir))
 
     return 0
+
+
+def main():
+    options, args = parse_options()
+    return main_(options, args)
 
 
 if __name__ == '__main__':
