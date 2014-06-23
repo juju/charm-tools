@@ -13,7 +13,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='charm-tools',
-    version="1.3.1",
+    version="1.3.2",
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
