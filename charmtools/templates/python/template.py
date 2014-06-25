@@ -81,12 +81,11 @@ class PythonCharmTemplate(CharmTemplate):
                 os.path.join(output_dir, 'hooks_symlinked'),
                 os.path.join(output_dir, 'hooks')
             )
+            # Symlinks must be relative so that they are copied properly
+            # when output_dir is moved to it's final location.
             for link in ['config-changed', 'install', 'start', 'stop',
                          'upgrade-charm']:
-                os.symlink(
-                    os.path.join(output_dir, 'hooks', 'hooks.py'),
-                    os.path.join(output_dir, 'hooks', link)
-                )
+                os.symlink('hooks.py', os.path.join(output_dir, 'hooks', link))
 
     def _install_charmhelpers(self, output_dir):
         helpers_dest = os.path.join(output_dir, 'lib', 'charmhelpers')
