@@ -33,8 +33,8 @@ from charmtools.generators import (
 log = logging.getLogger(__name__)
 
 
-class PythonCharmTemplate(CharmTemplate):
-    skip_parsing = ['README.ex']
+class AnsibleCharmTemplate(CharmTemplate):
+    skip_parsing = ['README.ex', 'Makefile']
 
     def create_charm(self, config, output_dir):
         self._copy_files(output_dir)
@@ -73,19 +73,11 @@ class PythonCharmTemplate(CharmTemplate):
         os.unlink(backupname)
 
     def _cleanup_hooks(self, config, output_dir):
-        rmdir = 'hooks' if config['symlink'] else 'hooks_symlinked'
-        shutil.rmtree(os.path.join(output_dir, rmdir))
-
-        if config['symlink']:
-            os.rename(
-                os.path.join(output_dir, 'hooks_symlinked'),
-                os.path.join(output_dir, 'hooks')
-            )
-            # Symlinks must be relative so that they are copied properly
-            # when output_dir is moved to it's final location.
-            for link in ['config-changed', 'install', 'start', 'stop',
-                         'upgrade-charm']:
-                os.symlink('hooks.py', os.path.join(output_dir, 'hooks', link))
+        # Symlinks must be relative so that they are copied properly
+        # when output_dir is moved to it's final location.
+        for link in ['config-changed', 'install', 'start', 'stop',
+                     'upgrade-charm']:
+            os.symlink('hooks.py', os.path.join(output_dir, 'hooks', link))
 
     def _install_charmhelpers(self, output_dir):
         helpers_dest = os.path.join(output_dir, 'lib', 'charmhelpers')

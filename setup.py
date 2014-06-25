@@ -58,6 +58,7 @@ setup(
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
             'python = charmtools.templates.python:PythonCharmTemplate',
+            'ansible = charmtools.templates.ansible:AnsibleCharmTemplate',
         ]
     },
 )
