@@ -34,14 +34,14 @@ log = logging.getLogger(__name__)
 
 
 class PythonCharmTemplate(CharmTemplate):
-    skip_parsing = ['README.ex']
+    """Creates a python-based charm"""
 
     def create_charm(self, config, output_dir):
         self._copy_files(output_dir)
 
         for root, dirs, files in os.walk(output_dir):
             for outfile in files:
-                if outfile in self.skip_parsing:
+                if self.skip_template(outfile):
                     continue
 
                 self._template_file(config, path.join(root, outfile))

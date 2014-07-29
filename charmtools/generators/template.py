@@ -15,6 +15,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from fnmatch import fnmatch
 import inspect
 import os
 import yaml
@@ -24,6 +25,15 @@ from .prompt import PromptList
 
 class CharmTemplate(object):
     """Base plugin for creating a new charm."""
+
+    skip_parsing = ['README.ex', '*.pyc']
+
+    def skip_template(self, filename):
+        """Return True if file should not be processed for template
+        variable substitution.
+
+        """
+        return any(fnmatch(filename, pat) for pat in self.skip_parsing)
 
     def prompts(self):
         """Return a list :class:`Prompt` objects that will be used for
