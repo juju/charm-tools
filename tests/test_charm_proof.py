@@ -420,7 +420,10 @@ class MaintainerValidationTest(TestCase):
         """Maintainers field happy path."""
         linter = Mock()
         charm = {
-            'maintainers': ['Tester <tester@example.com>'],
+            'maintainers': [
+                'Tester <tester@example.com>',
+                'Tester Joe H. <tester@example.com>',
+            ]
         }
         validate_maintainer(charm, linter)
         self.assertFalse(linter.err.called)

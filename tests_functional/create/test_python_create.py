@@ -58,6 +58,10 @@ class PythonCreateTest(TestCase):
             'lib/charmhelpers/core/fstab.py',
             'lib/charmhelpers/core/hookenv.py',
             'lib/charmhelpers/core/host.py',
+            'lib/charmhelpers/core/services/__init__.py',
+            'lib/charmhelpers/core/services/base.py',
+            'lib/charmhelpers/core/services/helpers.py',
+            'lib/charmhelpers/core/templating.py',
         ]
         return sorted(static_files + dynamic_files)
 
