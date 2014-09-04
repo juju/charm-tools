@@ -46,7 +46,6 @@ class PythonCharmTemplate(CharmTemplate):
 
                 self._template_file(config, path.join(root, outfile))
 
-        self._cleanup_hooks(config, output_dir)
         self._install_charmhelpers(output_dir)
 
     def _copy_files(self, output_dir):
@@ -71,21 +70,6 @@ class PythonCharmTemplate(CharmTemplate):
         os.rename(outfile, backupname)
         os.rename(o.name, outfile)
         os.unlink(backupname)
-
-    def _cleanup_hooks(self, config, output_dir):
-        rmdir = 'hooks' if config['symlink'] else 'hooks_symlinked'
-        shutil.rmtree(os.path.join(output_dir, rmdir))
-
-        if config['symlink']:
-            os.rename(
-                os.path.join(output_dir, 'hooks_symlinked'),
-                os.path.join(output_dir, 'hooks')
-            )
-            # Symlinks must be relative so that they are copied properly
-            # when output_dir is moved to it's final location.
-            for link in ['config-changed', 'install', 'start', 'stop',
-                         'upgrade-charm']:
-                os.symlink('hooks.py', os.path.join(output_dir, 'hooks', link))
 
     def _install_charmhelpers(self, output_dir):
         helpers_dest = os.path.join(output_dir, 'lib', 'charmhelpers')

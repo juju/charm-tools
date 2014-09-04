@@ -46,6 +46,14 @@ class CharmTemplate(object):
         """Return default configuration for this template, loaded from a
         config.yaml file.
 
+        This is a sample config.yaml that configures one user prompt::
+
+            prompts:
+              symlink:
+                prompt: Symlink all hooks to one python source file? [yN]
+                default: n
+                type: boolean
+
         """
         path = self.config_path()
         if os.path.exists(path):

@@ -45,13 +45,9 @@ class PythonCreateTest(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def _expected_files(self, symlinked=False):
+    def _expected_files(self):
         static_files = list(flatten(pkg_resources.resource_filename(
             'charmtools', 'templates/python/files')))
-        static_files = [f for f in static_files
-                        if not f.startswith('hooks_symlinked/')]
-        if symlinked:
-            static_files.append('hooks/hooks.py')
         dynamic_files = [
             'lib/charmhelpers/__init__.py',
             'lib/charmhelpers/core/__init__.py',
@@ -64,30 +60,6 @@ class PythonCreateTest(TestCase):
             'lib/charmhelpers/core/templating.py',
         ]
         return sorted(static_files + dynamic_files)
-
-    @patch('__builtin__.raw_input')
-    @patch('charmtools.create.setup_parser')
-    def test_interactive(self, setup_parser, raw_input_):
-        """Functional test of a full 'charm create' run."""
-        class args(object):
-            charmname = 'testcharm'
-            charmhome = self.tempdir
-            template = 'python'
-            accept_defaults = False
-            verbose = False
-
-        setup_parser.return_value.parse_args.return_value = args
-        raw_input_.side_effect = ['Y']
-
-        main()
-
-        outputdir = join(self.tempdir, args.charmname)
-        actual_files = sorted(flatten(outputdir))
-        expected_files = self._expected_files(symlinked=True)
-        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
-
-        self.assertEqual(expected_files, actual_files)
-        self.assertEqual(metadata['name'], args.charmname)
 
     @patch('charmtools.create.setup_parser')
     def test_defaults(self, setup_parser):
