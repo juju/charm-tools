@@ -52,6 +52,9 @@ fi
 echo ===== Testing python charm template =====
 $PYTHON $TESTDIR/test_python_create.py
 
+echo ===== Testing ansible charm template =====
+$PYTHON $TESTDIR/test_ansible_create.py
+
 echo ===== All tests passed! =====
 echo PASS
 set +e
