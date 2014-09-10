@@ -1,0 +1,17 @@
+#!/usr/bin/python
+
+import setup
+setup.pre_install()
+
+from charmhelpers.core import hookenv
+
+
+def install():
+    hookenv.log('Installing $metadata.package')
+    # add steps for installing dependencies and packages here
+    # e.g.: from charmhelpers import fetch
+    #       fetch.apt_install(fetch.filter_installed_packages(['nginx']))
+
+
+if __name__ == "__main__":
+    install()

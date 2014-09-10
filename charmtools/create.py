@@ -31,7 +31,7 @@ from charmtools.generators import (
 
 log = logging.getLogger(__name__)
 
-DEFAULT_TEMPLATE = 'python'
+DEFAULT_TEMPLATE = 'python-services'
 
 
 def setup_parser():
