@@ -45,9 +45,6 @@ class PythonServicesCharmTemplate(CharmTemplate):
 
                 self._template_file(config, path.join(root, outfile))
 
-        os.rename(path.join(output_dir, 'templates', 'upstart.conf'),
-                  path.join(output_dir, 'templates', '{}.conf'.format(config['metadata']['package'])))
-
     def _copy_files(self, output_dir):
         here = path.abspath(path.dirname(__file__))
         template_dir = path.join(here, 'files')

@@ -20,7 +20,7 @@ def manage():
                 # e.g.: helpers.RequiredConfig('domain', 'auth_key'), helpers.MysqlRelation()
             ],
             'data_ready': [
-                helpers.render_template(source='${metadata.package}.conf',
+                helpers.render_template(source='upstart.conf',
                                         target='/etc/init.d/$metadata.package'),
                 actions.log_start,
             ],
