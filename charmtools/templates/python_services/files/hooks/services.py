@@ -9,7 +9,7 @@ import actions
 def manage():
     manager = ServiceManager([
         {
-            'serivce': '$metadata.package',
+            'service': '$metadata.package',
             'ports': [],  # ports to after start
             'provided_data': [
                 # context managers for provided relations
