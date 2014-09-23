@@ -58,7 +58,8 @@ setup(
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
             'python-basic = charmtools.templates.python:PythonCharmTemplate',
-            'python = charmtools.templates.python_services:PythonServicesCharmTemplate',
+            'python = charmtools.templates.python_services'
+            ':PythonServicesCharmTemplate',
         ]
     },
 )
