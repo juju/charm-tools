@@ -38,7 +38,9 @@ def flatten(path):
             yield join(root[len(path):], f).lstrip('/')
 
 
-class PythonCreateTest(TestCase):
+class PythonBasicCreateTest(TestCase):
+    maxDiff = None
+
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
 
@@ -58,8 +60,73 @@ class PythonCreateTest(TestCase):
             'lib/charmhelpers/core/fstab.py',
             'lib/charmhelpers/core/hookenv.py',
             'lib/charmhelpers/core/host.py',
+            'lib/charmhelpers/core/services/__init__.py',
+            'lib/charmhelpers/core/services/base.py',
+            'lib/charmhelpers/core/services/helpers.py',
+            'lib/charmhelpers/core/templating.py',
         ]
         return sorted(static_files + dynamic_files)
+
+    @patch('__builtin__.raw_input')
+    @patch('charmtools.create.setup_parser')
+    def test_interactive(self, setup_parser, raw_input_):
+        """Functional test of a full 'charm create' run."""
+        class args(object):
+            charmname = 'testcharm'
+            charmhome = self.tempdir
+            template = 'python-basic'
+            accept_defaults = False
+            verbose = False
+
+        setup_parser.return_value.parse_args.return_value = args
+        raw_input_.side_effect = ['Y']
+
+        main()
+
+        outputdir = join(self.tempdir, args.charmname)
+        actual_files = sorted(flatten(outputdir))
+        expected_files = self._expected_files(symlinked=True)
+        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
+
+        self.assertEqual(expected_files, actual_files)
+        self.assertEqual(metadata['name'], args.charmname)
+
+    @patch('charmtools.create.setup_parser')
+    def test_defaults(self, setup_parser):
+        """Functional test of a full 'charm create' run."""
+        class args(object):
+            charmname = 'testcharm'
+            charmhome = self.tempdir
+            template = 'python-basic'
+            accept_defaults = True
+            verbose = False
+
+        setup_parser.return_value.parse_args.return_value = args
+
+        main()
+
+        outputdir = join(self.tempdir, args.charmname)
+        actual_files = sorted(flatten(outputdir))
+        expected_files = self._expected_files()
+        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
+
+        self.assertEqual(expected_files, actual_files)
+        self.assertEqual(metadata['name'], args.charmname)
+
+
+class PythonServicesCreateTest(TestCase):
+    maxDiff = None
+
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def _expected_files(self):
+        static_files = list(flatten(pkg_resources.resource_filename(
+            'charmtools', 'templates/python_services/files')))
+        return sorted(static_files)
 
     @patch('__builtin__.raw_input')
     @patch('charmtools.create.setup_parser')
@@ -79,7 +146,7 @@ class PythonCreateTest(TestCase):
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = sorted(flatten(outputdir))
-        expected_files = self._expected_files(symlinked=True)
+        expected_files = self._expected_files()
         metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
         self.assertEqual(expected_files, actual_files)
