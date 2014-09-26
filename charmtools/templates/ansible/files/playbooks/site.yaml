@@ -1,0 +1,47 @@
+# The tasks here are left as examples and should be removed/replaced by the
+# charm author. Some things to note:
+#
+# 1. All charm config values are available as template variables
+#    e.g. repo -> {{repo}}, app-name -> {{app_name}} (note underscore)
+#
+# 2. Along with charm config values, the following variables are also
+#    made available as template vars:
+#
+#    charm_dir
+#    local_unit
+#    unit_private_address
+#    unit_public_address
+#
+# 3. Use tags to control when each task is executed. The tags list should
+#    contain one or more hook names.
+
+- hosts: all
+  tasks:
+
+    - name: Install required packages.
+      apt: pkg={{ item }} state=latest update_cache=yes
+      with_items:
+        - python-django
+        - python-django-celery
+      tags:
+        - install
+        - upgrade-charm
+
+    - name: Put app code in place.
+      git: repo=git://github.com/absoludity/charm-bootstrap-ansible.git
+           dest=/srv/myapp
+           version=HEAD
+      tags:
+        - install
+        - config-changed
+
+    - name: Start service
+      debug: msg="You'd start some service here. The config 'string-option' has the value '{{ string_option }}'"
+      tags:
+        - start
+        - config-changed
+
+    - name: Stop service
+      debug: msg="You'd stop some service here. The config 'string-option' is '{{ string_option }}'"
+      tags:
+        - stop

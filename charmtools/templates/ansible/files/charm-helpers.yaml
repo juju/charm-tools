@@ -1,0 +1,7 @@
+destination: lib/charmhelpers
+branch: lp:charm-helpers
+include:
+    - core
+    - fetch
+    - contrib.ansible|inc=*
+    - contrib.templating.contexts

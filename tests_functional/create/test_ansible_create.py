@@ -38,9 +38,8 @@ def flatten(path):
             yield join(root[len(path):], f).lstrip('/')
 
 
-class PythonBasicCreateTest(TestCase):
+class AnsibleCreateTest(TestCase):
     maxDiff = None
-
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
 
@@ -49,9 +48,18 @@ class PythonBasicCreateTest(TestCase):
 
     def _expected_files(self):
         static_files = list(flatten(pkg_resources.resource_filename(
-            'charmtools', 'templates/python/files')))
+            'charmtools', 'templates/ansible/files')))
         dynamic_files = [
+            'hooks/config-changed',
+            'hooks/install',
+            'hooks/start',
+            'hooks/stop',
+            'hooks/upgrade-charm',
             'lib/charmhelpers/__init__.py',
+            'lib/charmhelpers/contrib/__init__.py',
+            'lib/charmhelpers/contrib/ansible/__init__.py',
+            'lib/charmhelpers/contrib/templating/__init__.py',
+            'lib/charmhelpers/contrib/templating/contexts.py',
             'lib/charmhelpers/core/__init__.py',
             'lib/charmhelpers/core/fstab.py',
             'lib/charmhelpers/core/hookenv.py',
@@ -60,77 +68,19 @@ class PythonBasicCreateTest(TestCase):
             'lib/charmhelpers/core/services/base.py',
             'lib/charmhelpers/core/services/helpers.py',
             'lib/charmhelpers/core/templating.py',
+            'lib/charmhelpers/fetch/__init__.py',
+            'lib/charmhelpers/fetch/archiveurl.py',
+            'lib/charmhelpers/fetch/bzrurl.py',
         ]
         return sorted(static_files + dynamic_files)
 
     @patch('charmtools.create.setup_parser')
-    def test_defaults(self, setup_parser):
-        """Functional test of a full 'charm create' run."""
+    def test_default(self, setup_parser):
+        """Test of `charm create -t ansible testcharm`"""
         class args(object):
             charmname = 'testcharm'
             charmhome = self.tempdir
-            template = 'python-basic'
-            accept_defaults = True
-            verbose = False
-
-        setup_parser.return_value.parse_args.return_value = args
-
-        main()
-
-        outputdir = join(self.tempdir, args.charmname)
-        actual_files = sorted(flatten(outputdir))
-        expected_files = self._expected_files()
-        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
-
-        self.assertEqual(expected_files, actual_files)
-        self.assertEqual(metadata['name'], args.charmname)
-
-
-class PythonServicesCreateTest(TestCase):
-    maxDiff = None
-
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tempdir)
-
-    def _expected_files(self):
-        static_files = list(flatten(pkg_resources.resource_filename(
-            'charmtools', 'templates/python_services/files')))
-        return sorted(static_files)
-
-    @patch('__builtin__.raw_input')
-    @patch('charmtools.create.setup_parser')
-    def test_interactive(self, setup_parser, raw_input_):
-        """Functional test of a full 'charm create' run."""
-        class args(object):
-            charmname = 'testcharm'
-            charmhome = self.tempdir
-            template = 'python'
-            accept_defaults = False
-            verbose = False
-
-        setup_parser.return_value.parse_args.return_value = args
-        raw_input_.side_effect = ['Y']
-
-        main()
-
-        outputdir = join(self.tempdir, args.charmname)
-        actual_files = sorted(flatten(outputdir))
-        expected_files = self._expected_files()
-        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
-
-        self.assertEqual(expected_files, actual_files)
-        self.assertEqual(metadata['name'], args.charmname)
-
-    @patch('charmtools.create.setup_parser')
-    def test_defaults(self, setup_parser):
-        """Functional test of a full 'charm create' run."""
-        class args(object):
-            charmname = 'testcharm'
-            charmhome = self.tempdir
-            template = 'python'
+            template = 'ansible'
             accept_defaults = True
             verbose = False
 

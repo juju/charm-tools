@@ -453,7 +453,7 @@ def validate_maintainer(charm, linter):
     for maintainer in maintainers:
         (name, address) = email.utils.parseaddr(maintainer)
         formatted = email.utils.formataddr((name, address))
-        if formatted != maintainer:
+        if formatted.replace('"', '') != maintainer:
             linter.warn(
                 'Maintainer format should be "Name <Email>", '
                 'not "%s"' % formatted)

@@ -60,6 +60,7 @@ setup(
             'python-basic = charmtools.templates.python:PythonCharmTemplate',
             'python = charmtools.templates.python_services'
             ':PythonServicesCharmTemplate',
+            'ansible = charmtools.templates.ansible:AnsibleCharmTemplate',
         ]
     },
 )
