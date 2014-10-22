@@ -10,7 +10,9 @@ description: |
   structure The included 'aptsources' Python interface provides an
   abstraction of the sources.list configuration on the repository and
   the distro level.
-categories:
+tags:
+  # Replace "misc" with one or more whitelisted tags from this list:
+  # https://juju.ubuntu.com/docs/authors-charm-metadata.html#charm-metadata
   - misc
 subordinate: false
 provides:

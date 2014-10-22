@@ -31,6 +31,7 @@ sys.path.append(proof_path)
 
 from charmtools.charms import CharmLinter as Linter
 from charmtools.charms import validate_maintainer
+from charmtools.charms import validate_categories_and_tags
 
 
 class TestCharmProof(TestCase):
@@ -340,6 +341,52 @@ class TestCharmProof(TestCase):
             "E: Cannot parse config.yaml: could not determine a constructor "
             "for the tag 'tag:yaml.org,2002:python/name:__builtin__.int'")
         self.assertTrue(self.linter.lint[0].startswith(expected))
+
+
+class CategoriesTagsValidationTest(TestCase):
+    def test_no_categories_or_tags(self):
+        """Charm has neither categories nor tags."""
+        linter = Mock()
+        charm = {}
+        validate_categories_and_tags(charm, linter)
+        linter.warn.assert_called_once_with(
+            'Metadata missing required field "tags"')
+
+    def test_invalid_tags(self):
+        """Charm has invalid tags field"""
+        warning = 'Metadata field "tags" must be a non-empty list'
+        linter = Mock()
+        validate_categories_and_tags({'tags': 'foo'}, linter)
+        linter.warn.assert_called_once_with(warning)
+        linter.reset_mock()
+        validate_categories_and_tags({'tags': []}, linter)
+        linter.warn.assert_called_once_with(warning)
+
+    def test_invalid_categories(self):
+        """Charm has invalid categories field"""
+        warning = (
+            'Categories metadata must be a list of one or more of: '
+            'applications, app-servers, databases, file-servers, '
+            'cache-proxy, misc'
+        )
+        linter = Mock()
+        validate_categories_and_tags({'categories': 'foo'}, linter)
+        linter.warn.assert_called_once_with(warning)
+        linter.reset_mock()
+        validate_categories_and_tags({'categories': []}, linter)
+        linter.warn.assert_called_once_with(warning)
+
+    def test_valid_categories(self):
+        """Charm has valid categories, which should be changed to tags"""
+        info = (
+            'Categories are being deprecated in favor of tags. '
+            'Please rename the "categories" field to "tags".'
+        )
+        linter = Mock()
+        validate_categories_and_tags({'categories': ['misc']}, linter)
+        linter.info.assert_called_once_with(info)
+        self.assertFalse(linter.warn.called)
+        self.assertFalse(linter.err.called)
 
 
 class MaintainerValidationTest(TestCase):

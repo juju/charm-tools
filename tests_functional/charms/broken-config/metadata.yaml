@@ -1,7 +1,7 @@
 name: broken-config
 summary: <Fill in summary here>
 maintainer: test@testhost
-categories:
+tags:
   - misc
 description: |
   <Multi-line description here>
