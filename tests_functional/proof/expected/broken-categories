@@ -1,2 +1,2 @@
-W: Categories metadata must be a list of one or more of: applications, app-servers, databases, file-servers, cache-proxy, misc
+I: Categories metadata must be a list of one or more of: applications, app-servers, databases, file-servers, cache-proxy, misc
 I: missing recommended hook config-changed

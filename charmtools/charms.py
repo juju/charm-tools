@@ -260,13 +260,13 @@ class Charm(object):
             validate_maintainer(charm, lint)
 
             if 'categories' not in charm:
-                lint.warn('Metadata is missing categories.')
+                lint.info('Metadata is missing categories.')
             else:
                 categories = charm['categories']
                 if type(categories) != list or categories == []:
                     # The category names are not validated because they may
                     # change.
-                    lint.warn(
+                    lint.info(
                         'Categories metadata must be a list of one or more of:'
                         ' applications, app-servers, databases, file-servers, '
                         'cache-proxy, misc')
