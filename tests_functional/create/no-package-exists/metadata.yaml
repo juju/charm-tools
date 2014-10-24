@@ -3,7 +3,9 @@ summary: <Fill in summary here>
 maintainer: tester <test@testhost>
 description: |
   <Multi-line description here>
-categories:
+tags:
+  # Replace "misc" with one or more whitelisted tags from this list:
+  # https://juju.ubuntu.com/docs/authors-charm-metadata.html#charm-metadata
   - misc
 subordinate: false
 provides:

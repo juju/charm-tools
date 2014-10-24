@@ -40,6 +40,7 @@ def flatten(path):
 
 class AnsibleCreateTest(TestCase):
     maxDiff = None
+
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
 
@@ -67,10 +68,12 @@ class AnsibleCreateTest(TestCase):
             'lib/charmhelpers/core/services/__init__.py',
             'lib/charmhelpers/core/services/base.py',
             'lib/charmhelpers/core/services/helpers.py',
+            'lib/charmhelpers/core/sysctl.py',
             'lib/charmhelpers/core/templating.py',
             'lib/charmhelpers/fetch/__init__.py',
             'lib/charmhelpers/fetch/archiveurl.py',
             'lib/charmhelpers/fetch/bzrurl.py',
+            'lib/charmhelpers/fetch/giturl.py',
         ]
         return sorted(static_files + dynamic_files)
 

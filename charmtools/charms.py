@@ -11,17 +11,20 @@ from stat import S_IXUSR
 from linter import Linter
 from launchpadlib.launchpad import Launchpad
 
-KNOWN_METADATA_KEYS = ['name',
-                       'summary',
-                       'maintainer',
-                       'maintainers',
-                       'description',
-                       'categories',
-                       'subordinate',
-                       'provides',
-                       'requires',
-                       'format',
-                       'peers']
+KNOWN_METADATA_KEYS = [
+    'name',
+    'summary',
+    'maintainer',
+    'maintainers',
+    'description',
+    'categories',
+    'subordinate',
+    'provides',
+    'requires',
+    'format',
+    'peers',
+    'tags',
+]
 
 KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
 
@@ -247,32 +250,21 @@ class Charm(object):
 
             charm_basename = os.path.basename(charm_path)
             if charm['name'] != charm_basename:
-                warn_msg = ("metadata name (%s) must match directory name (%s)"
-                            " exactly for local deployment.") % (
-                                charm['name'], charm_basename)
+                warn_msg = (
+                    "metadata name (%s) must match directory name (%s)"
+                    " exactly for local deployment.") % (charm['name'],
+                                                         charm_basename)
                 lint.warn(warn_msg)
 
             # summary should be short
             if len(charm['summary']) > 72:
                 lint.warn('summary sould be less than 72')
 
-            # validate maintainer info
             validate_maintainer(charm, lint)
-
-            if 'categories' not in charm:
-                lint.info('Metadata is missing categories.')
-            else:
-                categories = charm['categories']
-                if type(categories) != list or categories == []:
-                    # The category names are not validated because they may
-                    # change.
-                    lint.info(
-                        'Categories metadata must be a list of one or more of:'
-                        ' applications, app-servers, databases, file-servers, '
-                        'cache-proxy, misc')
+            validate_categories_and_tags(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
-                lint.warn("No icon.svg file.")
+                lint.info("No icon.svg file.")
             else:
                 # should have an icon.svg
                 template_sha1 = hashlib.sha1()
@@ -283,9 +275,9 @@ class Charm(object):
                         with open(os.path.join(charm_path, 'icon.svg')) as ci:
                             icon_sha1.update(ci.read())
                     if template_sha1.hexdigest() == icon_sha1.hexdigest():
-                        lint.warn("Includes template icon.svg file.")
+                        lint.info("Includes template icon.svg file.")
                 except IOError as e:
-                    lint.warn(
+                    lint.info(
                         "Error while opening %s (%s)" %
                         (e.filename, e.strerror))
 
@@ -457,6 +449,31 @@ def validate_maintainer(charm, linter):
             linter.warn(
                 'Maintainer format should be "Name <Email>", '
                 'not "%s"' % formatted)
+
+
+def validate_categories_and_tags(charm, linter):
+    if 'categories' not in charm and 'tags' not in charm:
+        linter.warn('Metadata missing required field "tags"')
+        return
+
+    if 'tags' in charm:
+        tags = charm['tags']
+        if type(tags) != list or tags == []:
+            linter.warn('Metadata field "tags" must be a non-empty list')
+
+    if 'categories' in charm:
+        categories = charm['categories']
+        if type(categories) != list or categories == []:
+            # The category names are not validated because they may
+            # change.
+            linter.warn(
+                'Categories metadata must be a list of one or more of: '
+                'applications, app-servers, databases, file-servers, '
+                'cache-proxy, misc')
+        linter.info(
+            'Categories are being deprecated in favor of tags. '
+            'Please rename the "categories" field to "tags".'
+        )
 
 
 def remote():

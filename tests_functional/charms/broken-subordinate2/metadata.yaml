@@ -4,7 +4,7 @@ summary: <Fill in summary here>
 maintainer: test@testhost
 description: |
   <Multi-line description here>
-categories:
+tags:
   - misc
 requires:
   foo:

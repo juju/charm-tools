@@ -1,5 +1,5 @@
-I: Metadata is missing categories.
-W: No icon.svg file.
+W: Metadata missing required field "tags"
+I: No icon.svg file.
 W: no copyright file
 W: Includes template README.ex file
 W: README.ex includes line 1 of boilerplate README.ex

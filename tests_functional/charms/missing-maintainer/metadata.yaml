@@ -2,7 +2,7 @@ name: test
 summary: <Fill in summary here>
 description: |
   <Multi-line description here>
-categories:
+tags:
   - misc
 provides:
   relation-name:

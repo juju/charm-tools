@@ -59,6 +59,7 @@ class PythonBasicCreateTest(TestCase):
             'lib/charmhelpers/core/services/__init__.py',
             'lib/charmhelpers/core/services/base.py',
             'lib/charmhelpers/core/services/helpers.py',
+            'lib/charmhelpers/core/sysctl.py',
             'lib/charmhelpers/core/templating.py',
         ]
         return sorted(static_files + dynamic_files)

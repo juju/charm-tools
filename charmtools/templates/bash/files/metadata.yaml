@@ -3,7 +3,9 @@ summary: $metadata.summary
 maintainer: $metadata.maintainer
 description: |
   $metadata.description
-categories:
+tags:
+  # Replace "misc" with one or more whitelisted tags from this list:
+  # https://juju.ubuntu.com/docs/authors-charm-metadata.html#charm-metadata
   - misc
 subordinate: false
 provides:
