@@ -93,9 +93,9 @@ def tests(charm_dir, is_bundle=False, debug=False):
         with open(os.path.join(charm_dir, 'tests', '00-setup'), 'w') as f:
             f.write("""#!/bin/bash
 
-sudo add-apt-repository ppa:juju/stable
+sudo add-apt-repository ppa:juju/stable -y
 sudo apt-get update
-sudo apt-get install amulet
+sudo apt-get install amulet -y
 """)
 
     os.chmod(os.path.join(charm_dir, 'tests', '00-autogen'), 0755)
