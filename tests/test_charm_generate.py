@@ -1,5 +1,8 @@
 import unittest
-from charmtools.generate import graph
+from charmtools.generate import (
+    graph,
+    copy_file,
+)
 from mock import patch
 
 
@@ -19,3 +22,15 @@ class JujuCharmAddTest(unittest.TestCase):
         self.assertEqual(graph('nointerface', 'requires'), None)
         m.search.assert_called_with({'series': 'precise',
                                      'provides': 'nointerface'})
+
+    @patch('charmtools.generate.Charm')
+    @patch('charmtools.generate.shutil')
+    def test_copy_file(self, msh, mcharm):
+        m = mcharm.return_value.is_charm.return_value = True
+        copy_file('1.ex', '/tmp')
+        msh.copy.assert_called()
+
+    @patch('charmtools.generate.Charm')
+    def test_not_charm(self, mcharm):
+        mcharm.return_value.is_charm.return_value = False
+        self.assertRaises(Exception, copy_file, '1.ex', '/no-charm')

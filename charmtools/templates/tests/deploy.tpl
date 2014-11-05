@@ -1,3 +1,3 @@
 #for $s in $services
-d.add('$s')
+        cls.deployment.add('$s')
 #end for

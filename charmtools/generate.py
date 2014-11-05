@@ -51,17 +51,17 @@ def copy_file(tpl_file, charm_dir, is_bundle=False, debug=False):
     shutil.copy(os.path.join(CHARM_TPL, tpl_file), charm_dir)
 
 
-def tests(charm_dir, is_bundle=False, debug=False):
+def tests(charm_dir, is_bundle=False, debug=False, series='trusty'):
     c = Charm(charm_dir)
-
-    interfaces = {}
-    deploy = []
-    relations = []
 
     if not c.is_charm():
         raise Exception('Not a Charm')
 
     mdata = c.metadata()
+
+    interfaces = {}
+    deploy = [mdata['name']]
+    relations = []
 
     for rel_type in ['provides', 'requires']:
         if rel_type in mdata:
@@ -81,12 +81,13 @@ def tests(charm_dir, is_bundle=False, debug=False):
     d = Template(file=ATPL['deploy'], searchList=[{'services': deploy}])
     s = Template(file=ATPL['relate'], searchList=[{'relations': relations}])
 
-    t = Template(file=ATPL['body'], searchList=[{'deploy': d, 'relate': s}])
+    t = Template(file=ATPL['body'], searchList=[{'deploy': d, 'relate': s,
+                                                 'series': series}])
 
     if not os.path.exists(os.path.join(charm_dir, 'tests')):
         os.mkdir(os.path.join(charm_dir, 'tests'))
 
-    with open(os.path.join(charm_dir, 'tests', '00-autogen'), 'w') as f:
+    with open(os.path.join(charm_dir, 'tests', '99-autogen'), 'w') as f:
         f.write(str(t))
 
     if not os.path.exists(os.path.join(charm_dir, 'tests', '00-setup')):
@@ -98,7 +99,7 @@ sudo apt-get update
 sudo apt-get install amulet -y
 """)
 
-    os.chmod(os.path.join(charm_dir, 'tests', '00-autogen'), 0755)
+    os.chmod(os.path.join(charm_dir, 'tests', '99-autogen'), 0755)
     os.chmod(os.path.join(charm_dir, 'tests', '00-setup'), 0755)
 
 
@@ -108,13 +109,23 @@ def parser(args=None):
     parser.add_argument('subcommand', choices=['tests', 'readme', 'icon'],
                         help='Which type of generator to run')
     parser = parser_defaults(parser)
+    return parser.parse_known_args(args)
+
+
+def tests_parser(args):
+    # This bites, need an argparser experter
+    parser = argparse.ArgumentParser(description="Add tests to a charm")
+    parser.add_argument('--series', '-s', default='trusty',
+                        help='Series for the generated test')
     return parser.parse_args(args)
 
 
 def main():
-    a = parser()
+    a, extra = parser()
     if a.subcommand == 'tests':
-        tests(os.getcwd(), is_bundle=a.bundle, debug=a.debug)
+        opts = tests_parser(extra)
+        tests(os.getcwd(), is_bundle=a.bundle, debug=a.debug,
+              series=opts.series)
     elif a.subcommand == 'readme':
         copy_file('README.ex', os.getcwd(), is_bundle=a.bundle, debug=a.debug)
     elif a.subcommand == 'icon':
