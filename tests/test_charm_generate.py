@@ -12,7 +12,7 @@ class JujuCharmAddTest(unittest.TestCase):
         m = mcharm.return_value
         m.search.return_value = [{'foo': 'bar'}]
         self.assertEqual(graph('nagios', 'requires'), {'foo': 'bar'})
-        m.search.assert_called_with({'series': 'precise',
+        m.search.assert_called_with({'series': 'trusty',
                                      'provides': 'nagios'})
 
     @patch('charmtools.generate.Charms')
@@ -20,7 +20,7 @@ class JujuCharmAddTest(unittest.TestCase):
         m = mcharm.return_value
         m.search.return_value = None
         self.assertEqual(graph('nointerface', 'requires'), None)
-        m.search.assert_called_with({'series': 'precise',
+        m.search.assert_called_with({'series': 'trusty',
                                      'provides': 'nointerface'})
 
     @patch('charmtools.generate.Charm')

@@ -10,8 +10,12 @@ class TestDeployment(unittest.TestCase):
     def setUpClass(cls):
         cls.deployment = amulet.Deployment(series='$series')
 
-$deploy
-$relate
+#for $s in $deploy
+        cls.deployment.add('$s')
+#end for
+#for $r in $relate
+        cls.deployment.relate('$r[0]', '$r[1]')
+#end for
 
         try:
             cls.deployment.setup(timeout=900)

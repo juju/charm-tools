@@ -26,13 +26,10 @@ from charms import Charm
 from charmworldlib.charm import Charms
 
 TPL_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
-ATPL = {'deploy': os.path.join(TPL_DIR, 'tests', 'deploy.tpl'),
-        'body': os.path.join(TPL_DIR, 'tests', 'body.tpl'),
-        'relate': os.path.join(TPL_DIR, 'tests', 'relate.tpl')}
 CHARM_TPL = os.path.join(TPL_DIR, 'charm')
 
 
-def graph(interface, endpoint, series='precise'):
+def graph(interface, endpoint, series='trusty'):
     matches = {'requires': 'provides', 'provides': 'requires'}
     c = Charms()
     charms = c.search({matches[endpoint]: interface, 'series': series})
@@ -69,20 +66,18 @@ def tests(charm_dir, is_bundle=False, debug=False, series='trusty'):
             for rel, data in mdata[rel_type].iteritems():
                 iface = data['interface']
                 if iface and iface not in interfaces[rel_type]:
-                    r = graph(iface, rel_type)
+                    r = graph(iface, rel_type, series=series)
                     # If we dont find an interface, do nothing
                     if r is None:
                         continue
                     interfaces[rel_type][iface] = r
-                    deploy.append(r.url)
+                    deploy.append(r.name)
 
                 relations.append(['%s:%s' % (mdata['name'], rel), r.name])
 
-    d = Template(file=ATPL['deploy'], searchList=[{'services': deploy}])
-    s = Template(file=ATPL['relate'], searchList=[{'relations': relations}])
-
-    t = Template(file=ATPL['body'], searchList=[{'deploy': d, 'relate': s,
-                                                 'series': series}])
+    t = Template(file=os.path.join(TPL_DIR, 'tests', '99-autogen.tpl'),
+                 searchList=[{'deploy': deploy, 'relate': relations,
+                              'series': series}])
 
     if not os.path.exists(os.path.join(charm_dir, 'tests')):
         os.mkdir(os.path.join(charm_dir, 'tests'))
@@ -96,7 +91,7 @@ def tests(charm_dir, is_bundle=False, debug=False, series='trusty'):
 
 sudo add-apt-repository ppa:juju/stable -y
 sudo apt-get update
-sudo apt-get install amulet -y
+sudo apt-get install amulet python-requests -y
 """)
 
     os.chmod(os.path.join(charm_dir, 'tests', '99-autogen'), 0755)
