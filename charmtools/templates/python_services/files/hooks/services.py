@@ -23,7 +23,7 @@ def manage():
             'data_ready': [
                 helpers.render_template(
                     source='upstart.conf',
-                    target='/etc/init.d/$metadata.package'),
+                    target='/etc/init/$metadata.package'),
                 actions.log_start,
             ],
         },
