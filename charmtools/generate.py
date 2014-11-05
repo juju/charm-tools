@@ -91,7 +91,7 @@ def tests(charm_dir, is_bundle=False, debug=False, series='trusty'):
 
 sudo add-apt-repository ppa:juju/stable -y
 sudo apt-get update
-sudo apt-get install amulet python-requests -y
+sudo apt-get install amulet python3-requests -y
 """)
 
     os.chmod(os.path.join(charm_dir, 'tests', '99-autogen'), 0755)
