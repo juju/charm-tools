@@ -37,7 +37,7 @@ class ChefCharmTemplate(CharmTemplate):
     def create_charm(self, config, output_dir):
         cb_path = "hooks/cookbooks/{}".format(config['metadata']['package'])
 
-        to_parse = ['metadata.yaml', 'metadata.rb']
+        to_parse = ['metadata.yaml', 'metadata.rb', 'stub']
 
         self._copy_files(output_dir, cb_path)
         for root, dirs, files in os.walk(output_dir):
@@ -45,7 +45,6 @@ class ChefCharmTemplate(CharmTemplate):
                 if outfile in to_parse:
                     self._template_file(config, path.join(root, outfile))
 
-        self._cleanup_hooks(config, output_dir)
 
     def _copy_files(self, output_dir, cb_path):
         here = path.abspath(path.dirname(__file__))
@@ -75,13 +74,3 @@ class ChefCharmTemplate(CharmTemplate):
         os.rename(outfile, backupname)
         os.rename(o.name, outfile)
         os.unlink(backupname)
-
-    def _cleanup_hooks(self, config, output_dir):
-        # Symlinks must be relative so that they are copied properly
-        # when output_dir is moved to it's final location.
-        for link in ['config-changed', 'start', 'stop',
-                     'upgrade-charm', 'relation-name-relation-joined',
-                     'relation-name-relation-changed',
-                     'relation-name-relation-broken',
-                     'relation-name-relation-departed']:
-            os.symlink('stub', os.path.join(output_dir, 'hooks', link))
