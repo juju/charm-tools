@@ -37,7 +37,7 @@ class ChefCharmTemplate(CharmTemplate):
     def create_charm(self, config, output_dir):
         cb_path = "hooks/cookbooks/{}".format(config['metadata']['package'])
 
-        to_parse = ['metadata.yaml', 'metadata.rb', 'stub']
+        to_parse = ['metadata.yaml', 'metadata.rb', 'stub', '99-autogen']
 
         self._copy_files(output_dir, cb_path)
         for root, dirs, files in os.walk(output_dir):

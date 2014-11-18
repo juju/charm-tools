@@ -78,6 +78,8 @@ class ChefCreateTest(TestCase):
             'hooks/cookbooks/relation-name-relation/recipes/changed.rb',
             'hooks/cookbooks/relation-name-relation/recipes/departed.rb',
             'hooks/cookbooks/relation-name-relation/recipes/joined.rb',
+            'tests/00-setup',
+            'tests/99-autogen',
             'icon.svg',
             'metadata.yaml',
             'README.ex',
