@@ -250,11 +250,11 @@ class Charm(object):
 
             charm_basename = os.path.basename(charm_path)
             if charm['name'] != charm_basename:
-                warn_msg = (
+                msg = (
                     "metadata name (%s) must match directory name (%s)"
                     " exactly for local deployment.") % (charm['name'],
                                                          charm_basename)
-                lint.warn(warn_msg)
+                lint.info(msg)
 
             # summary should be short
             if len(charm['summary']) > 72:
