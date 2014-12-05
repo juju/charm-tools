@@ -1,4 +1,4 @@
-W: metadata name (test) must match directory name (broken-maintainer) exactly for local deployment.
+I: metadata name (test) must match directory name (broken-maintainer) exactly for local deployment.
 W: Maintainer format should be "Name <Email>", not "test@testhost"
 W: no copyright file
 W: Includes template README.ex file

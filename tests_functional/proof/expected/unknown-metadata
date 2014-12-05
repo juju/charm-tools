@@ -1,5 +1,5 @@
 E: Unknown root metadata field (foo)
-W: metadata name (test) must match directory name (unknown-metadata) exactly for local deployment.
+I: metadata name (test) must match directory name (unknown-metadata) exactly for local deployment.
 W: no copyright file
 W: Includes template README.ex file
 W: README.ex includes line 1 of boilerplate README.ex
