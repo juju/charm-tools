@@ -74,7 +74,7 @@ def bundle():
         sys.stderr.write('Error: %s is not a valid subcommand\n\n' % sub)
         cli.usage(2)
 
-    subprocess.call([sub_exec, '--bundle'] + opts)
+    sys.exit(subprocess.call([sub_exec, '--bundle'] + opts))
 
 
 if __name__ == '__main__':
