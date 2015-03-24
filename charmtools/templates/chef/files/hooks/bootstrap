@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-export HOOKS_DIR=$( cd "$( dirname "$0" )" && pwd)
-
 apt-get update
 
 sudo apt-get install -y ruby1.9.1 ruby1.9.1-dev \
@@ -11,10 +9,10 @@ sudo apt-get install -y ruby1.9.1 ruby1.9.1-dev \
 
 gem install bundler --no-rdoc --no-ri
 
-cd "$(dirname $0)" && bundle install
+cd "$(dirname $0)../cookbooks" && bundle install
 
 mkdir -p /etc/chef
 
 cat > /etc/chef/solo.rb <<EOF
-cookbook_path '$HOOKS_DIR/cookbooks'
+cookbook_path '$CHARM_DIR/cookbooks'
 EOF

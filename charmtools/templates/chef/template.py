@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 class ChefCharmTemplate(CharmTemplate):
 
     def create_charm(self, config, output_dir):
-        cb_path = "hooks/cookbooks/{}".format(config['metadata']['package'])
+        cb_path = "cookbooks/{}".format(config['metadata']['package'])
 
         to_parse = ['metadata.yaml', 'metadata.rb', 'stub', '99-autogen']
 
@@ -54,7 +54,7 @@ class ChefCharmTemplate(CharmTemplate):
         self._setup_cookbook(output_dir, cb_path)
 
     def _setup_cookbook(self, output_dir, cb_path):
-        outpath = "{}/hooks/cookbooks/charm-name".format(output_dir)
+        outpath = "{}/cookbooks/charm-name".format(output_dir)
         cb_path = "{}/{}".format(output_dir, cb_path)
         shutil.move(outpath, cb_path)
 
