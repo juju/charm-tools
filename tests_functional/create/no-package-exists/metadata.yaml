@@ -5,7 +5,7 @@ description: |
   <Multi-line description here>
 tags:
   # Replace "misc" with one or more whitelisted tags from this list:
-  # https://juju.ubuntu.com/docs/authors-charm-metadata.html#charm-metadata
+  # https://jujucharms.com/docs/stable/authors-charm-metadata
   - misc
 subordinate: false
 provides:

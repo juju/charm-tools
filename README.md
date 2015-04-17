@@ -4,7 +4,7 @@ This is a collection of Juju charms for use as a reference and in
 deploying real services using juju. See Juju's home page for
 more information.
 
-https://juju.ubuntu.com
+https://jujucharms.com/
 https://launchpad.net/charm
 
 # Quick Start
