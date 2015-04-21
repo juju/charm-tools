@@ -52,7 +52,7 @@ class TestDeployment(unittest.TestCase):
         #
         # More information on writing Amulet tests can be found at:
         #
-        #     https://juju.ubuntu.com/docs/tools-amulet.html
+        #     https://jujucharms.com/docs/stable/tools-amulet
         pass
 
 

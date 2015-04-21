@@ -42,7 +42,7 @@ class TestDeployment(unittest.TestCase):
         #     page = requests.get('http://{}'.format(self.unit.info['public-address']))
         #     page.raise_for_status()
         # More information on writing Amulet tests can be found at:
-        #     https://juju.ubuntu.com/docs/tools-amulet.html
+        #     https://jujucharms.com/docs/stable/tools-amulet
         pass
 
 
