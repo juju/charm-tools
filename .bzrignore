@@ -13,3 +13,5 @@ build
 dist
 tests/.ropeproject/
 charmtools/.ropeproject/
+.ropeproject/
+.tox/

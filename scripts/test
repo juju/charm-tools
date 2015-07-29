@@ -1,7 +1,0 @@
-#!/bin/bash
-# If the --pdb switch is passed, inject --pdb-failures too.
-if [[ $* =~ --pdb( .*|$) ]]
-then
-    extra_args="--pdb-failures"
-fi
-bin/nosetests --exe --with-id $extra_args $@
