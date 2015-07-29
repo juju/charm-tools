@@ -1,0 +1,49 @@
+#!/usr/bin/python
+import glob
+import os
+import sys
+import uuid
+import lib.utils as utils
+from subprocess import check_output, CalledProcessError
+from charmhelpers.fetch import (
+    apt_install,
+    apt_update,
+    add_source
+)
+
+
+# Add archive source of provided
+add_source(utils.config_get('source'), utils.config_get('key'))
+apt_update()
+
+# Pre-exec
+if os.path.isdir('exec.d'):
+    for f in glob.glob("exec.d/*/charm-pre-install"):
+        if not os.access(f, os.X_OK):
+            continue
+        try:
+            check_output([f])
+        except CalledProcessError as exc:
+            ## bail out if anyone fails
+            utils.juju_log('ERROR', str(exc))
+            sys.exit(1)
+
+    # Update again in case any pre-exec script(s) modified sources.
+    apt_update()
+
+apt_install(['debconf-utils', 'python-mysqldb', 'uuid', 'pwgen', 'dnsutils'])
+
+PASSFILE = os.path.join('/var', 'lib', 'mysql', 'mysql.passwd')
+if not os.path.isfile(PASSFILE):
+    dirname = os.path.dirname(PASSFILE)
+    if not os.path.isdir(dirname):
+        os.mkdir(dirname)
+    with open(PASSFILE, 'w'):
+        pass
+
+os.chmod(PASSFILE, 0600)
+with open(PASSFILE, 'a') as fd:
+    fd.seek(0, os.SEEK_END)
+    if fd.tell() == 0:
+        fd.seek(0)
+        fd.write(str(uuid.uuid4()))

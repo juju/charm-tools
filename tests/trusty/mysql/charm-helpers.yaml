@@ -1,0 +1,9 @@
+branch: lp:charm-helpers
+destination: hooks/charmhelpers
+include:
+    - __init__
+    - core
+    - fetch
+    - contrib.network.ip
+    - contrib.database
+    - contrib.peerstorage

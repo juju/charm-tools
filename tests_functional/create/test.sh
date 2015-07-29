@@ -1,7 +1,7 @@
 #!/bin/sh
 
-TESTDIR=`dirname $0`
-PYTHON=$TESTDIR/../../bin/python
+TESTDIR=`dirname $0`/.tox/py27
+PYTHON=$TESTDIR/bin/python
 CREATE="$PYTHON $TESTDIR/../../charmtools/create.py -t bash"
 
 cleanup() {

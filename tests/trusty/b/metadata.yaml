@@ -1,0 +1,11 @@
+name: b
+summary: An imagined extension to the a charm
+maintainer: None
+description: |
+    Test layer b
+categories:
+    - app
+requires:
+  mysql:
+    interface: mysql
+

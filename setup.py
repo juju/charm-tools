@@ -49,6 +49,8 @@ setup(
             'charm-info = charmtools.info:main',
             'charm-generate = charmtools.generate:main',
             'charm-add = charmtools.generate:main',
+            'charm-compose = charmtools.compose:main',
+            'charm-inspect = charmtools.compose:inspect',
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
