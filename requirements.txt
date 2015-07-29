@@ -2,11 +2,7 @@ PyYAML==3.10
 launchpadlib==1.10.2
 nose==1.2.1
 requests==1.1.0
-lazr.authentication==0.1.2
-lazr.restfulclient==0.13.1
-lazr.uri==1.0.3
 simplejson==2.2.1
-wadllib==1.3.1
 httplib2==0.7.7
 oauth==1.0.1
 flake8==1.6.2
@@ -14,3 +10,10 @@ mock==1.0.1
 coverage==3.7.1
 charmworldlib>=0.3.0
 bzr>=2.6.0
+bundletester
+pathspec
+blessings
+path.py
+otherstuf
+ruamel.yaml
+responses

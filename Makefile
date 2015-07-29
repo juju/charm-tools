@@ -36,7 +36,7 @@ python-deps: $(PYTHON_PACKAGE_CANARY)
 $(PYTHON_PACKAGE_CANARY): requirements.txt | dependencies
 	sudo apt-get update
 	sudo apt-get install -y build-essential bzr python-dev \
-	    python-virtualenv
+	    python-virtualenv python-tox
 	virtualenv .
 	bin/pip install --no-index --no-dependencies --find-links \
 	    file:///$(WD)/dependencies/python -r requirements.txt
@@ -49,8 +49,8 @@ bin/nosetests: python-deps
 bin/test: | bin/nosetests
 	ln scripts/test bin/test
 
-test: build bin/test
-	bin/test
+test: build 
+	tox
 
 lint: sources = setup.py charmtools
 lint: build
