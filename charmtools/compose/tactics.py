@@ -203,6 +203,17 @@ class InterfaceBind(InterfaceCopy):
         self._config = config
 
     DEFAULT_BINDING = """#!/usr/bin/env python
+
+# Load modules from $CHARM_DIR/lib
+import sys
+sys.path.append('lib')
+
+# This will load and run the appropriate @hook and other decorated
+# handlers from $CHARM_DIR/reactive, $CHARM_DIR/hooks/reactive,
+# and $CHARM_DIR/hooks/relations.
+#
+# See https://jujucharms.com/docs/stable/getting-started-with-charms-reactive
+# for more information on this pattern.
 from charmhelpers.core.reactive import main
 main('{}')
 """
