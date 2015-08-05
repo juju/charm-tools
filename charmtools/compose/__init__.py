@@ -124,7 +124,6 @@ class Composer(object):
         self.target_dir = (self.repo / self.name)
 
     def find_or_create_repo(self, allow_create=True):
-        import pdb; pdb.set_trace()
         # see if output dir is already in a repo, we can use that directly
         if self.output_dir == path(self.charm).normpath():
             # we've indicated in the cmdline that we are doing an inplace
@@ -349,7 +348,6 @@ class Composer(object):
             if repo.exists():
                 od = repo
         elif ":" in od:
-            import pdb; pdb.set_trace()
             od = od.basename
         log.info("Composing into {}".format(od))
         self.output_dir = od

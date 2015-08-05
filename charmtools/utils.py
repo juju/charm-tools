@@ -348,7 +348,6 @@ def delta_signatures(manifest_filename, ignorer=None):
     md = path(manifest_filename)
     repo = md.normpath().dirname()
 
-    print md, md.exists(), repo, repo.exists()
     expected = json.load(md.open())
     current = {}
     for rel, sig in walk(repo, sign):
