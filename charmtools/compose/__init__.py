@@ -15,7 +15,7 @@ from charmtools.compose.fetchers import (InterfaceFetcher,
                                          LayerFetcher,
                                          get_fetcher,
                                          FetchError)
-import utils
+from charmtools import utils
 
 log = logging.getLogger("composer")
 
@@ -110,6 +110,10 @@ class Composer(object):
         self.force = False
         self.inplace = False
 
+    def __repr__(self):
+        return """<Composer From :{} To: {}>""".format(
+            self.charm, self.target_dir)
+
     def create_repo(self):
         # Generated output will go into this directory
         base = path(self.output_dir)
@@ -120,6 +124,7 @@ class Composer(object):
         self.target_dir = (self.repo / self.name)
 
     def find_or_create_repo(self, allow_create=True):
+        import pdb; pdb.set_trace()
         # see if output dir is already in a repo, we can use that directly
         if self.output_dir == path(self.charm).normpath():
             # we've indicated in the cmdline that we are doing an inplace
@@ -330,12 +335,24 @@ class Composer(object):
         return a, c, d
 
     def __call__(self):
-        self.find_or_create_repo()
         self.validate()
         self.generate()
 
     def inspect(self):
         inspector.inspect(self.charm)
+
+    def normalize_outputdir(self):
+        od = path(self.charm).normpath()
+        repo = os.environ.get('JUJU_REPOSITORY')
+        if repo:
+            repo = path(repo)
+            if repo.exists():
+                od = repo
+        elif ":" in od:
+            import pdb; pdb.set_trace()
+            od = od.basename
+        log.info("Composing into {}".format(od))
+        self.output_dir = od
 
 
 def configLogging(composer):
@@ -353,20 +370,6 @@ def configLogging(composer):
     root_logger.addHandler(clihandler)
     requests_logger = logging.getLogger("requests")
     requests_logger.setLevel(logging.WARNING)
-
-
-def normalize_outputdir(composer):
-    od = path(composer.charm).normpath()
-    repo = os.environ.get('JUJU_REPOSITORY')
-    if repo:
-        repo = path(repo)
-        if repo.exists():
-            od = repo
-    elif ":" in od:
-        od = od.basename
-    log.info("Composing into {}".format(od))
-    composer.output_dir = od
-    return od
 
 
 def inspect(args=None):
@@ -390,7 +393,6 @@ def main(args=None):
     parser.add_argument('--interface-service',
                         default="http://localhost:9999")
     parser.add_argument('-n', '--name',
-                        default=path(os.getcwd).dirname(),
                         help="Generate a charm of 'name' from 'charm'")
     parser.add_argument('charm', nargs="?", default=".", type=path)
     # Namespace will set the options as attrs of composer
@@ -401,9 +403,12 @@ def main(args=None):
     configLogging(composer)
 
     if not composer.name:
-        composer.name = path(composer.charm).normpath().name
+        composer.name = str(path(composer.charm).normpath().name)
     if not composer.output_dir:
-        normalize_outputdir(composer)
+        composer.normalize_output()
+
+    composer.find_or_create_repo()
+    print composer
     composer()
 
 

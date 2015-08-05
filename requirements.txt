@@ -17,6 +17,6 @@ path.py==7.4
 otherstuf==0.904
 ruamel.yaml==0.10.2
 responses==0.4.0
-uju-deployer==0.4.3
+juju-deployer==0.4.3
 jujuclient==0.50.1
 

@@ -3,7 +3,7 @@ import json
 from ruamel import yaml
 
 from path import path
-import utils
+from charmtools import utils
 
 log = logging.getLogger(__name__)
 

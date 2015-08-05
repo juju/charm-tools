@@ -348,7 +348,8 @@ def delta_signatures(manifest_filename, ignorer=None):
     md = path(manifest_filename)
     repo = md.normpath().dirname()
 
-    baseline = json.load(md.open())
+    print md, md.exists(), repo, repo.exists()
+    expected = json.load(md.open())
     current = {}
     for rel, sig in walk(repo, sign):
         rel = rel.relpath(repo)
@@ -362,17 +363,17 @@ def delta_signatures(manifest_filename, ignorer=None):
         if ignorer and not ignorer(p):
             continue
 
-        if p not in baseline["signatures"]:
+        if p not in expected["signatures"]:
             add.add(p)
             continue
         # layer, kind, sig
         # don't include items generated only for the last layer
-        if baseline["signatures"][p][0] == "composer":
+        if expected["signatures"][p][0] == "composer":
             continue
-        if baseline["signatures"][p][2] != s:
+        if expected["signatures"][p][2] != s:
             change.add(p)
 
-    for p, d in baseline["signatures"].items():
+    for p, d in expected["signatures"].items():
         if p not in current:
             delete.add(path(p))
     return add, change, delete
