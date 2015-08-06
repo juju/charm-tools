@@ -1,8 +1,9 @@
+from charmtools import compose
 from path import path
 from ruamel import yaml
 import json
-from charmtools import compose
 import logging
+import mock
 import os
 import pkg_resources
 import responses
@@ -172,8 +173,9 @@ class TestCompose(unittest.TestCase):
         main = base / "hooks/reactive/main.py"
         self.assertTrue(main.exists())
 
+    @mock.patch("charmtools.utils.Process")
     @responses.activate
-    def test_remote_layer(self):
+    def test_remote_layer(self, mcall):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
                       "http://localhost:8888/api/v1/layer/basic/",
@@ -194,6 +196,9 @@ class TestCompose(unittest.TestCase):
         composer.series = "trusty"
         composer.name = "foo"
         composer.charm = "trusty/use-layers"
+        # remove the sign phase
+        composer.PHASES = composer.PHASES[:-1]
+
         composer()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -203,27 +208,27 @@ class TestCompose(unittest.TestCase):
         self.assertTrue((base / "metadata.yaml").exists())
 
         # show that we pulled charmhelpers from the basic layer as well
-        self.assertTrue((base / "hooks/charmhelpers/__init__.py").exists())
-        self.assertFalse((base / "hooks/charmhelpers.pypi").exists())
+        mcall.assert_called_with(("pip", "install", "-U",
+                                  "-t", path("out/trusty/foo/lib"),
+                                  mock.ANY))
 
-    def test_pypi_installer(self):
+
+    @mock.patch("charmtools.utils.Process")
+    def test_pypi_installer(self, mcall):
         composer = compose.Composer()
         composer.log_level = "WARN"
         composer.output_dir = "out"
         composer.series = "trusty"
         composer.name = "foo"
         composer.charm = "trusty/chlayer"
+
+        # remove the sign phase
+        composer.PHASES = composer.PHASES[:-1]
+
         composer()
-
-        base = path('out/trusty/foo')
-        self.assertTrue(base.exists())
-
-        # basics
-        hooks = base / "hooks"
-        self.assertTrue(hooks.exists())
-        # show that we pulled the interface from github
-        init = hooks / "charmhelpers/__init__.py"
-        self.assertTrue(init.exists())
+        mcall.assert_called_with(("pip", "install", "-U",
+                                  "-t", path("out/trusty/foo/hooks"),
+                                  "charmhelpers"))
 
 
 if __name__ == '__main__':

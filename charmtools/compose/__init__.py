@@ -9,7 +9,8 @@ import sys
 import blessings
 from collections import OrderedDict
 from path import path
-from charmtools.compose import inspector, tactics
+from charmtools.compose import inspector
+import charmtools.compose.tactics
 from charmtools.compose.config import (ComposerConfig, DEFAULT_IGNORES)
 from charmtools.compose.fetchers import (InterfaceFetcher,
                                          LayerFetcher,
@@ -105,14 +106,19 @@ class Composer(object):
     """
     Handle the processing of overrides, implements the policy of ComposerConfig
     """
+    PHASES = ['lint', 'read', 'call', 'sign']
+
     def __init__(self):
         self.config = ComposerConfig()
         self.force = False
-        self.inplace = False
+        self.verbose = False
 
-    def __repr__(self):
-        return """<Composer From :{} To: {}>""".format(
-            self.charm, self.target_dir)
+    def status(self):
+        result = {}
+        result.update(vars(self))
+        for e in ["COMPOSER_PATH", "INTERFACE_PATH", "JUJU_REPOSITORY"]:
+           result[e] = os.environ.get(e)
+        return  result
 
     def create_repo(self):
         # Generated output will go into this directory
@@ -253,13 +259,15 @@ class Composer(object):
                         continue
                     # COPY phase
                     plan.append(
-                        tactics.InterfaceCopy(iface, relation_name,
-                                              self.target, target_config)
+                        charmtools.compose.tactics.InterfaceCopy(
+                            iface, relation_name,
+                            self.target, target_config)
                     )
                     # Link Phase
                     plan.append(
-                        tactics.InterfaceBind(iface, relation_name, kind,
-                                              self.target, target_config))
+                        charmtools.compose.tactics.InterfaceBind(
+                            iface, relation_name, kind,
+                            self.target, target_config))
         elif not charm_meta and layers["interfaces"]:
             raise ValueError(
                 "Includes interfaces but no metadata.yaml to bind them")
@@ -275,7 +283,7 @@ class Composer(object):
     def exec_plan(self, plan=None, layers=None):
         signatures = {}
         cont = True
-        for phase in ['lint', 'read', '__call__', 'sign']:
+        for phase in self.PHASES:
             for tactic in plan:
                 if phase == "lint":
                     cont &= tactic.lint()
@@ -285,14 +293,15 @@ class Composer(object):
                     # We use a read (into memory phase to make layer comps
                     # simpler)
                     tactic.read()
-                elif phase == "__call__":
+                elif phase == "call":
                     tactic()
                 elif phase == "sign":
                     sig = tactic.sign()
                     if sig:
                         signatures.update(sig)
         # write out the sigs
-        self.write_signatures(signatures, layers)
+        if "sign" in self.PHASES:
+            self.write_signatures(signatures, layers)
 
     def write_signatures(self, signatures, layers):
         sigs = self.target / ".composer.manifest"
@@ -334,6 +343,11 @@ class Composer(object):
         return a, c, d
 
     def __call__(self):
+        self.find_or_create_repo()
+
+        if self.verbose:
+            log.debug(json.dumps(
+                self.status(), indent=2, sort_keys=True, default=str))
         self.validate()
         self.generate()
 
@@ -385,6 +399,7 @@ def main(args=None):
     composer = Composer()
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--log-level', default=logging.INFO)
+    parser.add_argument('-v', '--verbose', action="store_true")
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-o', '--output-dir')
     parser.add_argument('-s', '--series', default="trusty")
@@ -405,8 +420,6 @@ def main(args=None):
     if not composer.output_dir:
         composer.normalize_output()
 
-    composer.find_or_create_repo()
-    print composer
     composer()
 
 
