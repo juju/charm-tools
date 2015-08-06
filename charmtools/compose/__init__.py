@@ -420,7 +420,7 @@ def main(args=None):
     if not composer.name:
         composer.name = str(path(composer.charm).normpath().name)
     if not composer.output_dir:
-        composer.normalize_output()
+        composer.normalize_outputdir()
 
     composer()
 
