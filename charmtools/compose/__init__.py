@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import os
+import pkg_resources
 import sys
 
 import blessings
@@ -111,7 +112,6 @@ class Composer(object):
     def __init__(self):
         self.config = ComposerConfig()
         self.force = False
-        self.verbose = False
 
     def status(self):
         result = {}
@@ -345,9 +345,8 @@ class Composer(object):
     def __call__(self):
         self.find_or_create_repo()
 
-        if self.verbose:
-            log.debug(json.dumps(
-                self.status(), indent=2, sort_keys=True, default=str))
+        log.debug(json.dumps(
+            self.status(), indent=2, sort_keys=True, default=str))
         self.validate()
         self.generate()
 
@@ -397,9 +396,12 @@ def inspect(args=None):
 
 def main(args=None):
     composer = Composer()
-    parser = argparse.ArgumentParser()
+    intro = path(
+        pkg_resources.resource_filename(__name__,
+                                        "../../doc/source/compose-intro.md")).text()
+    parser = argparse.ArgumentParser(description=intro,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
-    parser.add_argument('-v', '--verbose', action="store_true")
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-o', '--output-dir')
     parser.add_argument('-s', '--series', default="trusty")

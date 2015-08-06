@@ -120,21 +120,4 @@ TODO:
 layers
 
 
-Trying it out
-=============
-
-If you're a Docker user you can quickly try this out with out installing the many deps locally or 
-dealing with virtualenvs.
-
-docker build -t composer .
-docker run -it --rm composer <args>
-
-
-I recommend that you create an alias for this like
-
-alias compose='docker run -it --rm --net host -v $JUJU_REPOSITORY:/root/out composer -o /root/out'
-
-then after setting JUJU_REPOSITORY you can directly compose charms and look for the output in the
-repo.
-
 

@@ -1,3 +1,4 @@
 include *.py README*
+include doc/source/composer.md
 recursive-include charmtools *
 recursive-exclude charmtools *.pyc
