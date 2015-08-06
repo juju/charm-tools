@@ -1,4 +1,4 @@
-tests/proof/results/*
+tests_functional/proof/results/*
 .coverage
 .noseids
 charm_tools.egg-info
