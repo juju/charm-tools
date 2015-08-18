@@ -4,12 +4,12 @@ import argparse
 import json
 import logging
 import os
-import pkg_resources
 import sys
 
 import blessings
 from collections import OrderedDict
 from path import path
+import yaml
 from charmtools.compose import inspector
 import charmtools.compose.tactics
 from charmtools.compose.config import (ComposerConfig, DEFAULT_IGNORES)
@@ -112,13 +112,36 @@ class Composer(object):
     def __init__(self):
         self.config = ComposerConfig()
         self.force = False
+        self._name = None
+
+    @property
+    def name(self):
+        if self._name:
+            return self._name
+
+        # optionally extract name from the top layer
+        self._name = str(path(self.charm).abspath().name)
+
+        # however if the current layer has a metadata.yaml we can
+        # use its name
+        md = path(self.charm) / "metadata.yaml"
+        if md.exists():
+            data = yaml.loads(md)
+            name = data.get("name")
+            if name:
+                self._name = name
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
 
     def status(self):
         result = {}
         result.update(vars(self))
         for e in ["COMPOSER_PATH", "INTERFACE_PATH", "JUJU_REPOSITORY"]:
-           result[e] = os.environ.get(e)
-        return  result
+            result[e] = os.environ.get(e)
+        return result
 
     def create_repo(self):
         # Generated output will go into this directory
@@ -396,11 +419,9 @@ def inspect(args=None):
 
 def main(args=None):
     composer = Composer()
-    intro = path(
-        pkg_resources.resource_filename(__name__,
-                                        "../../doc/source/compose-intro.md")).text()
-    parser = argparse.ArgumentParser(description=intro,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,)
+    parser = argparse.ArgumentParser(
+        description="Compose layers into a charm",
+        formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-o', '--output-dir')
@@ -418,7 +439,7 @@ def main(args=None):
     configLogging(composer)
 
     if not composer.name:
-        composer.name = str(path(composer.charm).normpath().name)
+        composer.find_name()
     if not composer.output_dir:
         composer.normalize_outputdir()
 
