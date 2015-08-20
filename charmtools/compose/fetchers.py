@@ -30,7 +30,7 @@ fetchers.FETCHERS.insert(0, RepoFetcher)
 
 class InterfaceFetcher(fetchers.LocalFetcher):
     # XXX: When hosted somewhere, fix this
-    INTERFACE_DOMAIN = "http://localhost:8888"
+    INTERFACE_DOMAIN = "http://interfaces.juju.solutions"
     NAMESPACE = "interface"
     ENVIRON = "INTERFACE_PATH"
     OPTIONAL_PREFIX = "juju-relation-"
@@ -90,7 +90,7 @@ fetchers.FETCHERS.insert(0, InterfaceFetcher)
 
 
 class LayerFetcher(InterfaceFetcher):
-    INTERFACE_DOMAIN = "http://localhost:8888"
+    INTERFACE_DOMAIN = "http://interfaces.juju.solutions"
     NAMESPACE = "layer"
     ENVIRON = "COMPOSER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"

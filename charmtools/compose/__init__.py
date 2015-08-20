@@ -126,7 +126,7 @@ class Composer(object):
         # use its name
         md = path(self.charm) / "metadata.yaml"
         if md.exists():
-            data = yaml.loads(md)
+            data = yaml.load(md.open())
             name = data.get("name")
             if name:
                 self._name = name
@@ -427,7 +427,7 @@ def main(args=None):
     parser.add_argument('-o', '--output-dir')
     parser.add_argument('-s', '--series', default="trusty")
     parser.add_argument('--interface-service',
-                        default="http://interfaces.juju.solutions:9999")
+                        default="http://interfaces.juju.solutions")
     parser.add_argument('-n', '--name',
                         help="Generate a charm of 'name' from 'charm'")
     parser.add_argument('charm', nargs="?", default=".", type=path)
