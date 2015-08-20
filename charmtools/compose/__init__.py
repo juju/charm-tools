@@ -239,6 +239,8 @@ class Composer(object):
         config = config.add_config(
             layers["layers"][0] / ComposerConfig.DEFAULT_FILE, True)
 
+        layers["layers"][-1].url = self.name
+
         for i, layer in enumerate(layers["layers"]):
             log.info("Processing layer: %s", layer.url)
             if i + 1 < len(layers["layers"]):

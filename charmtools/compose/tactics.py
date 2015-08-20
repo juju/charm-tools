@@ -214,7 +214,7 @@ sys.path.append('lib')
 #
 # See https://jujucharms.com/docs/stable/getting-started-with-charms-reactive
 # for more information on this pattern.
-from charmhelpers.core.reactive import main
+from charms.reactive import main
 main('{}')
 """
 
@@ -382,6 +382,8 @@ class InstallerTactic(Tactic):
         utils.Process(("pip",
                        "install",
                        "-U",
+                       "--exists-action",
+                       "i",
                        "-t",
                        target,
                        spec)).throw_on_error()()
