@@ -438,8 +438,6 @@ def main(args=None):
     LayerFetcher.INTERFACE_DOMAIN = composer.interface_service
     configLogging(composer)
 
-    if not composer.name:
-        composer.find_name()
     if not composer.output_dir:
         composer.normalize_outputdir()
 
