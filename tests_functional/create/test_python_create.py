@@ -53,14 +53,19 @@ class PythonBasicCreateTest(TestCase):
         dynamic_files = [
             'lib/charmhelpers/__init__.py',
             'lib/charmhelpers/core/__init__.py',
+            'lib/charmhelpers/core/decorators.py',
+            'lib/charmhelpers/core/files.py',
             'lib/charmhelpers/core/fstab.py',
             'lib/charmhelpers/core/hookenv.py',
             'lib/charmhelpers/core/host.py',
+            'lib/charmhelpers/core/hugepage.py',
             'lib/charmhelpers/core/services/__init__.py',
             'lib/charmhelpers/core/services/base.py',
             'lib/charmhelpers/core/services/helpers.py',
+            'lib/charmhelpers/core/strutils.py',
             'lib/charmhelpers/core/sysctl.py',
             'lib/charmhelpers/core/templating.py',
+            'lib/charmhelpers/core/unitdata.py',
         ]
         return sorted(static_files + dynamic_files)
 

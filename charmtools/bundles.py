@@ -79,7 +79,10 @@ class BundleLinter(Linter):
 class Bundle(object):
     def __init__(self, path, debug=False):
         self.bundle_path = os.path.abspath(path)
-        self.supported_files = ['bundles.yaml', 'bundles.json']
+        self.supported_files = [
+            'bundle.yaml', 'bundle.json',    # v4
+            'bundles.yaml', 'bundles.json',  # v3
+        ]
         self.debug = debug
         if not self.is_bundle():
             raise Exception('Not a bundle')
