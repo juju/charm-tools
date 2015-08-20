@@ -52,7 +52,7 @@ class TestCompose(unittest.TestCase):
         self.assertTrue(cyaml.exists())
         cyaml_data = yaml.load(cyaml.open())
         self.assertEquals(cyaml_data['includes'], ['trusty/mysql'])
-        self.assertEquals(cyaml_data['is'], 'trusty/tester')
+        self.assertEquals(cyaml_data['is'], 'foo')
 
         self.assertTrue((base / "hooks/config-changed").exists())
 
@@ -68,13 +68,13 @@ class TestCompose(unittest.TestCase):
         self.assertTrue(sigs.exists())
         data = json.load(sigs.open())
         self.assertEquals(data['signatures']["README.md"], [
-            u'trusty/tester',
+            u'foo',
             "static",
             u'cfac20374288c097975e9f25a0d7c81783acdbc81'
             '24302ff4a731a4aea10de99'])
 
         self.assertEquals(data["signatures"]['metadata.yaml'], [
-            u'trusty/tester',
+            u'foo',
             "dynamic",
             u'ecb80da834070599ac81190e78448440b442d4eda9'
             'cea2e4af3a1db58e60e400'])
@@ -113,14 +113,14 @@ class TestCompose(unittest.TestCase):
         cy = base / "composer.yaml"
         config = yaml.load(cy.open())
         self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-        self.assertEquals(config["is"], "trusty/b")
+        self.assertEquals(config["is"], "foo")
 
         # We can even run it more than once
         composer()
         cy = base / "composer.yaml"
         config = yaml.load(cy.open())
         self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-        self.assertEquals(config["is"], "trusty/b")
+        self.assertEquals(config["is"], "foo")
 
         # We included an interface, we should be able to assert things about it
         # in its final form as well
@@ -142,7 +142,7 @@ class TestCompose(unittest.TestCase):
     def test_remote_interface(self):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "http://localhost:8888/api/v1/interface/pgsql/",
+                      "http://interfaces.juju.solutions/api/v1/interface/pgsql/",
                       body='''{
                       "id": "pgsql",
                       "name": "pgsql4",
@@ -178,7 +178,7 @@ class TestCompose(unittest.TestCase):
     def test_remote_layer(self, mcall):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "http://localhost:8888/api/v1/layer/basic/",
+                      "http://interfaces.juju.solutions/api/v1/layer/basic/",
                       body='''{
                       "id": "basic",
                       "name": "basic",
@@ -209,6 +209,7 @@ class TestCompose(unittest.TestCase):
 
         # show that we pulled charmhelpers from the basic layer as well
         mcall.assert_called_with(("pip", "install", "-U",
+                                  '--exists-action', 'i',
                                   "-t", path("out/trusty/foo/lib"),
                                   mock.ANY))
 
@@ -227,6 +228,7 @@ class TestCompose(unittest.TestCase):
 
         composer()
         mcall.assert_called_with(("pip", "install", "-U",
+                                  '--exists-action', 'i',
                                   "-t", path("out/trusty/foo/hooks"),
                                   "charmhelpers"))
 
