@@ -9,3 +9,10 @@ Examples:
 charm compose -o /tmp/out trusty/mycharm
 
 Will generate /tmp/out/trusty/mycharm will all the includes specified.
+
+WORKFLOW
+========
+
+Typically you'll make changes in the layer owning the file(s) in queustion
+and then recompose the charm and deploy/upgrade-charm that. You'll not
+want to edit the generated charm directly.
