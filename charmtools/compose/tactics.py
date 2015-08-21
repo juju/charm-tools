@@ -306,6 +306,7 @@ class YAMLTactic(SerializedTactic):
                   default_flow_style=False)
 
 
+
 class JSONTactic(SerializedTactic):
     """Rule Driven JSON generation"""
     prefix = None
@@ -352,6 +353,22 @@ class MetadataYAML(YAMLTactic):
     """Rule Driven metadata.yaml generation"""
     section = "metadata"
     FILENAME = "metadata.yaml"
+    KEY_ORDER = ["name", "summary", "maintainer",
+                 "description", "tags",
+                 "requires", "provides", "peers" ]
+
+    def dump(self, data):
+        if not data:
+            return
+        final = yaml.comments.CommentedMap()
+        # assempt keys in know order
+        for k in self.KEY_ORDER:
+            if k in data:
+                final[k] = data[k]
+        missing = set(data.keys()) - set(self.KEY_ORDER)
+        for k in sorted(missing):
+            final[k] = data[k]
+        super(MetadataYAML, self).dump(final)
 
 
 class ConfigYAML(MetadataYAML):
