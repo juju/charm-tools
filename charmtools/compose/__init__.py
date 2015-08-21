@@ -113,6 +113,15 @@ class Composer(object):
         self.config = ComposerConfig()
         self.force = False
         self._name = None
+        self._charm = None
+
+    @property
+    def charm(self):
+        return self._charm
+
+    @charm.setter
+    def charm(self, value):
+        self._charm = path(value)
 
     @property
     def name(self):
@@ -135,6 +144,10 @@ class Composer(object):
     @name.setter
     def name(self, value):
         self._name = value
+
+    @property
+    def charm_name(self):
+        return "{}/{}".format(self.series, self.name)
 
     def status(self):
         result = {}
@@ -376,6 +389,7 @@ class Composer(object):
         self.generate()
 
     def inspect(self):
+        self.charm = path(self.charm).abspath()
         inspector.inspect(self.charm)
 
     def normalize_outputdir(self):
@@ -412,7 +426,7 @@ def inspect(args=None):
     composer = Composer()
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--log-level', default=logging.INFO)
-    parser.add_argument('charm', default=".", type=path)
+    parser.add_argument('charm', nargs="?", default=".", type=path)
     # Namespace will set the options as attrs of composer
     parser.parse_args(args, namespace=composer)
     configLogging(composer)
