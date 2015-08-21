@@ -76,8 +76,9 @@ class TestCompose(unittest.TestCase):
         self.assertEquals(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
-            u'ecb80da834070599ac81190e78448440b442d4eda9'
-            'cea2e4af3a1db58e60e400'])
+            u'8dd9059eae849c61a1bd3d8de7f96a418e'
+            u'f8b4bf5d9c058c413b5169e2783815',
+            ])
 
     def test_regenerate_inplace(self):
         # take a generated example where a base layer has changed
@@ -205,7 +206,6 @@ class TestCompose(unittest.TestCase):
 
         # basics
         self.assertTrue((base / "README.md").exists())
-        self.assertTrue((base / "metadata.yaml").exists())
 
         # show that we pulled charmhelpers from the basic layer as well
         mcall.assert_called_with(("pip", "install", "-U",
