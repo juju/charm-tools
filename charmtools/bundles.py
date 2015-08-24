@@ -31,7 +31,8 @@ class BundleLinter(Linter):
                               'poorly in GUI' % (leader, svc))
                 if not charm_url_includes_id(sdata['charm']):
                     self.warn(
-                        '%s%s: charm URL should include a revision' % (leader, svc))
+                        '%s%s: charm URL should include a revision' % (
+                            leader, svc))
 
         else:
             if 'inherits' not in data:
