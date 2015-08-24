@@ -18,7 +18,7 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko', 'bzr', 'requests',
-                      'charmworldlib'],
+                      'charmworldlib', 'jujubundlelib'],
     include_package_data=True,
     maintainer='Marco Ceppi',
     maintainer_email='marco@ceppi.net',

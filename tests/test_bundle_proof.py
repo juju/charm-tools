@@ -30,42 +30,36 @@ class TestCharmProof(unittest.TestCase):
 
     def test_warn_on_charm_urls_without_revisions(self):
         self.linter.validate({
-            'my-service': {
-                'services': {
-                    'memcached': {
-                        'charm': 'cs:precise/memcached',
-                        'num_units': 1,
-                    },
+            'services': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
                 },
-            }})
+            }}, 'my-service')
         self.assertIn(
-            'W: memcached: charm URL should include a revision',
+            'W: my-service: memcached: charm URL should include a revision',
             self.linter.lint)
 
     def test_no_warning_when_charm_urls_include_revisions(self):
         self.linter.validate({
-            'my-service': {
-                'services': {
-                    'memcached': {
-                        'charm': 'cs:precise/memcached-99',
-                        'num_units': 1,
-                    },
+            'services': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached-99',
+                    'num_units': 1,
                 },
-            }})
+            }}, 'my-service')
         self.assertNotIn(
             'W: memcached: charm URL should include a revision',
             self.linter.lint)
 
     def test_warn_on_missing_annotations(self):
         self.linter.validate({
-            'my-service': {
-                'services': {
-                    'memcached': {
-                        'charm': 'cs:precise/memcached',
-                        'num_units': 1,
-                    },
+            'services': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
                 },
-            }})
+            }}, 'my-service')
         self.assertIn(
             'W: my-service: memcached: No annotations found, will render '
                 'poorly in GUI',
