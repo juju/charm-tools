@@ -1,4 +1,4 @@
-PyYAML==3.10
+PyYAML==3.11
 launchpadlib==1.10.2
 nose==1.2.1
 requests==1.1.0
@@ -14,3 +14,4 @@ mock==1.0.1
 coverage==3.7.1
 charmworldlib>=0.3.0
 bzr>=2.6.0
+jujubundlelib>=0.1.9
