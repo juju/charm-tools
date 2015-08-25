@@ -371,10 +371,10 @@ class CategoriesTagsValidationTest(TestCase):
         )
         linter = Mock()
         validate_categories_and_tags({'categories': 'foo'}, linter)
-        linter.warn.assert_called_once_with(warning)
+        linter.warn.assert_any_call(warning)
         linter.reset_mock()
         validate_categories_and_tags({'categories': []}, linter)
-        linter.warn.assert_called_once_with(warning)
+        linter.warn.assert_any_call(warning)
 
     def test_valid_categories(self):
         """Charm has valid categories, which should be changed to tags"""
@@ -384,8 +384,8 @@ class CategoriesTagsValidationTest(TestCase):
         )
         linter = Mock()
         validate_categories_and_tags({'categories': ['misc']}, linter)
-        linter.info.assert_called_once_with(info)
-        self.assertFalse(linter.warn.called)
+        linter.warn.assert_called_once_with(info)
+        self.assertFalse(linter.info.called)
         self.assertFalse(linter.err.called)
 
 

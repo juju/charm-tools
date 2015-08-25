@@ -470,7 +470,7 @@ def validate_categories_and_tags(charm, linter):
                 'Categories metadata must be a list of one or more of: '
                 'applications, app-servers, databases, file-servers, '
                 'cache-proxy, misc')
-        linter.info(
+        linter.warn(
             'Categories are being deprecated in favor of tags. '
             'Please rename the "categories" field to "tags".'
         )
