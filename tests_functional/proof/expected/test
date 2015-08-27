@@ -2,7 +2,7 @@ W: Metadata missing required field "tags"
 I: No icon.svg file.
 W: no copyright file
 W: Includes template README.ex file
-W: README.ex includes line 1 of boilerplate README.ex
+W: README.ex includes boilerplate: Describe the intended usage of this charm and anything unique about how this charm relates to others here.
 E: template interface names should be changed: interface-name
 E: template relations should be renamed to fit charm: relation-name
 E: template interface names should be changed: interface-name
