@@ -1,3 +1,3 @@
 W: Categories metadata must be a list of one or more of: applications, app-servers, databases, file-servers, cache-proxy, misc
-I: Categories are being deprecated in favor of tags. Please rename the "categories" field to "tags".
+W: Categories are being deprecated in favor of tags. Please rename the "categories" field to "tags".
 I: missing recommended hook config-changed

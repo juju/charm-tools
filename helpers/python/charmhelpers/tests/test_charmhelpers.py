@@ -3,7 +3,7 @@
 import unittest
 import yaml
 
-from simplejson import dumps
+from json import dumps
 from StringIO import StringIO
 from testtools import TestCase
 

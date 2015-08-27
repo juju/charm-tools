@@ -6,55 +6,64 @@ import yaml
 
 from linter import Linter
 from charmworldlib import bundle as cw_bundle
+import jujubundlelib.validation
 
 
 charm_url_includes_id = re.compile(r'-\d+$').search
 
 
 class BundleLinter(Linter):
-    def validate(self, contents):
+    def validate(self, data, name=None):
         """Validate the bundle.
 
         Tests:
-          * name not 'envExport' (generic name for exports by Juju GUI),
           * No series set and not inheriting,
           * Position annotations give for each service.
         """
-        for name, bdata in contents.items():
-            if name == 'envExport':
-                self.warn('envExport is the default export name. Please '
-                          'use a unique name')
+        leader = '%s: ' % name if name else ''
+        if 'series' not in data and 'inherits' not in data:
+            self.info("%sNo series defined" % leader)
 
-            if 'series' not in bdata and 'inherits' not in bdata:
-                self.info("%s: No series defined" % name)
+        if 'services' in data:
+            for svc, sdata in data['services'].items():
+                if 'annotations' not in sdata:
+                    self.warn('%s%s: No annotations found, will render '
+                              'poorly in GUI' % (leader, svc))
+                if not charm_url_includes_id(sdata['charm']):
+                    self.warn(
+                        '%s%s: charm URL should include a revision' % (
+                            leader, svc))
 
-            if 'services' in bdata:
-                for svc, sdata in bdata['services'].items():
-                    if 'annotations' not in sdata:
-                        self.warn('%s: %s: No annotations found, will render '
-                                  'poorly in GUI' % (name, svc))
-                    if not charm_url_includes_id(sdata['charm']):
-                        self.warn(
-                            '%s: charm URL should include a revision' % svc)
-
-            else:
-                if 'inherits' not in bdata:
-                    self.err("%s: No services defined" % name)
-                    return
+        else:
+            if 'inherits' not in data:
+                self.err("%sNo services defined" % leader)
+                return
 
     def local_proof(self, bundle):
-        try:
-            data = bundle.bundle_file()
-        except:
-            raise
+        data = bundle.bundle_file()
 
         readmes = glob.glob(os.path.join(bundle.bundle_path, 'README*'))
         if len(readmes) < 1:
             self.warn('No readme file found')
 
-        self.validate(data)
+        if bundle.is_v4(data):
+            self.validate(data)
+        else:
+            for name, bdata in data.items():
+                if name == 'envExport':
+                    self.warn('envExport is the default export name. Please '
+                              'use a unique name')
+                self.validate(bdata, name)
 
     def remote_proof(self, bundle, server, port, secure):
+        data = bundle.bundle_file()
+        if bundle.is_v4(data):
+            # use jujubundlelib in lieu of deprecated API
+            errors = jujubundlelib.validation.validate(data)
+            for error in errors:
+                self.err(error)
+            return
+
         if server is not None or port is not None:
             # Use the user-specified overrides for the remote server.
             bundles = cw_bundle.Bundles(server=server, port=port,
@@ -63,8 +72,7 @@ class BundleLinter(Linter):
             # Otherwise use the defaults.
             bundles = cw_bundle.Bundles()
 
-        deployer_file = bundle.bundle_file(parse=True)
-        proof_output = bundles.proof(deployer_file)
+        proof_output = bundles.proof(data)
 
         if self.debug:
             print json.dumps(proof_output, 2)
@@ -79,7 +87,10 @@ class BundleLinter(Linter):
 class Bundle(object):
     def __init__(self, path, debug=False):
         self.bundle_path = os.path.abspath(path)
-        self.supported_files = ['bundles.yaml', 'bundles.json']
+        self.supported_files = [
+            'bundle.yaml', 'bundle.json',    # v4
+            'bundles.yaml', 'bundles.json',  # v3
+        ]
         self.debug = debug
         if not self.is_bundle():
             raise Exception('Not a bundle')
@@ -95,6 +106,13 @@ class Bundle(object):
             return False
 
         return True
+
+    def is_v4(self, data=None):
+        if data is None:
+            data = self.bundle_file()
+        v4_keys = {'services', 'relations', 'machines', 'series'}
+        bundle_keys = set(data.keys())
+        return bool(v4_keys & bundle_keys)
 
     def bundle_file(self, parse=True):
         for f in self.supported_files:
