@@ -97,6 +97,9 @@ class Tactic(object):
     def read(self):
         return None
 
+    def build(self):
+        pass
+
 
 class ExactMatch(object):
     FILENAME = None
@@ -306,7 +309,6 @@ class YAMLTactic(SerializedTactic):
                   default_flow_style=False)
 
 
-
 class JSONTactic(SerializedTactic):
     """Rule Driven JSON generation"""
     prefix = None
@@ -355,7 +357,7 @@ class MetadataYAML(YAMLTactic):
     FILENAME = "metadata.yaml"
     KEY_ORDER = ["name", "summary", "maintainer",
                  "description", "tags",
-                 "requires", "provides", "peers" ]
+                 "requires", "provides", "peers"]
 
     def dump(self, data):
         if not data:
@@ -396,23 +398,34 @@ class InstallerTactic(Tactic):
         target_dir = target / path(spec.split(" ", 1)[0]).normpath().namebase
         log.debug("pip installing {} as {}".format(
             spec, target_dir))
-        utils.Process(("pip",
-                       "install",
-                       "-U",
-                       "--exists-action",
-                       "i",
-                       "-t",
-                       target,
-                       spec)).throw_on_error()()
+        with utils.tempdir() as temp_dir:
+            # We do this dance so we don't have
+            # to guess package and .egg file names
+            # we move everything in the tempdir to the target
+            # and track it for later use in sign()
+            utils.Process(("pip",
+                        "install",
+                        "-U",
+                        "--exists-action",
+                        "i",
+                        "-t",
+                        temp_dir,
+                        spec)).throw_on_error()()
+            dirs = temp_dir.listdir()
+            self._tracked = []
+            for d in dirs:
+                d.move(target)
+                self._tracked.append(target / d)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
         """
         sigs = {}
-        for entry, sig in utils.walk(self.target_file.dirname(),
-                                     utils.sign, kind="files"):
-            relpath = entry.relpath(self._target.directory)
-            sigs[relpath] = (self.current.url, "dynamic", sig)
+        for d in self._tracked:
+            for entry, sig in utils.walk(d,
+                                         utils.sign, kind="files"):
+                relpath = entry.relpath(self._target.directory)
+                sigs[relpath] = (self.current.url, "dynamic", sig)
         return sigs
 
 

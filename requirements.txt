@@ -14,10 +14,10 @@ bundletester==0.5.2
 pathspec==0.3.3
 blessings==1.6
 path.py==7.4
-otherstuf==0.904
+otherstuf==1.1.0
 ruamel.yaml==0.10.2
 responses==0.4.0
 juju-deployer==0.4.3
 jujuclient==0.50.1
-pip>=7.1.1
+pip>=7.1.2
 

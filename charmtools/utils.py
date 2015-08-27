@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from contextlib import contextmanager
 
@@ -28,6 +29,14 @@ def cd(directory, make=False):
         yield
     finally:
         os.chdir(cwd)
+
+
+@contextmanager
+def tempdir():
+    dirname = path(tempfile.mkdtemp())
+    with cd(dirname):
+        yield dirname
+    dirname.rmtree_p()
 
 
 def deepmerge(dest, src):

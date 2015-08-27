@@ -1,4 +1,5 @@
 from charmtools import compose
+from charmtools import utils
 from path import path
 from ruamel import yaml
 import json
@@ -99,45 +100,46 @@ class TestCompose(unittest.TestCase):
         self.assertTrue((base / "README.md").exists())
 
         # now regenerate from the target
-        composer = compose.Composer()
-        composer.log_level = "WARNING"
-        composer.output_dir = "out"
-        composer.series = "trusty"
-        # The generate target and source are now the same
-        composer.name = "foo"
-        composer.charm = "out/trusty/foo"
-        composer()
-        base = path('out/trusty/foo')
-        self.assertTrue(base.exists())
+        with utils.cd("out/trusty/foo"):
+            composer = compose.Composer()
+            composer.log_level = "WARNING"
+            composer.output_dir = path(os.getcwd())
+            composer.series = "trusty"
+            # The generate target and source are now the same
+            composer.name = "foo"
+            composer.charm = "."
+            composer()
+            base = composer.output_dir
+            self.assertTrue(base.exists())
 
-        # Check that the generated composer makes sense
-        cy = base / "composer.yaml"
-        config = yaml.load(cy.open())
-        self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-        self.assertEquals(config["is"], "foo")
+            # Check that the generated composer makes sense
+            cy = base / "composer.yaml"
+            config = yaml.load(cy.open())
+            self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
+            self.assertEquals(config["is"], "foo")
 
-        # We can even run it more than once
-        composer()
-        cy = base / "composer.yaml"
-        config = yaml.load(cy.open())
-        self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-        self.assertEquals(config["is"], "foo")
+            # We can even run it more than once
+            composer()
+            cy = base / "composer.yaml"
+            config = yaml.load(cy.open())
+            self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
+            self.assertEquals(config["is"], "foo")
 
-        # We included an interface, we should be able to assert things about it
-        # in its final form as well
-        provides = base / "hooks/relations/mysql/provides.py"
-        requires = base / "hooks/relations/mysql/requires.py"
-        self.assertTrue(provides.exists())
-        self.assertTrue(requires.exists())
+            # We included an interface, we should be able to assert things about it
+            # in its final form as well
+            provides = base / "hooks/relations/mysql/provides.py"
+            requires = base / "hooks/relations/mysql/requires.py"
+            self.assertTrue(provides.exists())
+            self.assertTrue(requires.exists())
 
-        # and that we generated the hooks themselves
-        for kind in ["joined", "changed", "broken", "departed"]:
-            self.assertTrue((base / "hooks" /
-                             "mysql-relation-{}".format(kind)).exists())
+            # and that we generated the hooks themselves
+            for kind in ["joined", "changed", "broken", "departed"]:
+                self.assertTrue((base / "hooks" /
+                                "mysql-relation-{}".format(kind)).exists())
 
-        # and ensure we have an init file (the interface doesn't its added)
-        init = base / "hooks/relations/mysql/__init__.py"
-        self.assertTrue(init.exists())
+            # and ensure we have an init file (the interface doesn't its added)
+            init = base / "hooks/relations/mysql/__init__.py"
+            self.assertTrue(init.exists())
 
     @responses.activate
     def test_remote_interface(self):
@@ -198,7 +200,7 @@ class TestCompose(unittest.TestCase):
         composer.name = "foo"
         composer.charm = "trusty/use-layers"
         # remove the sign phase
-        composer.PHASES = composer.PHASES[:-1]
+        composer.PHASES = composer.PHASES[:-2]
 
         composer()
         base = path('out/trusty/foo')
@@ -210,7 +212,7 @@ class TestCompose(unittest.TestCase):
         # show that we pulled charmhelpers from the basic layer as well
         mcall.assert_called_with(("pip", "install", "-U",
                                   '--exists-action', 'i',
-                                  "-t", path("out/trusty/foo/lib"),
+                                  "-t", mock.ANY,
                                   mock.ANY))
 
 
@@ -224,12 +226,11 @@ class TestCompose(unittest.TestCase):
         composer.charm = "trusty/chlayer"
 
         # remove the sign phase
-        composer.PHASES = composer.PHASES[:-1]
-
+        composer.PHASES = composer.PHASES[:-2]
         composer()
         mcall.assert_called_with(("pip", "install", "-U",
                                   '--exists-action', 'i',
-                                  "-t", path("out/trusty/foo/hooks"),
+                                  "-t", mock.ANY,
                                   "charmhelpers"))
 
 

@@ -13,6 +13,8 @@ DEFAULT_IGNORES = [
     "**/.ropeproject/",
     "*.pyc",
     "*~",
+    ".tox/",
+    "build/",
 ]
 
 

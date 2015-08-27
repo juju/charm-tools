@@ -107,7 +107,7 @@ class Composer(object):
     """
     Handle the processing of overrides, implements the policy of ComposerConfig
     """
-    PHASES = ['lint', 'read', 'call', 'sign']
+    PHASES = ['lint', 'read', 'call', 'sign', 'build']
 
     def __init__(self):
         self.config = ComposerConfig()
@@ -337,6 +337,8 @@ class Composer(object):
                     sig = tactic.sign()
                     if sig:
                         signatures.update(sig)
+                elif phase == "build":
+                    tactic.build()
         # write out the sigs
         if "sign" in self.PHASES:
             self.write_signatures(signatures, layers)
@@ -371,7 +373,7 @@ class Composer(object):
             log.warn(
                 "Deleted a file owned by another layer: %s", f)
         if a or c or d:
-            if self.force is False:
+            if self.force is True:
                 log.info(
                     "Continuing with known changes to target layer. "
                     "Changes will be overwritten")
@@ -440,7 +442,7 @@ def main(args=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
-    parser.add_argument('-o', '--output-dir')
+    parser.add_argument('-o', '--output-dir', type=path)
     parser.add_argument('-s', '--series', default="trusty")
     parser.add_argument('--interface-service',
                         default="http://interfaces.juju.solutions")
