@@ -18,7 +18,7 @@ confdir = $(DESTDIR)/etc
 INSTALL = install
 
 develop: 
-	tox --develop
+	tox --develop --notest
 
 build: deps develop
 
