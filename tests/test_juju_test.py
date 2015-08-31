@@ -714,15 +714,6 @@ class JujuTestPluginTest(unittest.TestCase):
                           call('Failed to grab logs for dummy/0')]
         o.log.warn.assert_has_calls(expected_warns)
 
-    @patch('subprocess.check_output')
-    @patch.object(juju_test.Orchestra, 'print_status')
-    def test_orchestra_perform(self, mprint_status, mcheck_output):
-        args = Arguments(tests='dummy', juju_env='testing', timeout=1)
-        c = juju_test.Conductor(args)
-        o = juju_test.Orchestra(c, 'test/dummy')
-        o.perform()
-        mprint_status.assert_called_once()
-
 
 class TestCfgTest(unittest.TestCase):
     test_config = '''\

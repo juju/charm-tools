@@ -1,8 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 TESTDIR=`dirname $0`
-PYTHON=$TESTDIR/../../bin/python
+source $TESTDIR/../../.tox/py27/bin/activate
+PYTHON=python
 CREATE="$PYTHON $TESTDIR/../../charmtools/create.py -t bash"
+CREATE="charm create -t bash"
 
 cleanup() {
     if [ -n "$workdir" ] && [ -d "$workdir" ] ; then

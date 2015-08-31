@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 TESTDIR=`dirname $0`
 
 # activate virtualenv
-. $TESTDIR/../../bin/activate
+source $TESTDIR/../../.tox/py27/bin/activate
 
 cleanup() {
     if [ -n "$workdir" ] && [ -d "$workdir" ] ; then

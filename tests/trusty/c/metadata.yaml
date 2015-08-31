@@ -1,0 +1,11 @@
+name: c
+summary: An imagined extension to the a charm
+maintainer: None
+description: |
+    Test layer c
+categories:
+    - app
+requires:
+    db:
+        interface: pgsql
+

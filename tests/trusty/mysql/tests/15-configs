@@ -1,0 +1,77 @@
+#!/usr/bin/python3
+
+import amulet
+import pymysql
+
+
+max_connections = 10
+
+d = amulet.Deployment(series='trusty')
+
+d.add('mysql')
+d.configure('mysql', {'max-connections': max_connections})
+d.expose('mysql')
+
+try:
+    d.setup(timeout=900)
+    d.sentry.wait()
+except amulet.helpers.TimeoutError:
+    amulet.raise_status(amulet.SKIP, msg="Environment wasn't stood up in time")
+except:
+    raise
+
+
+# Allow connections from outside
+mysqlmaster = d.sentry.unit['mysql/0']
+mysqlmaster.run(
+    "echo 'GRANT ALL ON *.* to root@\"%\"'\""
+    " IDENTIFIED BY '`cat /var/lib/mysql/mysql.passwd`'\"|"
+    "mysql -u root --password=`cat /var/lib/mysql/mysql.passwd`"
+)
+mysql_server = d.sentry.unit['mysql/0']
+mysql_password = mysql_server.file_contents('/var/lib/mysql/mysql.passwd')
+
+connections = []
+
+# As we are using root as test user, we need to test with max_conn + 1
+cnx_list = []
+try:
+    for cnx_idx in range(0, max_connections + 10):
+        cnx = pymysql.connect(
+            user='root',
+            password=mysql_password,
+            host=mysql_server.info['public-address'],
+            database='mysql')
+
+        cnx_list.append(cnx)
+except pymysql.err.OperationalError as err:
+    TOO_MANY_USER_CONNECTIONS = 1203
+    err_code = err.args[0]
+    if err_code == TOO_MANY_USER_CONNECTIONS and \
+            len(cnx_list) < max_connections + 1:
+        amulet.raise_status(
+            amulet.FAIL,
+            'MySQL is not allowing to connect {} times, just {} times.'.format(
+                max_connections, len(cnx_list)))
+
+else:
+    amulet.raise_status(amulet.FAIL,
+                        'Max connection reached, and still able to connect.')
+
+for cnx in cnx_list:
+    cnx.close()
+
+d.configure('mysql', {'max-connections': -1})
+
+# Now you can use d.sentry.unit[UNIT] to address each of the units and perform
+# more in-depth steps. There are three test statuses: amulet.PASS, amulet.FAIL,
+# and amulet.SKIP - these can be triggered with amulet.raise_status(). Each
+# d.sentry.unit[] has the following methods:
+# - .info - An array of the information of that unit from Juju
+# - .file(PATH) - Get the details of a file on that unit
+# - .file_contents(PATH) - Get plain text output of PATH file from that unit
+# - .directory(PATH) - Get details of directory
+# - .directory_contents(PATH) - List files and folders in PATH on that unit
+# - .relation(relation, service:rel) - Get relation data from return service
+
+# Make sure to rename this file from something other than 00-autogen

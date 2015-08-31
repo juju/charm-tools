@@ -1,4 +1,4 @@
-tests/proof/results/*
+tests_functional/proof/results/*
 .coverage
 .noseids
 charm_tools.egg-info
@@ -13,3 +13,5 @@ build
 dist
 tests/.ropeproject/
 charmtools/.ropeproject/
+.ropeproject/
+.tox/

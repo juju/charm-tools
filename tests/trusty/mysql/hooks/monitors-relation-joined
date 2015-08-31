@@ -1,0 +1,9 @@
+#!/bin/bash
+set -ue
+. hooks/monitors.common.bash
+echo "'${monitor_user}'@'${remote_addr}'" >> $revoke_todo
+$MYSQL -e "GRANT USAGE ON *.* TO '${monitor_user}'@'${remote_addr}'"
+# Won't be getting the real remote address from NRPE subordinate. Need to have NRPE tell the charm the remote address in the near future
+$MYSQL -e "GRANT USAGE ON *.* TO '${monitor_user}'@'%'"
+
+relation-set monitors="$(cat monitors.yaml)" target-id=${JUJU_UNIT_NAME//\//-} target-address=$(unit-get private-address)

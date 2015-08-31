@@ -17,44 +17,23 @@ helperdir = $(DDIR)/share/charm-helper
 confdir = $(DESTDIR)/etc
 INSTALL = install
 
-# We use a "canary" file to tell us if the package has been installed in
-# "develop" mode.
-DEVELOP_CANARY := lib/__develop_canary
-develop: $(DEVELOP_CANARY)
-$(DEVELOP_CANARY): | python-deps
-	bin/python setup.py develop
-	touch $(DEVELOP_CANARY)
+develop: 
+	tox --develop --notest
 
-build: deps develop bin/test
+build: deps develop
 
 dependencies:
 	bzr checkout lp:~juju-jitsu/charm-tools/dependencies
 
-# We use a "canary" file to tell us if the Python packages have been installed.
-PYTHON_PACKAGE_CANARY := lib/python2.7/site-packages/___canary
-python-deps: $(PYTHON_PACKAGE_CANARY)
-$(PYTHON_PACKAGE_CANARY): requirements.txt | dependencies
-	sudo apt-get update
-	sudo apt-get install -y build-essential bzr python-dev \
-	    python-virtualenv
-	virtualenv .
-	bin/pip install --no-index --no-dependencies --find-links \
-	    file:///$(WD)/dependencies/python -r requirements.txt
-	touch $(PYTHON_PACKAGE_CANARY)
+PYTHON_DEPS=build-essential bzr python-dev python-tox
+python-deps: scripts/packages.sh
+	$(if $(shell ./scripts/packages.sh $(PYTHON_DEPS)), \
+	tox -r --notest)
 
 deps: python-deps | dependencies
 
-bin/nosetests: python-deps
-
-bin/test: | bin/nosetests
-	ln scripts/test bin/test
-
-test: build bin/test
-	bin/test
-
-lint: sources = setup.py charmtools
-lint: build
-	@find $(sources) -name '*.py' -print0 | xargs -r0 bin/flake8
+test:
+	tox
 
 tags:
 	ctags --tag-relative --python-kinds=-iv -Rf tags --sort=yes \
@@ -93,12 +72,11 @@ integration: build
 	tests_functional/proof/test.sh
 	tests_functional/create/test.sh
 	tests_functional/add/test.sh
-#	PYTHONPATH=helpers/python python helpers/python/charmhelpers/tests/test_charmhelpers.py
 
-coverage: build bin/test
-	bin/test --with-coverage --cover-package=charmtools --cover-tests
+coverage: build 
+	tox
 
-check: build integration test lint
+check: build integration test
 
 define phony
   build
@@ -106,7 +84,6 @@ define phony
   clean
   deps
   install
-  lint
   tags
   test
 endef
