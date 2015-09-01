@@ -3,11 +3,11 @@ import tempfile
 import os
 
 import requests
-from bundletester import fetchers
-from bundletester.fetchers import (git,  # noqa
-                                   Fetcher,
-                                   get_fetcher,
-                                   FetchError)
+from charmtools import fetchers
+from charmtools.fetchers import (git,  # noqa
+                                 Fetcher,
+                                 get_fetcher,
+                                 FetchError)
 
 from path import path
 
