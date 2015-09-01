@@ -32,7 +32,7 @@ python-deps: scripts/packages.sh
 
 deps: python-deps | dependencies
 
-test:
+test: build
 	tox
 
 tags:
