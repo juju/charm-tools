@@ -14,7 +14,7 @@ setup(
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko', 'bzr', 'requests',
                       'charmworldlib', 'blessings', 'ruamel.yaml',
-                      'pathspec', 'bundletester', 'otherstuf', "path.py",
+                      'pathspec', 'otherstuf', "path.py",
                       "jujubundlelib"],
     include_package_data=True,
     maintainer='Marco Ceppi',
