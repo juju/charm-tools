@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 #    Copyright (C) 2014  Canonical Ltd.
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -59,6 +60,7 @@ class PythonBasicCreateTest(TestCase):
             'lib/charmhelpers/core/hookenv.py',
             'lib/charmhelpers/core/host.py',
             'lib/charmhelpers/core/hugepage.py',
+            'lib/charmhelpers/core/kernel.py',
             'lib/charmhelpers/core/services/__init__.py',
             'lib/charmhelpers/core/services/base.py',
             'lib/charmhelpers/core/services/helpers.py',
