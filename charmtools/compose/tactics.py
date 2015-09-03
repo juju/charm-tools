@@ -406,26 +406,36 @@ class InstallerTactic(Tactic):
             utils.Process(("pip",
                         "install",
                         "-U",
-                        "--exists-action",
-                        "i",
                         "-t",
                         temp_dir,
                         spec)).throw_on_error()()
             dirs = temp_dir.listdir()
             self._tracked = []
             for d in dirs:
-                d.move(target)
-                self._tracked.append(target / d)
+                d = d.relpath(temp_dir)
+                dst = target / d
+                if dst.exists():
+                    if dst.isdir():
+                        dst.rmtree_p()
+                    elif dst.isfile():
+                        dst.remove()
+                d.move(dst)
+                self._tracked.append(dst)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
         """
         sigs = {}
         for d in self._tracked:
-            for entry, sig in utils.walk(d,
-                                         utils.sign, kind="files"):
-                relpath = entry.relpath(self._target.directory)
-                sigs[relpath] = (self.current.url, "dynamic", sig)
+            if d.isdir():
+                for entry, sig in utils.walk(d,
+                                            utils.sign, kind="files"):
+                    relpath = entry.relpath(self.target.directory)
+                    sigs[relpath] = (self.current.url, "dynamic", sig)
+            elif d.isfile():
+                relpath = d.relpath(self.target.directory)
+                sigs[relpath] = (
+                    self.current.url, "dynamic", utils.sign(d))
         return sigs
 
 

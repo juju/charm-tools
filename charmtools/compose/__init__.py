@@ -379,7 +379,7 @@ class Composer(object):
                     "Changes will be overwritten")
             else:
                 raise ValueError(
-                    "Unable to continue due to unexpected modifications")
+                    "Unable to continue due to unexpected modifications (try --force)")
         return a, c, d
 
     def __call__(self):
