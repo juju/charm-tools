@@ -36,7 +36,7 @@ This section should document the charm's interfaces. Describe what the charm pro
 
 # External Dependencies
 
-Describe if the charm needs something from an external source, for example if it needs a URL config flag set to fetch something. Things like needing PyPy, github, an http resource or any other remote service that the charm needs in order to work.
+Describe if the charm needs something from an external source, for example if it needs a URL config flag set to fetch something. Things like needing pip, github, an http resource or any other remote service that the charm needs in order to work.
 
 # Contact Information
 
