@@ -6,6 +6,8 @@ This README will be displayed in the Charm Store, it should be either Markdown o
 
 Use this as a Markdown reference if you need help with the formatting of this README: http://askubuntu.com/editing-help
 
+You can also use an online Markdown editor to live edit Markdown with preview: https://stackedit.io/
+
 This charm provides [service](http://example.com). Add a description here of what the service itself actually does.
 
 # Usage
