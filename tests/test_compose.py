@@ -211,7 +211,6 @@ class TestCompose(unittest.TestCase):
 
         # show that we pulled charmhelpers from the basic layer as well
         mcall.assert_called_with(("pip", "install", "-U",
-                                  '--exists-action', 'i',
                                   "-t", mock.ANY,
                                   mock.ANY))
 
@@ -229,7 +228,6 @@ class TestCompose(unittest.TestCase):
         composer.PHASES = composer.PHASES[:-2]
         composer()
         mcall.assert_called_with(("pip", "install", "-U",
-                                  '--exists-action', 'i',
                                   "-t", mock.ANY,
                                   "charmhelpers"))
 

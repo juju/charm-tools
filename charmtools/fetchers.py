@@ -40,7 +40,12 @@ def rename(dir_):
     if not name:
         return dir_
     new_dir = os.path.join(os.path.dirname(dir_), name)
-    os.rename(dir_, new_dir)
+    if not os.path.exists(new_dir):
+        # This ignores existing repos
+        # In truth we want control over management of existing
+        # repos with per VCS branch selections
+        # ex: switching the git branch marked in revision
+        os.rename(dir_, new_dir)
     return new_dir
 
 
