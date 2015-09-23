@@ -392,7 +392,7 @@ class Composer(object):
 
     def inspect(self):
         self.charm = path(self.charm).abspath()
-        inspector.inspect(self.charm)
+        inspector.inspect(self.charm, force_styling=self.force_raw)
 
     def normalize_outputdir(self):
         od = path(self.charm).normpath()
@@ -427,6 +427,8 @@ def configLogging(composer):
 def inspect(args=None):
     composer = Composer()
     parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--force-raw', action="store_true",
+                       help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('charm', nargs="?", default=".", type=path)
     # Namespace will set the options as attrs of composer
