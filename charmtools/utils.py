@@ -409,12 +409,12 @@ class ColoredFormatter(logging.Formatter):
 
 
 class TermWriter(object):
-    def __init__(self, fp=None, term=None):
+    def __init__(self, fp=None, term=None, force_styling=False):
         if fp is None:
             fp = sys.stdout
         self.fp = fp
         if term is None:
-            term = blessings.Terminal()
+            term = blessings.Terminal(force_styling=force_styling)
         self.term = term
 
     def __getattr__(self, key):

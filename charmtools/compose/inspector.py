@@ -37,8 +37,8 @@ def get_prefix(walk, cur, depth, next_depth):
     return "{}{}".format("".join(guide), prefix)
 
 
-def inspect(charm):
-    tw = utils.TermWriter()
+def inspect(charm, force_styling=False):
+    tw = utils.TermWriter(force_styling=force_styling)
     manp = charm / ".composer.manifest"
     comp = charm / "composer.yaml"
     if not manp.exists() or not comp.exists():
