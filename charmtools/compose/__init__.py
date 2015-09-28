@@ -295,6 +295,8 @@ class Composer(object):
                 for kind, relation_name, interface_name in specs:
                     if interface_name != iface.name:
                         continue
+
+                    log.info("Processing interface: %s", interface_name)
                     # COPY phase
                     plan.append(
                         charmtools.compose.tactics.InterfaceCopy(

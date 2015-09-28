@@ -1,6 +1,7 @@
 import logging
 import json
 from ruamel import yaml
+import os
 
 from path import path
 from charmtools import utils
@@ -395,30 +396,32 @@ class InstallerTactic(Tactic):
         # XXX: Should this map multiline to "-r", self.entity
         spec = self.entity.text().strip()
         target = self.target_file.dirname()
-        target_dir = target / path(spec.split(" ", 1)[0]).normpath().namebase
         log.debug("pip installing {} as {}".format(
-            spec, target_dir))
+            spec, target))
+        cwd = os.getcwd()
         with utils.tempdir() as temp_dir:
             # We do this dance so we don't have
             # to guess package and .egg file names
             # we move everything in the tempdir to the target
             # and track it for later use in sign()
             utils.Process(("pip",
-                        "install",
-                        "-U",
-                        "-t",
-                        temp_dir,
-                        spec)).throw_on_error()()
+                           "install",
+                           "-t",
+                           temp_dir,
+                           spec)).throw_on_error()()
             dirs = temp_dir.listdir()
             self._tracked = []
             for d in dirs:
-                d = d.relpath(temp_dir)
-                dst = target / d
+                rp = d.relpath(temp_dir)
+                dst = cwd / target / rp
                 if dst.exists():
                     if dst.isdir():
                         dst.rmtree_p()
                     elif dst.isfile():
                         dst.remove()
+                if not target.exists():
+                    target.makedirs_p()
+                logging.debug("Installer moving {} to {}".format(d, dst))
                 d.move(dst)
                 self._tracked.append(dst)
 
@@ -429,7 +432,7 @@ class InstallerTactic(Tactic):
         for d in self._tracked:
             if d.isdir():
                 for entry, sig in utils.walk(d,
-                                            utils.sign, kind="files"):
+                                             utils.sign, kind="files"):
                     relpath = entry.relpath(self.target.directory)
                     sigs[relpath] = (self.current.url, "dynamic", sig)
             elif d.isfile():

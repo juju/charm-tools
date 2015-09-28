@@ -210,7 +210,7 @@ class TestCompose(unittest.TestCase):
         self.assertTrue((base / "README.md").exists())
 
         # show that we pulled charmhelpers from the basic layer as well
-        mcall.assert_called_with(("pip", "install", "-U",
+        mcall.assert_called_with(("pip", "install",
                                   "-t", mock.ANY,
                                   mock.ANY))
 
@@ -227,7 +227,7 @@ class TestCompose(unittest.TestCase):
         # remove the sign phase
         composer.PHASES = composer.PHASES[:-2]
         composer()
-        mcall.assert_called_with(("pip", "install", "-U",
+        mcall.assert_called_with(("pip", "install",
                                   "-t", mock.ANY,
                                   "charmhelpers"))
 
