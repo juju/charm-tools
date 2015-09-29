@@ -423,7 +423,9 @@ def configLogging(composer):
     log.setLevel(composer.log_level)
     root_logger.addHandler(clihandler)
     requests_logger = logging.getLogger("requests")
-    requests_logger.setLevel(logging.WARNING)
+    requests_logger.setLevel(logging.CRITICAL)
+    urllib_logger = logging.getLogger("urllib3")
+    urllib_logger.setLevel(logging.CRITICAL)
 
 
 def inspect(args=None):
