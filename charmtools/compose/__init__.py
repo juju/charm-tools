@@ -279,7 +279,7 @@ class Composer(object):
             target_config = layers["layers"][-1].config
             specs = []
             used_interfaces = set()
-            for kind in ("provides", "requires", "peer"):
+            for kind in ("provides", "requires", "peers"):
                 for k, v in meta.get(kind, {}).items():
                     # ex: ["provides", "db", "mysql"]
                     specs.append([kind, k, v["interface"]])
