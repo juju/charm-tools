@@ -1,7 +1,6 @@
 import logging
 import json
 from ruamel import yaml
-import os
 
 from path import path
 from charmtools import utils
@@ -398,7 +397,7 @@ class InstallerTactic(Tactic):
         target = self.target_file.dirname()
         log.debug("pip installing {} as {}".format(
             spec, target))
-        cwd = os.getcwd()
+        cwd = path.getcwd()
         with utils.tempdir() as temp_dir:
             # We do this dance so we don't have
             # to guess package and .egg file names
