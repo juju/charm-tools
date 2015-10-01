@@ -55,7 +55,7 @@ class Fetched(Configable):
         if self._name:
             return self._name
         if self.url.startswith(self.NAMESPACE):
-            return self.url[len(self.NAMESPACE):]
+            return self.url[len(self.NAMESPACE)+1:]
         return self.url
 
     def __repr__(self):
