@@ -22,15 +22,12 @@ develop:
 
 build: deps develop
 
-dependencies:
-	bzr checkout lp:~juju-jitsu/charm-tools/dependencies
-
 PYTHON_DEPS=build-essential bzr python-dev python-tox
 python-deps: scripts/packages.sh
 	$(if $(shell ./scripts/packages.sh $(PYTHON_DEPS)), \
 	tox -r --notest)
 
-deps: python-deps | dependencies
+deps: python-deps
 
 test: build
 	tox
