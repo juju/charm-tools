@@ -1,11 +1,12 @@
-# Juju Charms
+# Juju Charm Tools
 
-This is a collection of Juju charms for use as a reference and in
+[![Build Status](https://travis-ci.org/juju/charm-tools.svg?branch=master)](https://travis-ci.org/juju/charm-tools)
+
+This is a collection of Charm Tools for use as a reference and in
 deploying real services using juju. See Juju's home page for
 more information.
 
 https://jujucharms.com/
-https://launchpad.net/charm
 
 # Quick Start
 
