@@ -36,6 +36,8 @@ def rename(dir_):
     if not os.path.exists(metadata):
         return dir_
     metadata = yaml.safe_load(open(metadata))
+    if not metadata:
+        return dir_
     name = metadata.get("name")
     if not name:
         return dir_
