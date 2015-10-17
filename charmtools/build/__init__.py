@@ -10,23 +10,23 @@ import blessings
 from collections import OrderedDict
 from path import path
 import yaml
-from charmtools.compose import inspector
-import charmtools.compose.tactics
-from charmtools.compose.config import (ComposerConfig, DEFAULT_IGNORES)
-from charmtools.compose.fetchers import (InterfaceFetcher,
-                                         LayerFetcher,
-                                         get_fetcher,
+from charmtools.build import inspector
+import charmtools.build.tactics
+from charmtools.build.config import (BuildConfig, DEFAULT_IGNORES)
+from charmtools.build.fetchers import (InterfaceFetcher,
+                                       LayerFetcher,
+                                       get_fetcher,
                                          FetchError)
 from charmtools import utils
 
-log = logging.getLogger("composer")
+log = logging.getLogger("build")
 
 
 class Configable(object):
     CONFIG_FILE = None
 
     def __init__(self):
-        self._config = ComposerConfig()
+        self._config = BuildConfig()
         self.config_file = None
 
     @property
@@ -98,19 +98,19 @@ class Interface(Fetched):
 
 
 class Layer(Fetched):
-    CONFIG_FILE = "composer.yaml"
+    CONFIG_FILE = "layer.yaml"
     NAMESPACE = "layer"
-    ENVIRON = "COMPOSER_PATH"
+    ENVIRON = "LAYER_PATH"
 
 
-class Composer(object):
+class Builder(object):
     """
-    Handle the processing of overrides, implements the policy of ComposerConfig
+    Handle the processing of overrides, implements the policy of BuildConfig
     """
     PHASES = ['lint', 'read', 'call', 'sign', 'build']
 
     def __init__(self):
-        self.config = ComposerConfig()
+        self.config = BuildConfig()
         self.force = False
         self._name = None
         self._charm = None
@@ -152,7 +152,7 @@ class Composer(object):
     def status(self):
         result = {}
         result.update(vars(self))
-        for e in ["COMPOSER_PATH", "INTERFACE_PATH", "JUJU_REPOSITORY"]:
+        for e in ["LAYER_PATH", "INTERFACE_PATH", "JUJU_REPOSITORY"]:
             result[e] = os.environ.get(e)
         return result
 
@@ -185,7 +185,7 @@ class Composer(object):
         layer = Layer(self.charm, self.deps).fetch()
         if not layer.configured:
             log.info("The top level layer expects a "
-                     "valid composer.yaml file, "
+                     "valid layer.yaml file, "
                      "using defaults.")
         # Manually create a layer object for the output
         self.target = Layer(self.name, self.repo)
@@ -211,7 +211,7 @@ class Composer(object):
             layers.append(i.url)
         for i in self._interfaces:
             layers.append(i.url)
-        layers.append("composer")
+        layers.append("build")
         return layers
 
     def fetch_dep(self, layer, results):
@@ -248,9 +248,9 @@ class Composer(object):
         output_files[relname] = tactic
 
     def plan_layers(self, layers, output_files):
-        config = ComposerConfig()
+        config = BuildConfig()
         config = config.add_config(
-            layers["layers"][0] / ComposerConfig.DEFAULT_FILE, True)
+            layers["layers"][0] / BuildConfig.DEFAULT_FILE, True)
 
         layers["layers"][-1].url = self.name
 
@@ -259,7 +259,7 @@ class Composer(object):
             if i + 1 < len(layers["layers"]):
                 next_layer = layers["layers"][i + 1]
                 config = config.add_config(
-                    next_layer / ComposerConfig.DEFAULT_FILE, True)
+                    next_layer / BuildConfig.DEFAULT_FILE, True)
             list(e for e in utils.walk(layer.directory,
                                        self.build_tactics,
                                        current=layer,
@@ -288,7 +288,7 @@ class Composer(object):
             for iface in layers["interfaces"]:
                 if iface.name not in used_interfaces:
                     # we shouldn't include something the charm doesn't use
-                    log.warn("composer.yaml includes {} which isn't "
+                    log.warn("layer.yaml includes {} which isn't "
                              "used in metadata.yaml".format(
                                  iface.name))
                     continue
@@ -299,13 +299,13 @@ class Composer(object):
                     log.info("Processing interface: %s", interface_name)
                     # COPY phase
                     plan.append(
-                        charmtools.compose.tactics.InterfaceCopy(
+                        charmtools.build.tactics.InterfaceCopy(
                             iface, relation_name,
                             self.target, target_config)
                     )
                     # Link Phase
                     plan.append(
-                        charmtools.compose.tactics.InterfaceBind(
+                        charmtools.build.tactics.InterfaceBind(
                             iface, relation_name, kind,
                             self.target, target_config))
         elif not charm_meta and layers["interfaces"]:
@@ -313,7 +313,7 @@ class Composer(object):
                 "Includes interfaces but no metadata.yaml to bind them")
 
     def formulate_plan(self, layers):
-        """Build out a plan for each file in the various composed
+        """Build out a plan for each file in the various
         layers, taking into account config at each layer"""
         output_files = OrderedDict()
         self.plan = self.plan_layers(layers, output_files)
@@ -346,8 +346,8 @@ class Composer(object):
             self.write_signatures(signatures, layers)
 
     def write_signatures(self, signatures, layers):
-        sigs = self.target / ".composer.manifest"
-        signatures['.composer.manifest'] = ["composer", 'dynamic', 'unchecked']
+        sigs = self.target / ".build.manifest"
+        signatures['.build.manifest'] = ["build", 'dynamic', 'unchecked']
         sigs.write_text(json.dumps(dict(
             signatures=signatures,
             layers=layers,
@@ -359,7 +359,7 @@ class Composer(object):
         self.exec_plan(self.plan, self.layers)
 
     def validate(self):
-        p = self.target_dir / ".composer.manifest"
+        p = self.target_dir / ".build.manifest"
         if not p.exists():
             return [], [], []
         ignorer = utils.ignore_matcher(DEFAULT_IGNORES)
@@ -409,7 +409,7 @@ class Composer(object):
         self.output_dir = od
 
 
-def configLogging(composer):
+def configLogging(build):
     global log
     clifmt = utils.ColoredFormatter(
         blessings.Terminal(),
@@ -417,10 +417,10 @@ def configLogging(composer):
     root_logger = logging.getLogger()
     clihandler = logging.StreamHandler(sys.stdout)
     clihandler.setFormatter(clifmt)
-    if isinstance(composer.log_level, str):
-        composer.log_level = composer.log_level.upper()
-    root_logger.setLevel(composer.log_level)
-    log.setLevel(composer.log_level)
+    if isinstance(build.log_level, str):
+        build.log_level = build.log_level.upper()
+    root_logger.setLevel(build.log_level)
+    log.setLevel(build.log_level)
     root_logger.addHandler(clihandler)
     requests_logger = logging.getLogger("requests")
     requests_logger.setLevel(logging.CRITICAL)
@@ -429,22 +429,41 @@ def configLogging(composer):
 
 
 def inspect(args=None):
-    composer = Composer()
+    build = Builder()
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--force-raw', action="store_true",
                        help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('charm', nargs="?", default=".", type=path)
-    # Namespace will set the options as attrs of composer
-    parser.parse_args(args, namespace=composer)
-    configLogging(composer)
-    composer.inspect()
+    # Namespace will set the options as attrs of build
+    parser.parse_args(args, namespace=build)
+    configLogging(build)
+    build.inspect()
 
+
+def deprecated_main():
+    namemap = {
+        'compose': 'build',
+        'generate': 'build',
+        'refresh': 'build',
+        'inspect': 'layers',
+    }
+    cmd = sys.argv[0]
+    if "-" in cmd:
+        old = cmd.split('-', 1)[-1]
+    else:
+        old = sys.argv[1]
+    new = namemap[old]
+    raise DeprecationWarning("{} has been deprecated, please use {}".format(old, new))
+    if cmd == "inspect":
+        inspect()
+    else:
+        main()
 
 def main(args=None):
-    composer = Composer()
+    build = Builder()
     parser = argparse.ArgumentParser(
-        description="Compose layers into a charm",
+        description="Build a charm from layers and interfaces.",
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
@@ -453,19 +472,19 @@ def main(args=None):
     parser.add_argument('--interface-service',
                         default="http://interfaces.juju.solutions")
     parser.add_argument('-n', '--name',
-                        help="Generate a charm of 'name' from 'charm'")
+                        help="Build a charm of 'name' from 'charm'")
     parser.add_argument('charm', nargs="?", default=".", type=path)
-    # Namespace will set the options as attrs of composer
-    parser.parse_args(args, namespace=composer)
+    # Namespace will set the options as attrs of build
+    parser.parse_args(args, namespace=build)
     # Monkey patch in the domain for the interface webservice
-    InterfaceFetcher.INTERFACE_DOMAIN = composer.interface_service
-    LayerFetcher.INTERFACE_DOMAIN = composer.interface_service
-    configLogging(composer)
+    InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
+    LayerFetcher.INTERFACE_DOMAIN = build.interface_service
+    configLogging(build)
 
-    if not composer.output_dir:
-        composer.normalize_outputdir()
+    if not build.output_dir:
+        build.normalize_outputdir()
 
-    composer()
+    build()
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 # coding=utf-8
 import json
 from ruamel import yaml
-from charmtools.compose import config
+from charmtools.build import config
 from charmtools import utils
 
 theme = {

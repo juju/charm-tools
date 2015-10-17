@@ -18,13 +18,13 @@ DEFAULT_IGNORES = [
 ]
 
 
-class ComposerConfig(chainstuf):
+class BuildConfig(chainstuf):
     """Defaults for controlling the generator, each layer in
     the inclusion graph can provide values, including things
     like overrides, or warnings if things are overridden that
     shouldn't be.
     """
-    DEFAULT_FILE = "composer.yaml"
+    DEFAULT_FILE = "layer.yaml"
 
     def __init__(self, *args, **kwargs):
         super(ComposerConfig, self).__init__(*args, **kwargs)

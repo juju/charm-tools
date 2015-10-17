@@ -11,7 +11,7 @@ import tempfile
 import time
 from contextlib import contextmanager
 
-from .compose.diff_match_patch import diff_match_patch
+from .diff_match_patch import diff_match_patch
 import blessings
 import pathspec
 from path import path

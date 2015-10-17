@@ -403,13 +403,20 @@ class InstallerTactic(Tactic):
             # to guess package and .egg file names
             # we move everything in the tempdir to the target
             # and track it for later use in sign()
+            localenv = os.environ.copy()
+            localenv['PYTHONUSERBASE'] = temp_dir
             utils.Process(("pip",
                            "install",
-                           "-t",
-                           temp_dir,
-                           spec)).throw_on_error()()
+                           "--user",
+                           "--ignore-installed",
+                           spec), env=localenv).throw_on_error()()
             dirs = temp_dir.listdir()
             self._tracked = []
+            # Now map from prefix to the charms target
+            # We need to be aware of the nesting created by
+            # the installer in this mode which will create
+            # a lib/pythonX.X/site-packages/ tree
+            # and we want those files placed flatly in the target.
             for d in dirs:
                 rp = d.relpath(temp_dir)
                 dst = cwd / target / rp

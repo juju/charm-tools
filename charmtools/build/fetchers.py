@@ -16,7 +16,7 @@ class RepoFetcher(fetchers.LocalFetcher):
     @classmethod
     def can_fetch(cls, url):
         search_path = [os.getcwd(), os.environ.get("JUJU_REPOSITORY", ".")]
-        cp = os.environ.get("COMPOSER_PATH")
+        cp = os.environ.get("LAYER_PATH")
         if cp:
             search_path.extend(cp.split(":"))
         for part in search_path:
