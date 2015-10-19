@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sys
+import warnings
 
 import blessings
 from collections import OrderedDict
@@ -411,6 +412,7 @@ class Builder(object):
 
 def configLogging(build):
     global log
+    logging.captureWarnings(True)
     clifmt = utils.ColoredFormatter(
         blessings.Terminal(),
         '%(name)s: %(message)s')
@@ -450,11 +452,12 @@ def deprecated_main():
     }
     cmd = sys.argv[0]
     if "-" in cmd:
-        old = cmd.split('-', 1)[-1]
+        old = cmd.rsplit('-', 1)[-1]
     else:
         old = sys.argv[1]
     new = namemap[old]
-    raise DeprecationWarning("{} has been deprecated, please use {}".format(old, new))
+    warnings.warn("{} has been deprecated, please use {}".format(old, new),
+                  DeprecationWarning)
     if cmd == "inspect":
         inspect()
     else:

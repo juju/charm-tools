@@ -59,7 +59,8 @@ def delete_path(path, obj):
     parts = path.split('.')
     for p in parts[:-1]:
         obj = obj[p]
-    del obj[parts[-1]]
+    if parts[-1] in obj:
+        del obj[parts[-1]]
 
 
 class NestedDict(dict):
