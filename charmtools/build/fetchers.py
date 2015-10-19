@@ -1,5 +1,3 @@
-import re
-import tempfile
 import os
 
 import requests
@@ -85,7 +83,6 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                 path(res).rename(target)
             return target
 
-
 fetchers.FETCHERS.insert(0, InterfaceFetcher)
 
 
@@ -97,21 +94,3 @@ class LayerFetcher(InterfaceFetcher):
     ENDPOINT = "/api/v1/layer"
 
 fetchers.FETCHERS.insert(0, LayerFetcher)
-
-
-class LaunchpadGitFetcher(Fetcher):
-    # XXX: this should be upstreamed
-    MATCH = re.compile(r"""
-    ^(git:|https)?://git.launchpad.net/
-    (?P<repo>[^@]*)(@(?P<revision>.*))?$
-    """, re.VERBOSE)
-
-    def fetch(self, dir_):
-        dir_ = tempfile.mkdtemp(dir=dir_)
-        url = 'https://git.launchpad.net/' + self.repo
-        git('clone {} {}'.format(url, dir_))
-        if self.revision:
-            git('checkout {}'.format(self.revision), cwd=dir_)
-        return dir_
-
-fetchers.FETCHERS.append(LaunchpadGitFetcher)

@@ -36,6 +36,8 @@ def rename(dir_):
     if not os.path.exists(metadata):
         return dir_
     metadata = yaml.safe_load(open(metadata))
+    if not metadata:
+        return dir_
     name = metadata.get("name")
     if not name:
         return dir_
@@ -112,6 +114,21 @@ class BzrMergeProposalFetcher(BzrFetcher):
         bzr('branch --use-existing-dir {} {}'.format(target, dir_))
         bzr('merge {}'.format(source), cwd=dir_)
         bzr('commit --unchanged -m "Merge commit"', cwd=dir_)
+        return rename(dir_)
+
+
+class LaunchpadGitFetcher(Fetcher):
+    MATCH = re.compile(r"""
+    ^(git:|https)?://git.launchpad.net/
+    (?P<repo>[^@]*)(@(?P<revision>.*))?$
+    """, re.VERBOSE)
+
+    def fetch(self, dir_):
+        dir_ = tempfile.mkdtemp(dir=dir_)
+        url = 'https://git.launchpad.net/' + self.repo
+        git('clone {} {}'.format(url, dir_))
+        if self.revision:
+            git('checkout {}'.format(self.revision), cwd=dir_)
         return rename(dir_)
 
 
@@ -312,6 +329,7 @@ FETCHERS = [
     LocalFetcher,
     CharmstoreDownloader,
     BundleDownloader,
+    LaunchpadGitFetcher,
 ]
 
 
