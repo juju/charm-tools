@@ -27,7 +27,7 @@ class BuildConfig(chainstuf):
     DEFAULT_FILE = "layer.yaml"
 
     def __init__(self, *args, **kwargs):
-        super(ComposerConfig, self).__init__(*args, **kwargs)
+        super(BuildConfig, self).__init__(*args, **kwargs)
         self['_tactics'] = []
         self.configured = False
 

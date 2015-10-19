@@ -85,7 +85,7 @@ class TestBuild(unittest.TestCase):
         # take a generated example where a base layer has changed
         # regenerate in place
         # make some assertions
-        bu = build.Composer()
+        bu = build.Builder()
         bu.log_level = "WARNING"
         bu.output_dir = "out"
         bu.series = "trusty"
@@ -211,8 +211,8 @@ class TestBuild(unittest.TestCase):
 
         # show that we pulled charmhelpers from the basic layer as well
         mcall.assert_called_with(("pip", "install",
-                                  "--usert", mock.ANY,
-                                  mock.ANY))
+                                  "--user", "--ignore-installed",
+                                  mock.ANY), env=mock.ANY)
 
 
     @mock.patch("charmtools.utils.Process")
@@ -228,8 +228,8 @@ class TestBuild(unittest.TestCase):
         bu.PHASES = bu.PHASES[:-2]
         bu()
         mcall.assert_called_with(("pip", "install",
-                                  "--usert", mock.ANY,
-                                  "charmhelpers"))
+                                  "--user", "--ignore-installed",
+                                  mock.ANY), env=mock.ANY)
 
 
 if __name__ == '__main__':

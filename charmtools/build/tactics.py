@@ -1,6 +1,7 @@
 import logging
 import json
 from ruamel import yaml
+import os
 
 from path import path
 from charmtools import utils
@@ -320,8 +321,8 @@ class JSONTactic(SerializedTactic):
         json.dump(data, self.target_file.open('w'), indent=2)
 
 
-class ComposerYAML(YAMLTactic, ExactMatch):
-    FILENAME = "composer.yaml"
+class LayerYAML(YAMLTactic, ExactMatch):
+    FILENAME = "layer.yaml"
 
     def read(self):
         self._raw_data = self.load(self.entity.open())
@@ -410,14 +411,16 @@ class InstallerTactic(Tactic):
                            "--user",
                            "--ignore-installed",
                            spec), env=localenv).throw_on_error()()
-            dirs = temp_dir.listdir()
             self._tracked = []
             # Now map from prefix to the charms target
             # We need to be aware of the nesting created by
             # the installer in this mode which will create
             # a lib/pythonX.X/site-packages/ tree
             # and we want those files placed flatly in the target.
-            for d in dirs:
+            for d in [path(temp_dir) / "bin"] + \
+                      path(temp_dir).glob("lib/python*/site-packages/*"):
+                if not d.exists():
+                    continue
                 rp = d.relpath(temp_dir)
                 dst = cwd / target / rp
                 if dst.exists():
@@ -463,6 +466,6 @@ DEFAULT_TACTICS = [
     InstallerTactic,
     MetadataYAML,
     ConfigYAML,
-    ComposerYAML,
+    LayerYAML,
     CopyTactic
 ]

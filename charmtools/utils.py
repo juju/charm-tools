@@ -376,7 +376,7 @@ def delta_signatures(manifest_filename, ignorer=None):
             continue
         # layer, kind, sig
         # don't include items generated only for the last layer
-        if expected["signatures"][p][0] == "composer":
+        if expected["signatures"][p][0] == "build":
             continue
         if expected["signatures"][p][2] != s:
             change.add(p)
