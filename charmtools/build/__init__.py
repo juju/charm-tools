@@ -47,7 +47,7 @@ class Fetched(Configable):
     def __init__(self, url, target_repo, name=None):
         super(Fetched, self).__init__()
         self.url = url
-        self.target_repo = target_repo
+        self.target_repo = target_repo / self.NAMESPACE
         self.directory = None
         self._name = name
 
