@@ -252,7 +252,7 @@ def add_source(source, key=None):
     id may also be used, but be aware that only insecure protocols are
     available to retrieve the actual public key from a public keyserver
     placing your Juju environment at risk. ppa and cloud archive keys
-    are securely added automtically, so sould not be provided.
+    are securely added automtically, so should not be provided.
     """
     if source is None:
         log('Source is not present. Skipping')
