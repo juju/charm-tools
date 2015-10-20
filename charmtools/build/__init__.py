@@ -88,18 +88,23 @@ class Fetched(Configable):
                     self.url, self.ENVIRON))
 
         self.config_file = self.directory / self.CONFIG_FILE
+        if not self.config_file.exists():
+            if self.OLD_CONFIG and (self.directory / self.OLD_CONFIG).exists():
+                self.config_file = (self.directory / self.OLD_CONFIG)
         self._name = self.config.name
         return self
 
 
 class Interface(Fetched):
     CONFIG_FILE = "interface.yaml"
+    OLD_CONFIG = None
     NAMESPACE = "interface"
     ENVIRON = "INTERFACE_PATH"
 
 
 class Layer(Fetched):
     CONFIG_FILE = "layer.yaml"
+    OLD_CONFIG = "composer.yaml"
     NAMESPACE = "layer"
     ENVIRON = "LAYER_PATH"
 
@@ -163,7 +168,7 @@ class Builder(object):
         self.repo = (base / self.series)
         # And anything it includes from will be placed here
         # outside the series
-        self.deps = (base / "deps" / self.series)
+        self.deps = (base / "deps")
         self.target_dir = (self.repo / self.name)
 
     def find_or_create_repo(self, allow_create=True):
@@ -174,13 +179,23 @@ class Builder(object):
             if self.output_dir.parent.basename() == self.series:
                 # we're already in a repo
                 self.repo = self.output_dir.parent.parent
-                self.deps = (self.repo / "deps" / self.series)
+                self.deps = (self.repo / "deps")
                 self.target_dir = self.output_dir
                 return
         if allow_create:
             self.create_repo()
         else:
             raise ValueError("%s doesn't seem valid", self.charm.directory)
+
+    @property
+    def layers(self):
+        layers = []
+        for i in self._layers:
+            layers.append(i.url)
+        for i in self._interfaces:
+            layers.append(i.url)
+        layers.append("build")
+        return layers
 
     def fetch(self):
         layer = Layer(self.charm, self.deps).fetch()
@@ -204,16 +219,6 @@ class Builder(object):
         self._layers = results["layers"]
         self._interfaces = results["interfaces"]
         return results
-
-    @property
-    def layers(self):
-        layers = []
-        for i in self._layers:
-            layers.append(i.url)
-        for i in self._interfaces:
-            layers.append(i.url)
-        layers.append("build")
-        return layers
 
     def fetch_dep(self, layer, results):
         # Recursively fetch and scan layers
@@ -250,8 +255,14 @@ class Builder(object):
 
     def plan_layers(self, layers, output_files):
         config = BuildConfig()
-        config = config.add_config(
-            layers["layers"][0] / BuildConfig.DEFAULT_FILE, True)
+        cfgfn = layers["layers"][0] / BuildConfig.DEFAULT_FILE
+        if cfgfn.exists():
+            config = config.add_config(
+                cfgfn, True)
+        else:
+            cfgfn = layers["layers"][0] / BuildConfig.OLD_CONFIG
+            config = config.add_config(
+                cfgfn, True)
 
         layers["layers"][-1].url = self.name
 

@@ -39,8 +39,8 @@ def get_prefix(walk, cur, depth, next_depth):
 
 def inspect(charm, force_styling=False):
     tw = utils.TermWriter(force_styling=force_styling)
-    manp = charm / ".composer.manifest"
-    comp = charm / "composer.yaml"
+    manp = charm / ".build.manifest"
+    comp = charm / "layer.yaml"
     if not manp.exists() or not comp.exists():
         return
     manifest = json.loads(manp.text())
@@ -86,7 +86,7 @@ def inspect(charm, force_styling=False):
 
     ignorer = utils.ignore_matcher(config.DEFAULT_IGNORES)
     walk = sorted(utils.walk(charm, get_depth),
-                    key=lambda x: x[1][0])
+                  key=lambda x: x[1][0])
     for i in range(len(walk) - 1):
         entry, (rel, depth) = walk[i]
         nEnt, (nrel, ndepth) = walk[i + 1]
@@ -94,8 +94,8 @@ def inspect(charm, force_styling=False):
             continue
 
         tw.write("{prefix}{layerColor}{entry} "
-                    "{t.bold}{suffix}{t.normal}\n",
-                    prefix=get_prefix(walk, i, depth, ndepth),
-                    layerColor=get_color(rel),
-                    suffix=get_suffix(rel),
-                    entry=rel.name)
+                 "{t.bold}{suffix}{t.normal}\n",
+                 prefix=get_prefix(walk, i, depth, ndepth),
+                 layerColor=get_color(rel),
+                 suffix=get_suffix(rel),
+                 entry=rel.name)

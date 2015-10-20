@@ -25,6 +25,7 @@ class BuildConfig(chainstuf):
     shouldn't be.
     """
     DEFAULT_FILE = "layer.yaml"
+    OLD_CONFIG = "composer.yaml"
 
     def __init__(self, *args, **kwargs):
         super(BuildConfig, self).__init__(*args, **kwargs)
@@ -52,7 +53,7 @@ class BuildConfig(chainstuf):
         if not config_file.exists() and not allow_missing:
             raise OSError("Missing Config File {}".format(config_file))
         try:
-            if config_file.exists():
+            if config_file.exists() and config_file.text().strip() != "":
                 data = yaml.load(config_file.open())
                 self.configured = True
         except yaml.parser.ParserError:

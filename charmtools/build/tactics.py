@@ -321,8 +321,17 @@ class JSONTactic(SerializedTactic):
         json.dump(data, self.target_file.open('w'), indent=2)
 
 
-class LayerYAML(YAMLTactic, ExactMatch):
-    FILENAME = "layer.yaml"
+class LayerYAML(YAMLTactic):
+    FILENAMES = ["layer.yaml", "composer.yaml"]
+
+    @property
+    def target_file(self):
+        # force the non-deprecated name
+        return self.target.directory / "layer.yaml"
+
+    @classmethod
+    def trigger(cls, relpath):
+        return relpath in cls.FILENAMES
 
     def read(self):
         self._raw_data = self.load(self.entity.open())
@@ -350,6 +359,19 @@ class LayerYAML(YAMLTactic, ExactMatch):
             self.target_file.parent.makedirs_p()
         self.dump(data)
         return data
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        target = self.target_file
+        sig = {}
+        if target.exists() and target.isfile():
+            sig["layer.yaml"] = (self.current.url,
+                                 self.kind,
+                                 utils.sign(self.target_file))
+        return sig
+
+
 
 
 class MetadataYAML(YAMLTactic):
@@ -412,27 +434,34 @@ class InstallerTactic(Tactic):
                            "--ignore-installed",
                            spec), env=localenv).throw_on_error()()
             self._tracked = []
-            # Now map from prefix to the charms target
-            # We need to be aware of the nesting created by
-            # the installer in this mode which will create
-            # a lib/pythonX.X/site-packages/ tree
-            # and we want those files placed flatly in the target.
-            for d in [path(temp_dir) / "bin"] + \
-                      path(temp_dir).glob("lib/python*/site-packages/*"):
-                if not d.exists():
-                    continue
-                rp = d.relpath(temp_dir)
-                dst = cwd / target / rp
-                if dst.exists():
-                    if dst.isdir():
-                        dst.rmtree_p()
-                    elif dst.isfile():
-                        dst.remove()
-                if not target.exists():
-                    target.makedirs_p()
-                logging.debug("Installer moving {} to {}".format(d, dst))
-                d.move(dst)
-                self._tracked.append(dst)
+            # We now manage two classes of explicit mappings
+            # When python packages are installed into a prefix
+            # we know that bin/* should map to <charmdir>/bin/
+            # and lib/python*/site-packages/* should map to
+            # <target>/*
+            src_paths = ["bin/*", "lib/python*/site-packages/*"]
+            temp_dir = path(temp_dir)
+            for p in src_paths:
+                for d in temp_dir.glob(p):
+                    if not d.exists():
+                        continue
+                    bp = d.relpath(temp_dir)
+                    if bp.startswith("bin/"):
+                        dst = self.target / bp
+                    elif bp.startswith("lib"):
+                        dst = cwd / target / d.name
+                    else:
+                        dst = cwd / target / bp
+                    if dst.exists():
+                        if dst.isdir():
+                            dst.rmtree_p()
+                        elif dst.isfile():
+                            dst.remove()
+                    if not dst.parent.exists():
+                        dst.parent.makedirs_p()
+                    logging.debug("Installer moving {} to {}".format(d, dst))
+                    d.move(dst)
+                    self._tracked.append(dst)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
