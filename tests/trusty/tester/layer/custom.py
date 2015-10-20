@@ -1,4 +1,4 @@
-from charmtools.compose.tactics import Tactic
+from charmtools.build.tactics import Tactic
 
 
 class READMETactic(Tactic):

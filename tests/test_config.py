@@ -1,12 +1,12 @@
 import logging
 import unittest
 
-from charmtools.compose.config import ComposerConfig
+from charmtools.build.config import BuildConfig
 
 
 class TestConfig(unittest.TestCase):
     def test_rget(self):
-        c = ComposerConfig()
+        c = BuildConfig()
         c['a'] = 1
         c = c.new_child()
         c['a'] = 99
@@ -17,7 +17,7 @@ class TestConfig(unittest.TestCase):
 
     def test_tactics(self):
         # configure from empty and a layer with tactics
-        c = ComposerConfig()
+        c = BuildConfig()
         c._tactics = ['a', 'b', 'c']
         c = c.new_child()
         c._tactics = ['d', 'c']

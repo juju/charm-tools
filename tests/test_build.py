@@ -1,4 +1,4 @@
-from charmtools import compose
+from charmtools import build
 from charmtools import utils
 from path import path
 from ruamel import yaml
@@ -11,24 +11,24 @@ import responses
 import unittest
 
 
-class TestCompose(unittest.TestCase):
+class TestBuild(unittest.TestCase):
     def setUp(self):
         dirname = pkg_resources.resource_filename(__name__, "")
-        os.environ["COMPOSER_PATH"] = path(dirname)
+        os.environ["LAYER_PATH"] = path(dirname)
         os.environ["INTERFACE_PATH"] = path(dirname) / "interfaces"
         path("out").rmtree_p()
 
     def tearDown(self):
         path("out").rmtree_p()
 
-    def test_tester_compose(self):
-        composer = compose.Composer()
-        composer.log_level = "WARNING"
-        composer.output_dir = "out"
-        composer.series = "trusty"
-        composer.name = "foo"
-        composer.charm = "trusty/tester"
-        composer()
+    def test_tester_layer(self):
+        bu = build.Builder()
+        bu.log_level = "WARNING"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/tester"
+        bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
 
@@ -49,7 +49,7 @@ class TestCompose(unittest.TestCase):
         self.assertIn("bind-address", config_data)
         self.assertNotIn("vip", config_data)
 
-        cyaml = base / "composer.yaml"
+        cyaml = base / "layer.yaml"
         self.assertTrue(cyaml.exists())
         cyaml_data = yaml.load(cyaml.open())
         self.assertEquals(cyaml_data['includes'], ['trusty/mysql'])
@@ -65,7 +65,7 @@ class TestCompose(unittest.TestCase):
         self.assertTrue((base / "README.md").exists())
         self.assertEqual("dynamic tactics", (base / "README.md").text())
 
-        sigs = base / ".composer.manifest"
+        sigs = base / ".build.manifest"
         self.assertTrue(sigs.exists())
         data = json.load(sigs.open())
         self.assertEquals(data['signatures']["README.md"], [
@@ -85,13 +85,13 @@ class TestCompose(unittest.TestCase):
         # take a generated example where a base layer has changed
         # regenerate in place
         # make some assertions
-        composer = compose.Composer()
-        composer.log_level = "WARNING"
-        composer.output_dir = "out"
-        composer.series = "trusty"
-        composer.name = "foo"
-        composer.charm = "trusty/b"
-        composer()
+        bu = build.Builder()
+        bu.log_level = "WARNING"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/b"
+        bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
 
@@ -101,26 +101,26 @@ class TestCompose(unittest.TestCase):
 
         # now regenerate from the target
         with utils.cd("out/trusty/foo"):
-            composer = compose.Composer()
-            composer.log_level = "WARNING"
-            composer.output_dir = path(os.getcwd())
-            composer.series = "trusty"
+            bu = build.Builder()
+            bu.log_level = "WARNING"
+            bu.output_dir = path(os.getcwd())
+            bu.series = "trusty"
             # The generate target and source are now the same
-            composer.name = "foo"
-            composer.charm = "."
-            composer()
-            base = composer.output_dir
+            bu.name = "foo"
+            bu.charm = "."
+            bu()
+            base = bu.output_dir
             self.assertTrue(base.exists())
 
-            # Check that the generated composer makes sense
-            cy = base / "composer.yaml"
+            # Check that the generated layer.yaml makes sense
+            cy = base / "layer.yaml"
             config = yaml.load(cy.open())
             self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
             self.assertEquals(config["is"], "foo")
 
             # We can even run it more than once
-            composer()
-            cy = base / "composer.yaml"
+            bu()
+            cy = base / "layer.yaml"
             config = yaml.load(cy.open())
             self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
             self.assertEquals(config["is"], "foo")
@@ -157,13 +157,13 @@ class TestCompose(unittest.TestCase):
                       "version": 1
                       }''',
                       content_type="application/json")
-        composer = compose.Composer()
-        composer.log_level = "WARNING"
-        composer.output_dir = "out"
-        composer.series = "trusty"
-        composer.name = "foo"
-        composer.charm = "trusty/c-reactive"
-        composer()
+        bu = build.Builder()
+        bu.log_level = "WARNING"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/c-reactive"
+        bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
 
@@ -193,16 +193,16 @@ class TestCompose(unittest.TestCase):
                       "version": 1
                       }''',
                       content_type="application/json")
-        composer = compose.Composer()
-        composer.log_level = "WARNING"
-        composer.output_dir = "out"
-        composer.series = "trusty"
-        composer.name = "foo"
-        composer.charm = "trusty/use-layers"
+        bu = build.Builder()
+        bu.log_level = "WARNING"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/use-layers"
         # remove the sign phase
-        composer.PHASES = composer.PHASES[:-2]
+        bu.PHASES = bu.PHASES[:-2]
 
-        composer()
+        bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
 
@@ -211,25 +211,25 @@ class TestCompose(unittest.TestCase):
 
         # show that we pulled charmhelpers from the basic layer as well
         mcall.assert_called_with(("pip", "install",
-                                  "-t", mock.ANY,
-                                  mock.ANY))
+                                  "--user", "--ignore-installed",
+                                  mock.ANY), env=mock.ANY)
 
 
     @mock.patch("charmtools.utils.Process")
     def test_pypi_installer(self, mcall):
-        composer = compose.Composer()
-        composer.log_level = "WARN"
-        composer.output_dir = "out"
-        composer.series = "trusty"
-        composer.name = "foo"
-        composer.charm = "trusty/chlayer"
+        bu = build.Builder()
+        bu.log_level = "WARN"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/chlayer"
 
         # remove the sign phase
-        composer.PHASES = composer.PHASES[:-2]
-        composer()
+        bu.PHASES = bu.PHASES[:-2]
+        bu()
         mcall.assert_called_with(("pip", "install",
-                                  "-t", mock.ANY,
-                                  "charmhelpers"))
+                                  "--user", "--ignore-installed",
+                                  mock.ANY), env=mock.ANY)
 
 
 if __name__ == '__main__':

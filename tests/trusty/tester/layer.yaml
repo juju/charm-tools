@@ -5,4 +5,4 @@ config:
         - vip_iface
         - vip_cidr
 tactics:
-    - generate.custom.READMETactic
+    - layer.custom.READMETactic

@@ -11,7 +11,7 @@ import tempfile
 import time
 from contextlib import contextmanager
 
-from .compose.diff_match_patch import diff_match_patch
+from .diff_match_patch import diff_match_patch
 import blessings
 import pathspec
 from path import path
@@ -59,7 +59,8 @@ def delete_path(path, obj):
     parts = path.split('.')
     for p in parts[:-1]:
         obj = obj[p]
-    del obj[parts[-1]]
+    if parts[-1] in obj:
+        del obj[parts[-1]]
 
 
 class NestedDict(dict):
@@ -376,7 +377,7 @@ def delta_signatures(manifest_filename, ignorer=None):
             continue
         # layer, kind, sig
         # don't include items generated only for the last layer
-        if expected["signatures"][p][0] == "composer":
+        if expected["signatures"][p][0] == "build":
             continue
         if expected["signatures"][p][2] != s:
             change.add(p)

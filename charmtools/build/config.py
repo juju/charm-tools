@@ -18,16 +18,17 @@ DEFAULT_IGNORES = [
 ]
 
 
-class ComposerConfig(chainstuf):
+class BuildConfig(chainstuf):
     """Defaults for controlling the generator, each layer in
     the inclusion graph can provide values, including things
     like overrides, or warnings if things are overridden that
     shouldn't be.
     """
-    DEFAULT_FILE = "composer.yaml"
+    DEFAULT_FILE = "layer.yaml"
+    OLD_CONFIG = "composer.yaml"
 
     def __init__(self, *args, **kwargs):
-        super(ComposerConfig, self).__init__(*args, **kwargs)
+        super(BuildConfig, self).__init__(*args, **kwargs)
         self['_tactics'] = []
         self.configured = False
 
@@ -52,7 +53,7 @@ class ComposerConfig(chainstuf):
         if not config_file.exists() and not allow_missing:
             raise OSError("Missing Config File {}".format(config_file))
         try:
-            if config_file.exists():
+            if config_file.exists() and config_file.text().strip() != "":
                 data = yaml.load(config_file.open())
                 self.configured = True
         except yaml.parser.ParserError:

@@ -1,6 +1,7 @@
 import logging
 import json
 from ruamel import yaml
+import os
 
 from path import path
 from charmtools import utils
@@ -320,8 +321,17 @@ class JSONTactic(SerializedTactic):
         json.dump(data, self.target_file.open('w'), indent=2)
 
 
-class ComposerYAML(YAMLTactic, ExactMatch):
-    FILENAME = "composer.yaml"
+class LayerYAML(YAMLTactic):
+    FILENAMES = ["layer.yaml", "composer.yaml"]
+
+    @property
+    def target_file(self):
+        # force the non-deprecated name
+        return self.target.directory / "layer.yaml"
+
+    @classmethod
+    def trigger(cls, relpath):
+        return relpath in cls.FILENAMES
 
     def read(self):
         self._raw_data = self.load(self.entity.open())
@@ -349,6 +359,19 @@ class ComposerYAML(YAMLTactic, ExactMatch):
             self.target_file.parent.makedirs_p()
         self.dump(data)
         return data
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        target = self.target_file
+        sig = {}
+        if target.exists() and target.isfile():
+            sig["layer.yaml"] = (self.current.url,
+                                 self.kind,
+                                 utils.sign(self.target_file))
+        return sig
+
+
 
 
 class MetadataYAML(YAMLTactic):
@@ -403,26 +426,42 @@ class InstallerTactic(Tactic):
             # to guess package and .egg file names
             # we move everything in the tempdir to the target
             # and track it for later use in sign()
+            localenv = os.environ.copy()
+            localenv['PYTHONUSERBASE'] = temp_dir
             utils.Process(("pip",
                            "install",
-                           "-t",
-                           temp_dir,
-                           spec)).throw_on_error()()
-            dirs = temp_dir.listdir()
+                           "--user",
+                           "--ignore-installed",
+                           spec), env=localenv).throw_on_error()()
             self._tracked = []
-            for d in dirs:
-                rp = d.relpath(temp_dir)
-                dst = cwd / target / rp
-                if dst.exists():
-                    if dst.isdir():
-                        dst.rmtree_p()
-                    elif dst.isfile():
-                        dst.remove()
-                if not target.exists():
-                    target.makedirs_p()
-                logging.debug("Installer moving {} to {}".format(d, dst))
-                d.move(dst)
-                self._tracked.append(dst)
+            # We now manage two classes of explicit mappings
+            # When python packages are installed into a prefix
+            # we know that bin/* should map to <charmdir>/bin/
+            # and lib/python*/site-packages/* should map to
+            # <target>/*
+            src_paths = ["bin/*", "lib/python*/site-packages/*"]
+            temp_dir = path(temp_dir)
+            for p in src_paths:
+                for d in temp_dir.glob(p):
+                    if not d.exists():
+                        continue
+                    bp = d.relpath(temp_dir)
+                    if bp.startswith("bin/"):
+                        dst = self.target / bp
+                    elif bp.startswith("lib"):
+                        dst = cwd / target / d.name
+                    else:
+                        dst = cwd / target / bp
+                    if dst.exists():
+                        if dst.isdir():
+                            dst.rmtree_p()
+                        elif dst.isfile():
+                            dst.remove()
+                    if not dst.parent.exists():
+                        dst.parent.makedirs_p()
+                    logging.debug("Installer moving {} to {}".format(d, dst))
+                    d.move(dst)
+                    self._tracked.append(dst)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
@@ -456,6 +495,6 @@ DEFAULT_TACTICS = [
     InstallerTactic,
     MetadataYAML,
     ConfigYAML,
-    ComposerYAML,
+    LayerYAML,
     CopyTactic
 ]
