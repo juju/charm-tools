@@ -121,6 +121,7 @@ class Builder(object):
         self.force = False
         self._name = None
         self._charm = None
+        self.hide_metrics = True
 
     @property
     def charm(self):
