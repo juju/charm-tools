@@ -258,7 +258,7 @@ class Charm(object):
 
             # summary should be short
             if len(charm['summary']) > 72:
-                lint.warn('summary sould be less than 72')
+                lint.warn('summary should be less than 72')
 
             validate_maintainer(charm, lint)
             validate_categories_and_tags(charm, lint)

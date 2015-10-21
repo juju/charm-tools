@@ -2,54 +2,42 @@
 
 [![Build Status](https://travis-ci.org/juju/charm-tools.svg?branch=master)](https://travis-ci.org/juju/charm-tools)
 
-This is a collection of Charm Tools for use as a reference and in
-deploying real services using juju. See Juju's home page for
-more information.
+This is a collection of tools to make writing Juju charms easier. See Juju's
+home page for more information.
 
 https://jujucharms.com/
 
-# Quick Start
+## Quick Start
 
-First, you'll need juju. If its not available in your version of Ubuntu
+### Get Juju
+
+First, you'll need Juju. If its not available in your version of Ubuntu
 you can use the PPA:
 
     sudo add-apt-repository ppa:juju/stable
     sudo apt-get update
     sudo apt-get install juju-core
 
-You can install charm-tools from the distro, stable ppa, or daily-builds
-PPA.
+### Get Charm Tools
+
+Most people will want to install charm-tools from the Juju PPA.
 
     sudo apt-get install charm-tools
 
-Alternatively you can branch the project and run the tip of the code.
+Alternatively you can download the project and run the tip of the code.
 
-    bzr branch lp:charm-tools
+    git clone http://github.com/juju/charm-tools
     cd charm-tools
 
-If you've branched locally, you'll need to add the `charm-tools/bin`
-directory to your `$PATH`
-
-    export PATH="$(pwd):${PATH}"
-
-# Directory structure
-
-## bin
-
-tools to help in building charms
-
-## templates
-
-templates for usage in building new charms
 
 # Tools
 
-In order to use any of these charms, once you have juju setup and
+In order to use any of these tools you need to have Juju setup and
 working in your path
 
 ## create
 
-To generate a new charm from a debian package available on your system
+To generate a new charm from a Debian package available on your system
 
     juju charm create foo
 
@@ -67,7 +55,7 @@ It will analyze the charm for any obvious mistakes.
 
 ## getall
 
-Retrieves all of the charms in the charm distribution via bzr. 
+Retrieves all of the charms in the charm distribution via bzr.
 
 ## subscribers
 
