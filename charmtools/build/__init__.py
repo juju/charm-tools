@@ -10,6 +10,7 @@ import warnings
 import blessings
 from collections import OrderedDict
 from path import path
+import requests
 import yaml
 from charmtools.build import inspector
 import charmtools.build.tactics
@@ -17,7 +18,7 @@ from charmtools.build.config import (BuildConfig, DEFAULT_IGNORES)
 from charmtools.build.fetchers import (InterfaceFetcher,
                                        LayerFetcher,
                                        get_fetcher,
-                                         FetchError)
+                                       FetchError)
 from charmtools import utils
 
 log = logging.getLogger("build")
@@ -120,6 +121,7 @@ class Builder(object):
         self.force = False
         self._name = None
         self._charm = None
+        self.hide_metrics = True
 
     @property
     def charm(self):
@@ -235,10 +237,14 @@ class Builder(object):
         for base in baselayers:
             if base.startswith("interface:"):
                 iface = Interface(base, self.deps).fetch()
+                if iface.name in [i.name for i in results['interfaces']]:
+                    continue
                 results["interfaces"].append(iface)
             else:
                 base_layer = Layer(base, self.deps).fetch()
                 self.fetch_dep(base_layer, results)
+                if base_layer.name in [i.name for i in results['layers']]:
+                    continue
                 results["layers"].append(base_layer)
 
     def build_tactics(self, entry, current, config, output_files):
@@ -330,7 +336,19 @@ class Builder(object):
         output_files = OrderedDict()
         self.plan = self.plan_layers(layers, output_files)
         self.plan_interfaces(layers, output_files, self.plan)
+        if self.hide_metrics is not True:
+            self.post_metrics(layers)
         return self.plan
+
+    def post_metrics(self, layers):
+        url = "/".join((self.interface_service,
+                        "api/v1/metrics/"))
+        data = {"layers": [l.url for l in layers["layers"]],
+                "interfaces": [i.url for i in layers["interfaces"]]}
+        try:
+            requests.post(url, json.dumps(data).encode('utf-8'))
+        except requests.exceptions.RequestException:
+            log.warning("Unable to post usage metrics")
 
     def exec_plan(self, plan=None, layers=None):
         signatures = {}
@@ -340,7 +358,7 @@ class Builder(object):
                 if phase == "lint":
                     cont &= tactic.lint()
                     if cont is False and self.force is not True:
-                        break
+                        return
                 elif phase == "read":
                     # We use a read (into memory phase to make layer comps
                     # simpler)
@@ -351,8 +369,6 @@ class Builder(object):
                     sig = tactic.sign()
                     if sig:
                         signatures.update(sig)
-                elif phase == "build":
-                    tactic.build()
         # write out the sigs
         if "sign" in self.PHASES:
             self.write_signatures(signatures, layers)
@@ -393,7 +409,8 @@ class Builder(object):
                     "Changes will be overwritten")
             else:
                 raise ValueError(
-                    "Unable to continue due to unexpected modifications (try --force)")
+                    "Unable to continue due to unexpected modifications "
+                    "(try --force)")
         return a, c, d
 
     def __call__(self):
@@ -436,7 +453,7 @@ def configLogging(build):
     log.setLevel(build.log_level)
     root_logger.addHandler(clihandler)
     requests_logger = logging.getLogger("requests")
-    requests_logger.setLevel(logging.CRITICAL)
+    requests_logger.setLevel(logging.WARN)
     urllib_logger = logging.getLogger("urllib3")
     urllib_logger.setLevel(logging.CRITICAL)
 
@@ -445,7 +462,7 @@ def inspect(args=None):
     build = Builder()
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--force-raw', action="store_true",
-                       help="Force raw output (color)")
+                        help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('charm', nargs="?", default=".", type=path)
     # Namespace will set the options as attrs of build
@@ -474,6 +491,7 @@ def deprecated_main():
     else:
         main()
 
+
 def main(args=None):
     build = Builder()
     parser = argparse.ArgumentParser(
@@ -483,6 +501,7 @@ def main(args=None):
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-o', '--output-dir', type=path)
     parser.add_argument('-s', '--series', default="trusty")
+    parser.add_argument('--hide-metrics', action="store_true")
     parser.add_argument('--interface-service',
                         default="http://interfaces.juju.solutions")
     parser.add_argument('-n', '--name',
