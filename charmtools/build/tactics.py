@@ -98,9 +98,6 @@ class Tactic(object):
     def read(self):
         return None
 
-    def build(self):
-        pass
-
 
 class ExactMatch(object):
     FILENAME = None
@@ -372,8 +369,6 @@ class LayerYAML(YAMLTactic):
         return sig
 
 
-
-
 class MetadataYAML(YAMLTactic):
     """Rule Driven metadata.yaml generation"""
     section = "metadata"
@@ -459,7 +454,7 @@ class InstallerTactic(Tactic):
                             dst.remove()
                     if not dst.parent.exists():
                         dst.parent.makedirs_p()
-                    logging.debug("Installer moving {} to {}".format(d, dst))
+                    log.debug("Installer moving {} to {}".format(d, dst))
                     d.move(dst)
                     self._tracked.append(dst)
 

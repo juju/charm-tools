@@ -89,7 +89,7 @@ fetchers.FETCHERS.insert(0, InterfaceFetcher)
 class LayerFetcher(InterfaceFetcher):
     INTERFACE_DOMAIN = "http://interfaces.juju.solutions"
     NAMESPACE = "layer"
-    ENVIRON = "COMPOSER_PATH"
+    ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"
     ENDPOINT = "/api/v1/layer"
 
