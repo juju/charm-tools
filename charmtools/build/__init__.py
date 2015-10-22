@@ -237,10 +237,14 @@ class Builder(object):
         for base in baselayers:
             if base.startswith("interface:"):
                 iface = Interface(base, self.deps).fetch()
+                if iface.name in [i.name for i in results['interfaces']]:
+                    continue
                 results["interfaces"].append(iface)
             else:
                 base_layer = Layer(base, self.deps).fetch()
                 self.fetch_dep(base_layer, results)
+                if base_layer.name in [i.name for i in results['layers']]:
+                    continue
                 results["layers"].append(base_layer)
 
     def build_tactics(self, entry, current, config, output_files):
