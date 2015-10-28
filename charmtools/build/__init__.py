@@ -121,7 +121,7 @@ class Builder(object):
         self.force = False
         self._name = None
         self._charm = None
-        self.hide_metrics = True
+        self.hide_metrics = False
 
     @property
     def charm(self):
@@ -343,10 +343,11 @@ class Builder(object):
     def post_metrics(self, layers):
         url = "/".join((self.interface_service,
                         "api/v1/metrics/"))
-        data = {"layers": [l.url for l in layers["layers"]],
+        data = {"kind": "build",
+                "layers": [l.url for l in layers["layers"]],
                 "interfaces": [i.url for i in layers["interfaces"]]}
         try:
-            requests.post(url, json.dumps(data).encode('utf-8'))
+            requests.post(url, json.dumps(data).encode('utf-8'), timeout=10)
         except requests.exceptions.RequestException:
             log.warning("Unable to post usage metrics")
 
@@ -501,7 +502,8 @@ def main(args=None):
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-o', '--output-dir', type=path)
     parser.add_argument('-s', '--series', default="trusty")
-    parser.add_argument('--hide-metrics', action="store_true")
+    parser.add_argument('--hide-metrics', dest="hide_metrics",
+                        default=False, action="store_true")
     parser.add_argument('--interface-service',
                         default="http://interfaces.juju.solutions")
     parser.add_argument('-n', '--name',
@@ -516,7 +518,6 @@ def main(args=None):
 
     if not build.output_dir:
         build.normalize_outputdir()
-
     build()
 
 

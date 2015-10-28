@@ -28,6 +28,7 @@ class TestBuild(unittest.TestCase):
         bu.series = "trusty"
         bu.name = "foo"
         bu.charm = "trusty/tester"
+        bu.hide_metrics = True
         bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -91,6 +92,7 @@ class TestBuild(unittest.TestCase):
         bu.series = "trusty"
         bu.name = "foo"
         bu.charm = "trusty/b"
+        bu.hide_metrics = True
         bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -108,6 +110,7 @@ class TestBuild(unittest.TestCase):
             # The generate target and source are now the same
             bu.name = "foo"
             bu.charm = "."
+            bu.hide_metrics = True
             bu()
             base = bu.output_dir
             self.assertTrue(base.exists())
@@ -163,6 +166,7 @@ class TestBuild(unittest.TestCase):
         bu.series = "trusty"
         bu.name = "foo"
         bu.charm = "trusty/c-reactive"
+        bu.hide_metrics = True
         bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -199,6 +203,7 @@ class TestBuild(unittest.TestCase):
         bu.series = "trusty"
         bu.name = "foo"
         bu.charm = "trusty/use-layers"
+        bu.hide_metrics = True
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
 
@@ -223,6 +228,7 @@ class TestBuild(unittest.TestCase):
         bu.series = "trusty"
         bu.name = "foo"
         bu.charm = "trusty/chlayer"
+        bu.hide_metrics = True
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
