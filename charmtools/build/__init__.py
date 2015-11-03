@@ -511,6 +511,10 @@ def main(args=None):
     parser.add_argument('charm', nargs="?", default=".", type=path)
     # Namespace will set the options as attrs of build
     parser.parse_args(args, namespace=build)
+    if build.charm == "help":
+        parser.print_help()
+        raise SystemExit(0)
+
     # Monkey patch in the domain for the interface webservice
     InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
     LayerFetcher.INTERFACE_DOMAIN = build.interface_service
