@@ -22,7 +22,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from textwrap import dedent
 from unittest import main, TestCase
-from mock import Mock
+from mock import Mock, call
 
 proof_path = dirname(dirname(dirname(abspath(__file__))))
 proof_path = join(proof_path, 'charmtools')
@@ -32,6 +32,7 @@ sys.path.append(proof_path)
 from charmtools.charms import CharmLinter as Linter
 from charmtools.charms import validate_maintainer
 from charmtools.charms import validate_categories_and_tags
+from charmtools.charms import validate_storage
 
 
 class TestCharmProof(TestCase):
@@ -475,6 +476,108 @@ class MaintainerValidationTest(TestCase):
         validate_maintainer(charm, linter)
         self.assertFalse(linter.err.called)
         self.assertFalse(linter.warn.called)
+
+
+class StorageValidationTest(TestCase):
+    def test_minimal_storage_config(self):
+        """Charm has the minimum allowed storage configuration."""
+        linter = Mock()
+        charm = {
+            'storage': {
+                'data': {
+                    'type': 'filesystem',
+                }
+            }
+        }
+        validate_storage(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_complete_storage_config(self):
+        """Charm has a storage configuration using all options."""
+        linter = Mock()
+        charm = {
+            'storage': {
+                'data': {
+                    'type': 'filesystem',
+                    'description': 'my storage',
+                    'shared': False,
+                    'read-only': 'true',
+                    'minimum-size': '10G',
+                    'location': '/srv/data',
+                },
+                'disks': {
+                    'type': 'block',
+                    'multiple': {
+                        'range': '10-'
+                    }
+                }
+            }
+        }
+        validate_storage(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_storage_without_defs(self):
+        """Charm has storage key but no storage definitions."""
+        linter = Mock()
+        charm = {
+            'storage': {}
+        }
+        validate_storage(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('storage: must be a dictionary of storage definitions'),
+        ], any_order=True)
+
+    def test_storage_invalid_values(self):
+        """Charm has storage with invalid values."""
+        linter = Mock()
+        charm = {
+            'storage': {
+                'data': {
+                    'type': 'unknown',
+                    'shared': 'maybe',
+                    'read-only': 'no',
+                    'minimum-size': '10k',
+                },
+                'disks': {
+                    'type': 'block',
+                    'multiple': {
+                        'range': '10+'
+                    }
+                }
+            }
+        }
+        validate_storage(charm, linter)
+        self.assertEqual(linter.err.call_count, 5)
+        linter.err.assert_has_calls([
+            call('storage.data.type: "unknown" is not one of '
+                 'filesystem, block'),
+            call('storage.data.shared: "maybe" is not one of true, false'),
+            call('storage.data.read-only: "no" is not one of true, false'),
+            call('storage.data.minimum-size: must be a number followed by '
+                 'an optional M/G/T/P, e.g. 100M'),
+            call('storage.disks.multiple.range: supported formats are: '
+                 'm (a fixed number), m-n (an explicit range), and '
+                 'm- (a minimum number)'),
+        ], any_order=True)
+
+    def test_storage_unknown_keys(self):
+        """Charm has storage with illegal keys."""
+        linter = Mock()
+        charm = {
+            'storage': {
+                'data': {
+                    'type': 'filesystem',
+                    'unknown': 'invalid key',
+                },
+            }
+        }
+        validate_storage(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('storage.data: Unrecognized keys in mapping: '
+                 '"{\'unknown\': \'invalid key\'}"'),
+        ], any_order=True)
 
 
 if __name__ == '__main__':

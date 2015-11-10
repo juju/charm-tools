@@ -3,6 +3,27 @@ summary: <Fill in summary here>
 maintainer: test@testhost
 description: |
   <Multi-line description here>
+storage:
+  data:
+    type: filesystem
+    description: my storage
+    shared: false
+    read-only: false
+    minimum-size: 100M
+    location: /srv/data
+  disks:
+    type: block
+    multiple:
+      range: 1-10
+  invalid-data:
+    type: unknown
+    shared: yes
+    read-only: no
+    minimum-size: small
+  invalid-disks:
+    type: fast
+    multiple:
+      range: 1+
 provides:
   relation-name:
     interface: interface-name
