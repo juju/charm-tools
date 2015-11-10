@@ -1,9 +1,10 @@
 import os
-
 import re
-import yaml
 import hashlib
 import email.utils
+
+import colander
+import yaml
 
 from stat import ST_MODE
 from stat import S_IXUSR
@@ -24,6 +25,7 @@ KNOWN_METADATA_KEYS = [
     'format',
     'peers',
     'tags',
+    'storage',
 ]
 
 KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
@@ -262,6 +264,7 @@ class Charm(object):
 
             validate_maintainer(charm, lint)
             validate_categories_and_tags(charm, lint)
+            validate_storage(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -410,6 +413,97 @@ class Charm(object):
 
     def promulgate(self):
         pass
+
+
+class Boolean(object):
+    def deserialize(self, node, cstruct):
+        if cstruct is colander.null:
+            return colander.null
+        if isinstance(cstruct, bool):
+            cstruct = str(cstruct).lower()
+        if cstruct not in ('true', 'false'):
+            raise colander.Invalid(
+                node, '"%s" is not one of true, false' % cstruct)
+
+
+class StorageItem(colander.MappingSchema):
+    def schema_type(self, **kw):
+        return colander.Mapping(unknown='raise')
+
+    type_ = colander.SchemaNode(
+        colander.String(),
+        validator=colander.OneOf(['filesystem', 'block']),
+        name='type',
+    )
+    description = colander.SchemaNode(
+        colander.String(),
+        missing='',
+    )
+    shared = colander.SchemaNode(
+        Boolean(),
+        missing=False,
+    )
+    read_only = colander.SchemaNode(
+        Boolean(),
+        missing=False,
+        name='read-only',
+    )
+    minimum_size = colander.SchemaNode(
+        colander.String(),
+        validator=colander.Regex(
+            r'^\d+[MGTP]?$',
+            msg='must be a number followed by an optional '
+                'M/G/T/P, e.g. 100M'
+        ),
+        missing='',
+        name='minimum-size',
+    )
+    location = colander.SchemaNode(
+        colander.String(),
+        missing='',
+    )
+
+    @colander.instantiate(missing={})
+    class multiple(colander.MappingSchema):
+        def schema_type(self, **kw):
+            return colander.Mapping(unknown='raise')
+
+        range_ = colander.SchemaNode(
+            colander.String(),
+            validator=colander.Regex(
+                r'^\d+-?(\d+)?$',
+                msg='supported formats are: m (a fixed number), '
+                    'm-n (an explicit range), and m- (a minimum number)'
+            ),
+            name='range',
+        )
+
+
+def validate_storage(charm, linter):
+    """Validate storage configuration in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'storage' not in charm:
+        return
+
+    if (not isinstance(charm['storage'], dict) or
+            not charm['storage']):
+        linter.err('storage: must be a dictionary of storage definitions')
+        return
+
+    schema = colander.SchemaNode(colander.Mapping())
+    for storage_def in charm['storage']:
+        schema.add(StorageItem(name=storage_def))
+
+    try:
+        schema.deserialize(charm['storage'])
+    except colander.Invalid as e:
+        for k, v in e.asdict().items():
+            linter.err('storage.{}: {}'.format(k, v))
 
 
 def validate_maintainer(charm, linter):

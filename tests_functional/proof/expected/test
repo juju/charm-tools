@@ -1,4 +1,8 @@
 W: Metadata missing required field "tags"
+E: storage.invalid-disks.type: "fast" is not one of filesystem, block
+E: storage.invalid-data.minimum-size: must be a number followed by an optional M/G/T/P, e.g. 100M
+E: storage.invalid-data.type: "unknown" is not one of filesystem, block
+E: storage.invalid-disks.multiple.range: supported formats are: m (a fixed number), m-n (an explicit range), and m- (a minimum number)
 I: No icon.svg file.
 W: no copyright file
 W: Includes template README.ex file
