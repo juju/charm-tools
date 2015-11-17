@@ -9,11 +9,8 @@ include
 lib
 local
 man
-build
-build/.ropeproject/
-dist
-tests/.ropeproject/
-charmtools/.ropeproject/
+/build
+/dist
 .ropeproject/
 .tox/
 *.pyc

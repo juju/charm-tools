@@ -13,9 +13,9 @@ import unittest
 
 class TestBuild(unittest.TestCase):
     def setUp(self):
-        dirname = pkg_resources.resource_filename(__name__, "")
-        os.environ["LAYER_PATH"] = path(dirname)
-        os.environ["INTERFACE_PATH"] = path(dirname) / "interfaces"
+        self.dirname = path(pkg_resources.resource_filename(__name__, ""))
+        os.environ["LAYER_PATH"] = self.dirname
+        os.environ["INTERFACE_PATH"] = self.dirname / "interfaces"
         path("out").rmtree_p()
 
     def tearDown(self):
@@ -219,7 +219,6 @@ class TestBuild(unittest.TestCase):
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
-
     @mock.patch("charmtools.utils.Process")
     def test_pypi_installer(self, mcall):
         bu = build.Builder()
@@ -236,6 +235,27 @@ class TestBuild(unittest.TestCase):
         mcall.assert_called_with(("pip", "install",
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
+
+    @mock.patch("charmtools.utils.Process")
+    def test_wheelhouse(self, Process):
+        bu = build.Builder()
+        bu.log_level = "WARN"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/whlayer"
+        bu.hide_metrics = True
+
+        # remove the sign phase
+        bu.PHASES = bu.PHASES[:-2]
+        with mock.patch("path.Path.mkdir_p"):
+            with mock.patch("path.Path.files"):
+                bu()
+                Process.assert_called_with((
+                    'pip', 'wheel',
+                    '--no-binary', ':all:',
+                    '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt',
+                    '-w', 'out/trusty/foo/wheelhouse'))
 
 
 if __name__ == '__main__':

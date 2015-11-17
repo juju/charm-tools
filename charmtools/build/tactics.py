@@ -475,6 +475,49 @@ class InstallerTactic(Tactic):
         return sigs
 
 
+class WheelhouseTactic(ExactMatch, Tactic):
+    kind = "dynamic"
+    FILENAME = 'wheelhouse.txt'
+
+    def __init__(self, *args, **kwargs):
+        super(WheelhouseTactic, self).__init__(*args, **kwargs)
+        self.previous = []
+
+    def __str__(self):
+        return "Building wheelhouse in {}".format(self.target.directory / 'wheelhouse')
+
+    def combine(self, existing):
+        self.previous = existing.previous + [existing]
+        return self
+
+    def __call__(self):
+        for tactic in self.previous:
+            tactic()
+        wheelhouse = self.target.directory / 'wheelhouse'
+        wheelhouse.mkdir_p()
+        old_files = set(wheelhouse.files())
+        utils.Process(('pip',
+                       'wheel',
+                       '--no-binary', ':all:',
+                       '-r', self.entity,
+                       '-w', wheelhouse,
+                       )).throw_on_error()()
+        new_files = set(wheelhouse.files())
+        self._tracked = new_files - old_files
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        sigs = {}
+        for tactic in self.previous:
+            sigs.update(tactic.sign())
+        for d in self._tracked:
+            relpath = d.relpath(self.target.directory)
+            sigs[relpath] = (
+                self.current.url, "dynamic", utils.sign(d))
+        return sigs
+
+
 def load_tactic(dpath, basedir):
     """Load a tactic from the current layer using a dotted path. The last
     element in the path should be a Tactic subclass
@@ -487,6 +530,7 @@ def load_tactic(dpath, basedir):
 
 DEFAULT_TACTICS = [
     ManifestTactic,
+    WheelhouseTactic,
     InstallerTactic,
     MetadataYAML,
     ConfigYAML,
