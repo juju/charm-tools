@@ -21,3 +21,4 @@ pip>=7.1.2
 requests==2.7.0
 responses==0.4.0
 ruamel.yaml==0.10.2
+virtualenv>=1.11.4
