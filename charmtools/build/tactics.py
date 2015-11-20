@@ -2,6 +2,7 @@ import logging
 import json
 from ruamel import yaml
 import os
+import tempfile
 
 from path import path
 from charmtools import utils
@@ -475,6 +476,64 @@ class InstallerTactic(Tactic):
         return sigs
 
 
+class WheelhouseTactic(ExactMatch, Tactic):
+    kind = "dynamic"
+    FILENAME = 'wheelhouse.txt'
+
+    def __init__(self, *args, **kwargs):
+        super(WheelhouseTactic, self).__init__(*args, **kwargs)
+        self.tracked = []
+        self.previous = []
+
+    def __str__(self):
+        return "Building wheelhouse in {}".format(self.target.directory / 'wheelhouse')
+
+    def combine(self, existing):
+        self.previous = existing.previous + [existing]
+        return self
+
+    def _add(self, pip, wheelhouse, *reqs):
+        with utils.tempdir() as temp_dir:
+            # put in a temp dir first to ensure we track all of the files
+            utils.Process((pip, 'wheel',
+                          '--no-binary', ':all:',
+                          '-w', temp_dir) +
+                          reqs).throw_on_error()()
+            for wheel in temp_dir.files():
+                dest = wheelhouse / wheel.basename()
+                dest.remove_p()
+                wheel.move(wheelhouse)
+                self.tracked.append(dest)
+
+    def __call__(self, venv=None):
+        create_venv = venv is None
+        venv = venv or path(tempfile.mkdtemp())
+        pip = venv / 'bin' / 'pip'
+        wheelhouse = self.target.directory / 'wheelhouse'
+        wheelhouse.mkdir_p()
+        if create_venv:
+            utils.Process(('virtualenv', venv)).throw_on_error()()
+            utils.Process((pip, 'install', '-U', 'pip')).throw_on_error()()
+            self._add(pip, wheelhouse, 'pip')
+        for tactic in self.previous:
+            tactic(venv)
+        self._add(pip, wheelhouse, '-r', self.entity)
+        if create_venv:
+            venv.rmtree_p()
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        sigs = {}
+        for tactic in self.previous:
+            sigs.update(tactic.sign())
+        for d in self.tracked:
+            relpath = d.relpath(self.target.directory)
+            sigs[relpath] = (
+                self.current.url, "dynamic", utils.sign(d))
+        return sigs
+
+
 def load_tactic(dpath, basedir):
     """Load a tactic from the current layer using a dotted path. The last
     element in the path should be a Tactic subclass
@@ -487,6 +546,7 @@ def load_tactic(dpath, basedir):
 
 DEFAULT_TACTICS = [
     ManifestTactic,
+    WheelhouseTactic,
     InstallerTactic,
     MetadataYAML,
     ConfigYAML,

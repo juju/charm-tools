@@ -13,9 +13,9 @@ import unittest
 
 class TestBuild(unittest.TestCase):
     def setUp(self):
-        dirname = pkg_resources.resource_filename(__name__, "")
-        os.environ["LAYER_PATH"] = path(dirname)
-        os.environ["INTERFACE_PATH"] = path(dirname) / "interfaces"
+        self.dirname = path(pkg_resources.resource_filename(__name__, ""))
+        os.environ["LAYER_PATH"] = self.dirname
+        os.environ["INTERFACE_PATH"] = self.dirname / "interfaces"
         path("out").rmtree_p()
 
     def tearDown(self):
@@ -219,7 +219,6 @@ class TestBuild(unittest.TestCase):
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
-
     @mock.patch("charmtools.utils.Process")
     def test_pypi_installer(self, mcall):
         bu = build.Builder()
@@ -236,6 +235,35 @@ class TestBuild(unittest.TestCase):
         mcall.assert_called_with(("pip", "install",
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
+
+    @mock.patch("path.Path.rmtree_p")
+    @mock.patch("tempfile.mkdtemp")
+    @mock.patch("charmtools.utils.Process")
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p):
+        mkdtemp.return_value = '/tmp'
+        bu = build.Builder()
+        bu.log_level = "WARN"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/whlayer"
+        bu.hide_metrics = True
+
+        # remove the sign phase
+        bu.PHASES = bu.PHASES[:-2]
+        with mock.patch("path.Path.mkdir_p"):
+            with mock.patch("path.Path.files"):
+                bu()
+                Process.assert_has_call((
+                    '/tmp/bin/pip', 'wheel',
+                    '--no-binary', ':all:',
+                    '-w', '/tmp',
+                    'pip'))
+                Process.assert_called_with((
+                    '/tmp/bin/pip', 'wheel',
+                    '--no-binary', ':all:',
+                    '-w', '/tmp',
+                    '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
 
 
 if __name__ == '__main__':
