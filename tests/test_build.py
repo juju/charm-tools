@@ -236,8 +236,11 @@ class TestBuild(unittest.TestCase):
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
+    @mock.patch("path.Path.rmtree_p")
+    @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
-    def test_wheelhouse(self, Process):
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p):
+        mkdtemp.return_value = '/tmp'
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.output_dir = "out"
@@ -251,11 +254,16 @@ class TestBuild(unittest.TestCase):
         with mock.patch("path.Path.mkdir_p"):
             with mock.patch("path.Path.files"):
                 bu()
-                Process.assert_called_with((
-                    'pip', 'wheel',
+                Process.assert_has_call((
+                    '/tmp/bin/pip', 'wheel',
                     '--no-binary', ':all:',
-                    '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt',
-                    '-w', 'out/trusty/foo/wheelhouse'))
+                    '-w', '/tmp',
+                    'pip'))
+                Process.assert_called_with((
+                    '/tmp/bin/pip', 'wheel',
+                    '--no-binary', ':all:',
+                    '-w', '/tmp',
+                    '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
 
 
 if __name__ == '__main__':
