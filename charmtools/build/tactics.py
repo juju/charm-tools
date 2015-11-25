@@ -513,7 +513,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse.mkdir_p()
         if create_venv:
             utils.Process(('virtualenv', venv)).throw_on_error()()
-            utils.Process((pip, 'install', '-U', 'pip')).throw_on_error()()
+            utils.Process((pip, 'install', '-U', 'pip', 'wheel')).throw_on_error()()
             self._add(pip, wheelhouse, 'pip')
         for tactic in self.previous:
             tactic(venv)
