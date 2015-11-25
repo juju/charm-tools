@@ -416,8 +416,7 @@ class InstallerTactic(Tactic):
         target = self.target_file.dirname()
         log.debug("pip installing {} as {}".format(
             spec, target))
-        cwd = path.getcwd()
-        with utils.tempdir() as temp_dir:
+        with utils.tempdir(chdir=False) as temp_dir:
             # We do this dance so we don't have
             # to guess package and .egg file names
             # we move everything in the tempdir to the target
@@ -436,7 +435,6 @@ class InstallerTactic(Tactic):
             # and lib/python*/site-packages/* should map to
             # <target>/*
             src_paths = ["bin/*", "lib/python*/site-packages/*"]
-            temp_dir = path(temp_dir)
             for p in src_paths:
                 for d in temp_dir.glob(p):
                     if not d.exists():
@@ -445,9 +443,9 @@ class InstallerTactic(Tactic):
                     if bp.startswith("bin/"):
                         dst = self.target / bp
                     elif bp.startswith("lib"):
-                        dst = cwd / target / d.name
+                        dst = target / d.name
                     else:
-                        dst = cwd / target / bp
+                        dst = target / bp
                     if dst.exists():
                         if dst.isdir():
                             dst.rmtree_p()
@@ -493,11 +491,11 @@ class WheelhouseTactic(ExactMatch, Tactic):
         return self
 
     def _add(self, pip, wheelhouse, *reqs):
-        with utils.tempdir() as temp_dir:
+        with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
             utils.Process((pip, 'wheel',
-                          '--no-binary', ':all:',
-                          '-w', temp_dir) +
+                           '--no-binary', ':all:',
+                           '-w', temp_dir) +
                           reqs).throw_on_error()()
             for wheel in temp_dir.files():
                 dest = wheelhouse / wheel.basename()
