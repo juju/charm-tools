@@ -583,7 +583,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def __call__(self, venv=None):
         create_venv = venv is None
         venv = venv or path(tempfile.mkdtemp())
-        pip = venv / 'bin' / 'pip'
+        pip = venv / 'bin' / 'pip3'
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
