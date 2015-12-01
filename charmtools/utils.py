@@ -32,9 +32,12 @@ def cd(directory, make=False):
 
 
 @contextmanager
-def tempdir():
+def tempdir(chdir=True):
     dirname = path(tempfile.mkdtemp())
-    with cd(dirname):
+    if chdir:
+        with cd(dirname):
+            yield dirname
+    else:
         yield dirname
     dirname.rmtree_p()
 
