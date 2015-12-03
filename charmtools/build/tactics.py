@@ -493,9 +493,9 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def _add(self, pip, wheelhouse, *reqs):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
-            utils.Process((pip, 'wheel',
+            utils.Process((pip, 'install',
                            '--no-binary', ':all:',
-                           '-w', temp_dir) +
+                           '-d', temp_dir) +
                           reqs).throw_on_error()()
             for wheel in temp_dir.files():
                 dest = wheelhouse / wheel.basename()

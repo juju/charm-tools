@@ -255,14 +255,14 @@ class TestBuild(unittest.TestCase):
             with mock.patch("path.Path.files"):
                 bu()
                 Process.assert_has_call((
-                    '/tmp/bin/pip', 'wheel',
+                    '/tmp/bin/pip', 'install',
                     '--no-binary', ':all:',
-                    '-w', '/tmp',
+                    '-d', '/tmp',
                     'pip'))
                 Process.assert_called_with((
-                    '/tmp/bin/pip', 'wheel',
+                    '/tmp/bin/pip', 'install',
                     '--no-binary', ':all:',
-                    '-w', '/tmp',
+                    '-d', '/tmp',
                     '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
 
 
