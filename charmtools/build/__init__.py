@@ -24,6 +24,10 @@ from charmtools import utils
 log = logging.getLogger("build")
 
 
+class BuildError(Exception):
+    pass
+
+
 class Configable(object):
     CONFIG_FILE = None
 
@@ -83,7 +87,7 @@ class Fetched(Configable):
                 self.directory = path(fetcher.fetch(self.target_repo))
 
         if not self.directory.exists():
-            raise OSError(
+            raise BuildError(
                 "Unable to locate {}. "
                 "Do you need to set {}?".format(
                     self.url, self.ENVIRON))
@@ -522,7 +526,11 @@ def main(args=None):
 
     if not build.output_dir:
         build.normalize_outputdir()
-    build()
+    try:
+        build()
+    except BuildError as e:
+        log.error(*e.args)
+        raise SystemExit(1)
 
 
 if __name__ == '__main__':

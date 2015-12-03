@@ -61,7 +61,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                     result = None
                 if result and result.ok:
                     result = result.json()
-                    if "repo" in result:
+                    if result.get("repo"):
                         return result
             return {}
 
