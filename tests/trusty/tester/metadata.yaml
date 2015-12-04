@@ -12,3 +12,7 @@ provides:
   storage:
     interface: storage
     scope: container
+storage:
+  data:
+    type: filesystem
+    location: /srv/data

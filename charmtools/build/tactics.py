@@ -419,8 +419,8 @@ class MetadataYAML(YAMLTactic):
     def __call__(self):
         super(MetadataYAML, self).__call__()
         for name in self.storage.keys():
-            for hook in ['joined', 'changed', 'broken', 'departed']:
-                target = self._target / "hooks" / "{}-relation-{}".format(
+            for hook in ['attached', 'detaching']:
+                target = self._target / "hooks" / "{}-storage-{}".format(
                     name, hook)
                 if target.exists():
                     continue
@@ -434,8 +434,8 @@ class MetadataYAML(YAMLTactic):
         """
         sigs = super(MetadataYAML, self).sign()
         for name, owner in self.storage.items():
-            for hook in ['joined', 'changed', 'broken', 'departed']:
-                target = self._target / "hooks" / "{}-relation-{}".format(
+            for hook in ['attached', 'detaching']:
+                target = self._target / "hooks" / "{}-storage-{}".format(
                     name, hook)
                 rel = target.relpath(self._target.directory)
                 sigs[rel] = (owner,
