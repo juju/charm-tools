@@ -204,11 +204,11 @@ class Builder(object):
         return layers
 
     def fetch(self):
+        self.target_dir.makedirs_p()
         layer = Layer(self.charm, self.deps).fetch()
         if not layer.configured:
-            log.info("The top level layer expects a "
-                     "valid layer.yaml file, "
-                     "using defaults.")
+            log.warn("The top level layer expects a "
+                     "valid layer.yaml file")
         # Manually create a layer object for the output
         self.target = Layer(self.name, self.repo)
         self.target.directory = self.target_dir
