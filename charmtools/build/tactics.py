@@ -3,11 +3,30 @@ import json
 from ruamel import yaml
 import os
 import tempfile
+import textwrap
 
 from path import path
 from charmtools import utils
 
 log = logging.getLogger(__name__)
+
+
+HOOK_TEMPLATE = textwrap.dedent("""
+    #!/usr/bin/env python
+
+    # Load modules from $CHARM_DIR/lib
+    import sys
+    sys.path.append('lib')
+
+    # This will load and run the appropriate @hook and other decorated
+    # handlers from $CHARM_DIR/reactive, $CHARM_DIR/hooks/reactive,
+    # and $CHARM_DIR/hooks/relations.
+    #
+    # See https://jujucharms.com/docs/stable/authors-charm-building
+    # for more information on this pattern.
+    from charms.reactive import main
+    main('{}')
+    """)
 
 
 class Tactic(object):
@@ -197,28 +216,14 @@ class InterfaceCopy(Tactic):
 
 
 class InterfaceBind(InterfaceCopy):
+    DEFAULT_BINDING = HOOK_TEMPLATE
+
     def __init__(self, interface, relation_name, kind, target, config):
         self.interface = interface
         self.relation_name = relation_name
         self.kind = kind
         self._target = target
         self._config = config
-
-    DEFAULT_BINDING = """#!/usr/bin/env python
-
-# Load modules from $CHARM_DIR/lib
-import sys
-sys.path.append('lib')
-
-# This will load and run the appropriate @hook and other decorated
-# handlers from $CHARM_DIR/reactive, $CHARM_DIR/hooks/reactive,
-# and $CHARM_DIR/hooks/relations.
-#
-# See https://jujucharms.com/docs/stable/authors-charm-building
-# for more information on this pattern.
-from charms.reactive import main
-main('{}')
-"""
 
     def __call__(self):
         for hook in ['joined', 'changed', 'broken', 'departed']:
@@ -258,41 +263,57 @@ class ManifestTactic(ExactMatch, Tactic):
 
 class SerializedTactic(ExactMatch, Tactic):
     kind = "dynamic"
+    section = None
+    prefix = None
 
     def __init__(self, *args, **kwargs):
         super(SerializedTactic, self).__init__(*args, **kwargs)
-        self.data = None
+        self.data = {}
+        self._read = False
+
+    def load(self, fn):
+        raise NotImplementedError('Must be implemented in subclass: load')
+
+    def dump(self, data):
+        raise NotImplementedError('Must be implemented in subclass: dump')
+
+    def read(self):
+        if not self._read:
+            self.data = self.load(self.entity.open()) or {}
+            self._read = True
 
     def combine(self, existing):
-        # Invoke the previous tactic
-        existing()
-        if existing.data is not None:
-            self.data = existing.data
+        # make sure both versions are read in
+        existing.read()
+        self.read()
+        # merge them
+        self.data = utils.deepmerge(existing.data, self.data)
         return self
 
-    def __call__(self):
-        data = self.load(self.entity.open())
-        # self.data represents the product of previous layers
-        if self.data:
-            data = utils.deepmerge(self.data, data)
-
-        # Now apply any rules from config
+    def apply_edits(self):
+        # Apply any editing rules from config
         config = self.config
         if config:
             section = config.get(self.section)
             if section:
                 dels = section.get('deletes', [])
                 if self.prefix:
-                    namespace = data[self.prefix]
+                    namespace = self.data.get(self.prefix, {})
                 else:
-                    namespace = data
+                    namespace = self.data
                 for key in dels:
                     utils.delete_path(key, namespace)
-        self.data = data
         if not self.target_file.parent.exists():
             self.target_file.parent.makedirs_p()
-        self.dump(data)
-        return data
+
+    def process(self):
+        self.read()
+        self.apply_edits()
+        return self.data
+
+    def __call__(self):
+        self.dump(self.process())
+        return self.data
 
 
 class YAMLTactic(SerializedTactic):
@@ -378,9 +399,51 @@ class MetadataYAML(YAMLTactic):
                  "description", "tags",
                  "requires", "provides", "peers"]
 
+    STORAGE_BINDING = HOOK_TEMPLATE
+
+    def __init__(self, *args, **kwargs):
+        super(MetadataYAML, self).__init__(*args, **kwargs)
+        self.storage = {}
+
+    def read(self):
+        if not self._read:
+            super(MetadataYAML, self).read()
+            names = self.data.get('storage', {}).keys()
+            self.storage = {name: self.current.url for name in names}
+
+    def combine(self, existing):
+        super(MetadataYAML, self).combine(existing)
+        self.storage.update(existing.storage)
+        return self
+
+    def __call__(self):
+        super(MetadataYAML, self).__call__()
+        for name in self.storage.keys():
+            for hook in ['joined', 'changed', 'broken', 'departed']:
+                target = self._target / "hooks" / "{}-relation-{}".format(
+                    name, hook)
+                if target.exists():
+                    continue
+                target.parent.makedirs_p()
+                target.write_text(self.STORAGE_BINDING.format(name))
+                target.chmod(0755)
+        return self.data
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        sigs = super(MetadataYAML, self).sign()
+        for name, owner in self.storage.items():
+            for hook in ['joined', 'changed', 'broken', 'departed']:
+                target = self._target / "hooks" / "{}-relation-{}".format(
+                    name, hook)
+                rel = target.relpath(self._target.directory)
+                sigs[rel] = (owner,
+                             "dynamic",
+                             utils.sign(target))
+        return sigs
+
     def dump(self, data):
-        if not data:
-            return
         final = yaml.comments.CommentedMap()
         # assempt keys in know order
         for k in self.KEY_ORDER:
@@ -392,21 +455,21 @@ class MetadataYAML(YAMLTactic):
         super(MetadataYAML, self).dump(final)
 
 
-class ConfigYAML(MetadataYAML):
+class ConfigYAML(YAMLTactic):
     """Rule driven config.yaml generation"""
     section = "config"
     prefix = "options"
     FILENAME = "config.yaml"
 
 
-class DistYAML(MetadataYAML):
+class DistYAML(YAMLTactic):
     """Rule driven dist.yaml generation"""
     section = "dist"
     prefix = None
     FILENAME = "dist.yaml"
 
 
-class ResourcesYAML(MetadataYAML):
+class ResourcesYAML(YAMLTactic):
     """Rule driven resources.yaml generation"""
     section = "resources"
     prefix = None
