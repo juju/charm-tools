@@ -293,46 +293,48 @@ class Builder(object):
     def plan_interfaces(self, layers, output_files, plan):
         # Interface includes don't directly map to output files
         # as they are computed in combination with the metadata.yaml
-        charm_meta = output_files.get("metadata.yaml")
-        if charm_meta:
-            meta = charm_meta()
-            if not meta:
-                return
-            target_config = layers["layers"][-1].config
-            specs = []
-            used_interfaces = set()
-            for kind in ("provides", "requires", "peers"):
-                for k, v in meta.get(kind, {}).items():
-                    # ex: ["provides", "db", "mysql"]
-                    specs.append([kind, k, v["interface"]])
-                    used_interfaces.add(v["interface"])
+        metadata_tactic = [tactic for tactic in plan if isinstance(
+                           tactic, charmtools.build.tactics.MetadataYAML)]
+        if not metadata_tactic:
+            raise BuildError('At least one layer must provide metadata.yaml')
+        meta = metadata_tactic[0].process()
+        if not meta and layers.get('interfaces'):
+            raise BuildError('Includes interfaces but no metadata.yaml to bind them')
+        elif not meta:
+            log.warn('Empty metadata.yaml')
 
-            for iface in layers["interfaces"]:
-                if iface.name not in used_interfaces:
-                    # we shouldn't include something the charm doesn't use
-                    log.warn("layer.yaml includes {} which isn't "
-                             "used in metadata.yaml".format(
-                                 iface.name))
+        target_config = layers["layers"][-1].config
+        specs = []
+        used_interfaces = set()
+        for kind in ("provides", "requires", "peers"):
+            for k, v in meta.get(kind, {}).items():
+                # ex: ["provides", "db", "mysql"]
+                specs.append([kind, k, v["interface"]])
+                used_interfaces.add(v["interface"])
+
+        for iface in layers["interfaces"]:
+            if iface.name not in used_interfaces:
+                # we shouldn't include something the charm doesn't use
+                log.warn("layer.yaml includes {} which isn't "
+                         "used in metadata.yaml".format(
+                             iface.name))
+                continue
+            for kind, relation_name, interface_name in specs:
+                if interface_name != iface.name:
                     continue
-                for kind, relation_name, interface_name in specs:
-                    if interface_name != iface.name:
-                        continue
 
-                    log.info("Processing interface: %s", interface_name)
-                    # COPY phase
-                    plan.append(
-                        charmtools.build.tactics.InterfaceCopy(
-                            iface, relation_name,
-                            self.target, target_config)
-                    )
-                    # Link Phase
-                    plan.append(
-                        charmtools.build.tactics.InterfaceBind(
-                            iface, relation_name, kind,
-                            self.target, target_config))
-        elif not charm_meta and layers["interfaces"]:
-            raise ValueError(
-                "Includes interfaces but no metadata.yaml to bind them")
+                log.info("Processing interface: %s", interface_name)
+                # COPY phase
+                plan.append(
+                    charmtools.build.tactics.InterfaceCopy(
+                        iface, relation_name,
+                        self.target, target_config)
+                )
+                # Link Phase
+                plan.append(
+                    charmtools.build.tactics.InterfaceBind(
+                        iface, relation_name, kind,
+                        self.target, target_config))
 
     def formulate_plan(self, layers):
         """Build out a plan for each file in the various

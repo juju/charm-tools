@@ -78,9 +78,16 @@ class TestBuild(unittest.TestCase):
         self.assertEquals(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
-            u'8dd9059eae849c61a1bd3d8de7f96a418e'
-            u'f8b4bf5d9c058c413b5169e2783815',
+            u'01021a65fc131827805edfcbd4f81a897d'
+            u'01a0415f2a20a1179035dc85473a5f'
             ])
+
+        storage_attached = base / "hooks/data-storage-attached"
+        storage_detaching = base / "hooks/data-storage-detaching"
+        self.assertTrue(storage_attached.exists())
+        self.assertTrue(storage_detaching.exists())
+        self.assertIn("charms.reactive", storage_attached.text())
+        self.assertIn("charms.reactive", storage_detaching.text())
 
     def test_regenerate_inplace(self):
         # take a generated example where a base layer has changed
