@@ -399,6 +399,20 @@ class ConfigYAML(MetadataYAML):
     FILENAME = "config.yaml"
 
 
+class DistYAML(MetadataYAML):
+    """Rule driven dist.yaml generation"""
+    section = "dist"
+    prefix = None
+    FILENAME = "dist.yaml"
+
+
+class ResourcesYAML(MetadataYAML):
+    """Rule driven resources.yaml generation"""
+    section = "resources"
+    prefix = None
+    FILENAME = "resources.yaml"
+
+
 class InstallerTactic(Tactic):
     def __str__(self):
         return "Installing software to {}".format(self.relpath)
@@ -546,6 +560,8 @@ DEFAULT_TACTICS = [
     ManifestTactic,
     WheelhouseTactic,
     InstallerTactic,
+    DistYAML,
+    ResourcesYAML,
     MetadataYAML,
     ConfigYAML,
     LayerYAML,
