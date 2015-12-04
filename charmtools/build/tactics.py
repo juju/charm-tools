@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 HOOK_TEMPLATE = textwrap.dedent("""
-    #!/usr/bin/env python
+    #!/usr/bin/env python3
 
     # Load modules from $CHARM_DIR/lib
     import sys
@@ -500,7 +500,7 @@ class InstallerTactic(Tactic):
             # and track it for later use in sign()
             localenv = os.environ.copy()
             localenv['PYTHONUSERBASE'] = temp_dir
-            utils.Process(("pip",
+            utils.Process(("pip3",
                            "install",
                            "--user",
                            "--ignore-installed",
@@ -583,11 +583,11 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def __call__(self, venv=None):
         create_venv = venv is None
         venv = venv or path(tempfile.mkdtemp())
-        pip = venv / 'bin' / 'pip'
+        pip = venv / 'bin' / 'pip3'
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
-            utils.Process(('virtualenv', venv)).throw_on_error()()
+            utils.Process(('virtualenv', '--python', 'python3', venv)).throw_on_error()()
             utils.Process((pip, 'install', '-U', 'pip', 'wheel')).throw_on_error()()
             self._add(pip, wheelhouse, 'pip')
         for tactic in self.previous:

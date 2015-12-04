@@ -222,7 +222,7 @@ class TestBuild(unittest.TestCase):
         self.assertTrue((base / "README.md").exists())
 
         # show that we pulled charmhelpers from the basic layer as well
-        mcall.assert_called_with(("pip", "install",
+        mcall.assert_called_with(("pip3", "install",
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
@@ -239,7 +239,7 @@ class TestBuild(unittest.TestCase):
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
         bu()
-        mcall.assert_called_with(("pip", "install",
+        mcall.assert_called_with(("pip3", "install",
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
@@ -262,12 +262,12 @@ class TestBuild(unittest.TestCase):
             with mock.patch("path.Path.files"):
                 bu()
                 Process.assert_has_call((
-                    '/tmp/bin/pip', 'install',
+                    '/tmp/bin/pip3', 'install',
                     '--no-binary', ':all:',
                     '-d', '/tmp',
                     'pip'))
                 Process.assert_called_with((
-                    '/tmp/bin/pip', 'install',
+                    '/tmp/bin/pip3', 'install',
                     '--no-binary', ':all:',
                     '-d', '/tmp',
                     '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
