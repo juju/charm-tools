@@ -55,6 +55,7 @@ class TestBuild(unittest.TestCase):
         cyaml_data = yaml.load(cyaml.open())
         self.assertEquals(cyaml_data['includes'], ['trusty/mysql'])
         self.assertEquals(cyaml_data['is'], 'foo')
+        self.assertEquals(cyaml_data['options']['mysql']['qux'], 'one')
 
         self.assertTrue((base / "hooks/config-changed").exists())
 
@@ -271,6 +272,69 @@ class TestBuild(unittest.TestCase):
                     '--no-binary', ':all:',
                     '-d', '/tmp',
                     '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
+
+    @mock.patch.object(build.tactics, 'log')
+    @mock.patch.object(build.tactics.YAMLTactic, 'read')
+    def test_layer_options(self, read, log):
+        entity = mock.MagicMock(name='entity')
+        target = mock.MagicMock(name='target')
+        config = mock.MagicMock(name='config')
+
+        base_layer = mock.MagicMock(name='base_layer')
+        base_layer.name = 'base'
+        base = build.tactics.LayerYAML(entity, base_layer, target, config)
+        base.data = {
+            'defines': {
+                'foo': {
+                    'type': 'string',
+                    'default': 'FOO',
+                    'description': "Don't set me, bro",
+                },
+                'bar': {
+                    'enum': ['yes', 'no'],
+                    'description': 'Go to the bar?',
+                },
+            }
+        }
+        base.read()
+        base._read = True
+        top_layer = mock.MagicMock(name='top_layer')
+        top_layer.name = 'top'
+        top = build.tactics.LayerYAML(entity, top_layer, target, config)
+        top.data = {
+            'options': {
+                'base': {
+                    'bar': 'bah',
+                },
+            },
+            'defines': {
+                'qux': {
+                    'type': 'boolean',
+                    'default': False,
+                    'description': "Don't set me, bro",
+                },
+            }
+        }
+        top.read()
+        top._read = True
+        top.combine(base)
+        assert not top.lint()
+        log.error.assert_called_with('Invalid value for option %s: %s',
+                                     'base.bar',
+                                     "'bah' is not one of ['yes', 'no']")
+
+        log.error.reset_mock()
+        top.data['options']['base']['bar'] = 'yes'
+        assert top.lint()
+        self.assertEqual(top.data['options'], {
+            'base': {
+                'foo': 'FOO',
+                'bar': 'yes',
+            },
+            'top': {
+                'qux': False,
+            },
+        })
 
 
 if __name__ == '__main__':

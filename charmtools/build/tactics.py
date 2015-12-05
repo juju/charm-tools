@@ -3,6 +3,7 @@ import json
 from ruamel import yaml
 import os
 import tempfile
+import jsonschema
 
 from path import path
 from charmtools import utils
@@ -333,7 +334,40 @@ class JSONTactic(SerializedTactic):
 
 
 class LayerYAML(YAMLTactic):
+    """
+    Process the ``layer.yaml`` file from each layer, and generate the
+    resulting ``layer.yaml`` for the built charm.
+
+    The input ``layer.yaml`` files can contain the following sections:
+
+      * ``includes`` This is the heart of layering.  Layers and interface
+        layers referenced in this list value are pulled in during charm
+        build and combined with each other to produce the final layer.
+
+      * ``config``, ``metadata``, ``dist``, or ``resources`` These objects can
+        contain a ``deletes`` object to list keys that should be deleted from
+        the resulting ``<section>.yaml``.
+
+      * ``defines`` This object can contain a jsonschema used to defined and
+        validate options passed to this layer from another layer.  The options
+        and schema will be namespaced by the current layer name.  For example,
+        layer "foo" defining ``bar: {type: string}`` will accept
+        ``options: {foo: {bar: "foo"}}`` in the final ``layer.yaml``.
+
+      * ``options`` This object can contain option name/value sections for other
+        layers.  For example, if the current layer includes the previously
+        referenced "foo" layer, it could include ``foo: {bar: "foo"}`` in its
+        ``options`` section.
+
+    """
     FILENAMES = ["layer.yaml", "composer.yaml"]
+
+    def __init__(self, *args, **kwargs):
+        super(LayerYAML, self).__init__(*args, **kwargs)
+        self.schema = {
+            'type': 'object',
+            'properties': {}
+        }
 
     @property
     def target_file(self):
@@ -345,11 +379,34 @@ class LayerYAML(YAMLTactic):
         return relpath in cls.FILENAMES
 
     def read(self):
-        self._raw_data = self.load(self.entity.open())
+        if not self._read:
+            super(LayerYAML, self).read()
+            self.schema['properties'] = {
+                self.current.name: {
+                    'type': 'object',
+                    'properties': self.data.pop('defines', {}),
+                    'default': {},
+                },
+            }
+
+    def combine(self, existing):
+        super(LayerYAML, self).combine(existing)
+        self.schema = utils.deepmerge(existing.schema, self.schema)
+        return self
+
+    def lint(self):
+        if 'options' not in self.data:
+            return True
+        validator = extend_with_default(jsonschema.Draft4Validator)(self.schema)
+        valid = True
+        for error in validator.iter_errors(self.data['options']):
+            log.error('Invalid value for option %s: %s', '.'.join(error.absolute_path), error.message)
+            valid = False
+        return valid
 
     def __call__(self):
         # rewrite includes to be the current source
-        data = self._raw_data
+        data = self.data
         if data is None:
             return
         # The split should result in the series/charm path only
@@ -592,6 +649,27 @@ def load_tactic(dpath, basedir):
     if not issubclass(obj, Tactic):
         raise ValueError("Expected to load a tactic for %s" % dpath)
     return obj
+
+
+def extend_with_default(validator_class):
+    """
+    Extend a jsonschema validator to propagate default values prior
+    to validating.
+    """
+    validate_properties = validator_class.VALIDATORS["properties"]
+
+    def set_defaults(validator, properties, instance, schema):
+        for prop, subschema in properties.iteritems():
+            if "default" in subschema:
+                instance.setdefault(prop, subschema["default"])
+
+        for error in validate_properties(
+                validator, properties, instance, schema):
+            yield error
+
+    return jsonschema.validators.extend(
+        validator_class, {"properties": set_defaults},
+    )
 
 
 DEFAULT_TACTICS = [
