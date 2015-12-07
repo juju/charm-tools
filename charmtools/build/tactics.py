@@ -26,7 +26,7 @@ HOOK_TEMPLATE = textwrap.dedent("""
     # for more information on this pattern.
     from charms.reactive import main
     main('{}')
-    """)
+    """).lstrip('\n')
 
 
 class Tactic(object):
