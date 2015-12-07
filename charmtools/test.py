@@ -25,7 +25,8 @@ TEST_RESERVED_EXITS = {0: 'pass', 100: 'skip', 124: 'timeout'}
 
 LOG_LEVELS = [logging.INFO, logging.DEBUG]
 TEST_RESULT_LEVELV_NUM = 51
-ENV_WHITELIST = ['PATH', 'SSH_AUTH_SOCK', 'SSH_AGENT_PID', 'PYTHONPATH']
+ENV_WHITELIST = ['PATH', 'SSH_AUTH_SOCK', 'SSH_AGENT_PID', 'PYTHONPATH',
+                 'HOME']
 
 
 class NoTests(Exception):
