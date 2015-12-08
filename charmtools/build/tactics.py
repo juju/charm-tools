@@ -3,30 +3,13 @@ import json
 from ruamel import yaml
 import os
 import tempfile
-import textwrap
 
 from path import path
 from charmtools import utils
 
 log = logging.getLogger(__name__)
 
-
-HOOK_TEMPLATE = textwrap.dedent("""
-    #!/usr/bin/env python3
-
-    # Load modules from $CHARM_DIR/lib
-    import sys
-    sys.path.append('lib')
-
-    # This will load and run the appropriate @hook and other decorated
-    # handlers from $CHARM_DIR/reactive, $CHARM_DIR/hooks/reactive,
-    # and $CHARM_DIR/hooks/relations.
-    #
-    # See https://jujucharms.com/docs/stable/authors-charm-building
-    # for more information on this pattern.
-    from charms.reactive import main
-    main('{}')
-    """).lstrip('\n')
+HOOK_TEMPLATE_FILE = "hooks/hook.template"
 
 
 class Tactic(object):
@@ -216,24 +199,23 @@ class InterfaceCopy(Tactic):
 
 
 class InterfaceBind(InterfaceCopy):
-    DEFAULT_BINDING = HOOK_TEMPLATE
+    HOOK_TEMPLATE = "hooks/hook.template"
 
-    def __init__(self, interface, relation_name, kind, target, config):
+    def __init__(self, interface, relation_name, kind, target, config, template):
         self.interface = interface
         self.relation_name = relation_name
         self.kind = kind
         self._target = target
         self._config = config
+        self.template = template
 
     def __call__(self):
+        template = self.template.text()
         for hook in ['joined', 'changed', 'broken', 'departed']:
             target = self._target / "hooks" / "{}-relation-{}".format(
                 self.relation_name, hook)
-            if target.exists():
-                # XXX: warn
-                continue
             target.parent.makedirs_p()
-            target.write_text(self.DEFAULT_BINDING.format(self.relation_name))
+            target.write_text(template.format(self.relation_name))
             target.chmod(0755)
 
     def sign(self):
@@ -251,6 +233,40 @@ class InterfaceBind(InterfaceCopy):
 
     def __str__(self):
         return "Bind Interface {}".format(self.interface.name)
+
+
+class StorageBind(Tactic):
+    kind = "dynamic"
+
+    def __init__(self, name, owner, target, config, template):
+        self.name = name
+        self.owner = owner
+        self._target = target
+        self._config = config
+        self.targets = [self._target / "hooks" / "{}-storage-{}".format(
+            name, hook) for hook in ('attached', 'detaching')]
+        self.template = template
+
+    def __str__(self):
+        return "Bind Storage {}".format(self.name)
+
+    def __call__(self):
+        template = self.template.text()
+        for target in self.targets:
+            target.parent.makedirs_p()
+            target.write_text(template.format(self.name))
+            target.chmod(0755)
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        sigs = {}
+        for target in self.targets:
+            rel = target.relpath(self._target.directory)
+            sigs[rel] = (self.owner,
+                         "dynamic",
+                         utils.sign(target))
+        return sigs
 
 
 class ManifestTactic(ExactMatch, Tactic):
@@ -399,8 +415,6 @@ class MetadataYAML(YAMLTactic):
                  "description", "tags",
                  "requires", "provides", "peers"]
 
-    STORAGE_BINDING = HOOK_TEMPLATE
-
     def __init__(self, *args, **kwargs):
         super(MetadataYAML, self).__init__(*args, **kwargs)
         self.storage = {}
@@ -408,44 +422,29 @@ class MetadataYAML(YAMLTactic):
     def read(self):
         if not self._read:
             super(MetadataYAML, self).read()
-            names = self.data.get('storage', {}).keys()
-            self.storage = {name: self.current.url for name in names}
+            self.storage = {name: self.current.url
+                            for name in self.data.get('storage', {}).keys()}
 
     def combine(self, existing):
         super(MetadataYAML, self).combine(existing)
         self.storage.update(existing.storage)
         return self
 
-    def __call__(self):
-        super(MetadataYAML, self).__call__()
-        for name in self.storage.keys():
-            for hook in ['attached', 'detaching']:
-                target = self._target / "hooks" / "{}-storage-{}".format(
-                    name, hook)
-                if target.exists():
-                    continue
-                target.parent.makedirs_p()
-                target.write_text(self.STORAGE_BINDING.format(name))
-                target.chmod(0755)
-        return self.data
-
-    def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
-        sigs = super(MetadataYAML, self).sign()
-        for name, owner in self.storage.items():
-            for hook in ['attached', 'detaching']:
-                target = self._target / "hooks" / "{}-storage-{}".format(
-                    name, hook)
-                rel = target.relpath(self._target.directory)
-                sigs[rel] = (owner,
-                             "dynamic",
-                             utils.sign(target))
-        return sigs
+    def apply_edits(self):
+        super(MetadataYAML, self).apply_edits()
+        if not self.config or not self.config.get(self.section):
+            return
+        for key in self.config[self.section].get('deletes', []):
+            if not key.startswith('storage.'):
+                continue
+            _, name = key.split('.', 1)
+            if '.' in name:
+                continue
+            self.storage.pop(name, None)
 
     def dump(self, data):
         final = yaml.comments.CommentedMap()
-        # assempt keys in know order
+        # attempt keys in know order
         for k in self.KEY_ORDER:
             if k in data:
                 final[k] = data[k]
