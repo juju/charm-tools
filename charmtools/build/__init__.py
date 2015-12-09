@@ -305,11 +305,11 @@ class Builder(object):
             raise BuildError('Includes interfaces but no metadata.yaml to bind them')
         elif self.HOOK_TEMPLATE_FILE not in output_files:
             raise BuildError('At least one layer must provide %s',
-                                   self.HOOK_TEMPLATE_FILE)
+                             self.HOOK_TEMPLATE_FILE)
         elif not meta:
             log.warn('Empty metadata.yaml')
 
-        template = self.target / self.HOOK_TEMPLATE_FILE
+        template_file = self.target / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         specs = []
         used_interfaces = set()
@@ -340,8 +340,8 @@ class Builder(object):
                 # Link Phase
                 plan.append(
                     charmtools.build.tactics.InterfaceBind(
-                        iface, relation_name, kind,
-                        self.target, target_config, template))
+                        relation_name, iface.url, self.target,
+                        target_config, template_file))
 
     def plan_storage(self, layers, output_files, plan):
         # Storage hooks don't directly map to output files
@@ -356,15 +356,15 @@ class Builder(object):
             return
         if self.HOOK_TEMPLATE_FILE not in output_files:
             raise BuildError('At least one layer must provide %s',
-                                   self.HOOK_TEMPLATE_FILE)
+                             self.HOOK_TEMPLATE_FILE)
 
-        template = self.target / self.HOOK_TEMPLATE_FILE
+        template_file = self.target / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         for name, owner in meta_tac.storage.items():
             plan.append(
                 charmtools.build.tactics.StorageBind(
                     name, owner, self.target,
-                    target_config, template))
+                    target_config, template_file))
 
     def formulate_plan(self, layers):
         """Build out a plan for each file in the various

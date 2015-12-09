@@ -196,58 +196,19 @@ class InterfaceCopy(Tactic):
                                            from_name=relpath)
 
 
-class InterfaceBind(InterfaceCopy):
-    def __init__(self, interface, relation_name, kind, target, config, template):
-        self.interface = interface
-        self.relation_name = relation_name
-        self.kind = kind
-        self._target = target
-        self._config = config
-        self.template = template
+class DynamicHookBind(Tactic):
+    HOOKS = []
 
-    def __call__(self):
-        template = self.template.text()
-        for hook in ['joined', 'changed', 'broken', 'departed']:
-            target = self._target / "hooks" / "{}-relation-{}".format(
-                self.relation_name, hook)
-            target.parent.makedirs_p()
-            target.write_text(template.format(self.relation_name))
-            target.chmod(0755)
-
-    def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
-        sigs = {}
-        for hook in ['joined', 'changed', 'broken', 'departed']:
-            target = self._target / "hooks" / "{}-relation-{}".format(
-                self.relation_name, hook)
-            rel = target.relpath(self._target.directory)
-            sigs[rel] = (self.interface.url,
-                         "dynamic",
-                         utils.sign(target))
-        return sigs
-
-    def __str__(self):
-        return "Bind Interface {}".format(self.interface.name)
-
-
-class StorageBind(Tactic):
-    kind = "dynamic"
-
-    def __init__(self, name, owner, target, config, template):
+    def __init__(self, name, owner, target, config, template_file):
         self.name = name
         self.owner = owner
         self._target = target
-        self._config = config
-        self.targets = [self._target / "hooks" / "{}-storage-{}".format(
-            name, hook) for hook in ('attached', 'detaching')]
-        self.template = template
-
-    def __str__(self):
-        return "Bind Storage {}".format(self.name)
+        self._template_file = template_file
+        self.targets = [self._target / "hooks" / hook.format(name)
+                        for hook in self.HOOKS]
 
     def __call__(self):
-        template = self.template.text()
+        template = self._template_file.text()
         for target in self.targets:
             target.parent.makedirs_p()
             target.write_text(template.format(self.name))
@@ -263,6 +224,25 @@ class StorageBind(Tactic):
                          "dynamic",
                          utils.sign(target))
         return sigs
+
+    def __str__(self):
+        return "{}: {}".format(self.__class__.__name__, self.name)
+
+
+class InterfaceBind(DynamicHookBind):
+    HOOKS = [
+        '{}-relation-joined',
+        '{}-relation-changed',
+        '{}-relation-broken',
+        '{}-relation-departed'
+    ]
+
+
+class StorageBind(DynamicHookBind):
+    HOOKS = [
+        '{}-storage-attached',
+        '{}-storage-detaching',
+    ]
 
 
 class ManifestTactic(ExactMatch, Tactic):
