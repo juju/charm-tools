@@ -9,8 +9,6 @@ from charmtools import utils
 
 log = logging.getLogger(__name__)
 
-HOOK_TEMPLATE_FILE = "hooks/hook.template"
-
 
 class Tactic(object):
     """
@@ -199,8 +197,6 @@ class InterfaceCopy(Tactic):
 
 
 class InterfaceBind(InterfaceCopy):
-    HOOK_TEMPLATE = "hooks/hook.template"
-
     def __init__(self, interface, relation_name, kind, target, config, template):
         self.interface = interface
         self.relation_name = relation_name

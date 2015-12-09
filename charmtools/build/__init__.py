@@ -340,7 +340,7 @@ class Builder(object):
                         self.target, target_config, template))
 
     def plan_storage(self, layers, output_files, plan):
-        # Interface includes don't directly map to output files
+        # Storage hooks don't directly map to output files
         # as they are computed in combination with the metadata.yaml
         metadata_tactic = [tactic for tactic in plan if isinstance(
                            tactic, charmtools.build.tactics.MetadataYAML)]
