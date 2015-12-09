@@ -24,6 +24,10 @@ from charmtools import utils
 log = logging.getLogger("build")
 
 
+class BuildError(Exception):
+    pass
+
+
 class Configable(object):
     CONFIG_FILE = None
 
@@ -83,7 +87,7 @@ class Fetched(Configable):
                 self.directory = path(fetcher.fetch(self.target_repo))
 
         if not self.directory.exists():
-            raise utils.BuildError(
+            raise BuildError(
                 "Unable to locate {}. "
                 "Do you need to set {}?".format(
                     self.url, self.ENVIRON))
@@ -295,12 +299,12 @@ class Builder(object):
         metadata_tactic = [tactic for tactic in plan if isinstance(
                            tactic, charmtools.build.tactics.MetadataYAML)]
         if not metadata_tactic:
-            raise utils.BuildError('At least one layer must provide metadata.yaml')
+            raise BuildError('At least one layer must provide metadata.yaml')
         meta = metadata_tactic[0].process()
         if not meta and layers.get('interfaces'):
-            raise utils.BuildError('Includes interfaces but no metadata.yaml to bind them')
+            raise BuildError('Includes interfaces but no metadata.yaml to bind them')
         elif self.HOOK_TEMPLATE_FILE not in output_files:
-            raise utils.BuildError('At least one layer must provide %s',
+            raise BuildError('At least one layer must provide %s',
                                    self.HOOK_TEMPLATE_FILE)
         elif not meta:
             log.warn('Empty metadata.yaml')
@@ -345,13 +349,13 @@ class Builder(object):
         metadata_tactic = [tactic for tactic in plan if isinstance(
                            tactic, charmtools.build.tactics.MetadataYAML)]
         if not metadata_tactic:
-            raise utils.BuildError('At least one layer must provide metadata.yaml')
+            raise BuildError('At least one layer must provide metadata.yaml')
         meta_tac = metadata_tactic[0]
         meta_tac.process()
         if not meta_tac.storage:
             return
         if self.HOOK_TEMPLATE_FILE not in output_files:
-            raise utils.BuildError('At least one layer must provide %s',
+            raise BuildError('At least one layer must provide %s',
                                    self.HOOK_TEMPLATE_FILE)
 
         template = self.target / self.HOOK_TEMPLATE_FILE
@@ -557,7 +561,7 @@ def main(args=None):
         build.normalize_outputdir()
     try:
         build()
-    except utils.BuildError as e:
+    except BuildError as e:
         log.error(*e.args)
         raise SystemExit(1)
 

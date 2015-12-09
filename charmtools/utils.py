@@ -520,7 +520,3 @@ def delta_python_dump(orig, dest, patterns=REACTIVE_PATTERNS,
                    m=message)
         i += 1
     return i == 0
-
-
-class BuildError(Exception):
-    pass
