@@ -6,3 +6,6 @@ config:
         - vip_cidr
 tactics:
     - layer.custom.READMETactic
+options:
+  mysql:
+    qux: 'one'
