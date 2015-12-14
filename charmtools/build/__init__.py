@@ -119,6 +119,7 @@ class Builder(object):
     Handle the processing of overrides, implements the policy of BuildConfig
     """
     PHASES = ['lint', 'read', 'call', 'sign', 'build']
+    HOOK_TEMPLATE_FILE = path('hooks/hook.template')
 
     def __init__(self):
         self.config = BuildConfig()
@@ -293,6 +294,8 @@ class Builder(object):
     def plan_interfaces(self, layers, output_files, plan):
         # Interface includes don't directly map to output files
         # as they are computed in combination with the metadata.yaml
+        if not layers.get('interfaces'):
+            return
         metadata_tactic = [tactic for tactic in plan if isinstance(
                            tactic, charmtools.build.tactics.MetadataYAML)]
         if not metadata_tactic:
@@ -300,9 +303,13 @@ class Builder(object):
         meta = metadata_tactic[0].process()
         if not meta and layers.get('interfaces'):
             raise BuildError('Includes interfaces but no metadata.yaml to bind them')
+        elif self.HOOK_TEMPLATE_FILE not in output_files:
+            raise BuildError('At least one layer must provide %s',
+                             self.HOOK_TEMPLATE_FILE)
         elif not meta:
             log.warn('Empty metadata.yaml')
 
+        template_file = self.target / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         specs = []
         used_interfaces = set()
@@ -333,8 +340,31 @@ class Builder(object):
                 # Link Phase
                 plan.append(
                     charmtools.build.tactics.InterfaceBind(
-                        iface, relation_name, kind,
-                        self.target, target_config))
+                        relation_name, iface.url, self.target,
+                        target_config, template_file))
+
+    def plan_storage(self, layers, output_files, plan):
+        # Storage hooks don't directly map to output files
+        # as they are computed in combination with the metadata.yaml
+        metadata_tactic = [tactic for tactic in plan if isinstance(
+                           tactic, charmtools.build.tactics.MetadataYAML)]
+        if not metadata_tactic:
+            raise BuildError('At least one layer must provide metadata.yaml')
+        meta_tac = metadata_tactic[0]
+        meta_tac.process()
+        if not meta_tac.storage:
+            return
+        if self.HOOK_TEMPLATE_FILE not in output_files:
+            raise BuildError('At least one layer must provide %s',
+                             self.HOOK_TEMPLATE_FILE)
+
+        template_file = self.target / self.HOOK_TEMPLATE_FILE
+        target_config = layers["layers"][-1].config
+        for name, owner in meta_tac.storage.items():
+            plan.append(
+                charmtools.build.tactics.StorageBind(
+                    name, owner, self.target,
+                    target_config, template_file))
 
     def formulate_plan(self, layers):
         """Build out a plan for each file in the various
@@ -342,6 +372,7 @@ class Builder(object):
         output_files = OrderedDict()
         self.plan = self.plan_layers(layers, output_files)
         self.plan_interfaces(layers, output_files, self.plan)
+        self.plan_storage(layers, output_files, self.plan)
         if self.hide_metrics is not True:
             self.post_metrics(layers)
         return self.plan

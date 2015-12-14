@@ -86,8 +86,8 @@ class TestBuild(unittest.TestCase):
         storage_detaching = base / "hooks/data-storage-detaching"
         self.assertTrue(storage_attached.exists())
         self.assertTrue(storage_detaching.exists())
-        self.assertIn("charms.reactive", storage_attached.text())
-        self.assertIn("charms.reactive", storage_detaching.text())
+        self.assertIn("Hook: data", storage_attached.text())
+        self.assertIn("Hook: data", storage_detaching.text())
 
     def test_regenerate_inplace(self):
         # take a generated example where a base layer has changed
