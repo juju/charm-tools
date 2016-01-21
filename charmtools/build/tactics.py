@@ -621,7 +621,6 @@ class WheelhouseTactic(ExactMatch, Tactic):
         if create_venv:
             utils.Process(('virtualenv', '--python', 'python3', venv)).throw_on_error()()
             utils.Process((pip, 'install', '-U', 'pip', 'wheel')).throw_on_error()()
-            self._add(pip, wheelhouse, 'pip')
         for tactic in self.previous:
             tactic(venv)
         self._add(pip, wheelhouse, '-r', self.entity)
