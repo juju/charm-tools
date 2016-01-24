@@ -522,12 +522,12 @@ def deprecated_main():
     else:
         old = sys.argv[1]
     new = namemap[old]
-    warnings.warn("{} has been deprecated, please use {}".format(old, new),
-                  DeprecationWarning)
-    if cmd == "inspect":
-        inspect()
-    else:
-        main()
+
+    class MockBuild(object):
+        log_level = 'INFO'
+
+    configLogging(MockBuild)
+    log.critical("{} has been deprecated, please use {}".format(old, new))
 
 
 def main(args=None):
