@@ -54,7 +54,7 @@ def _is_pyfile(path):
 def ensure_init(path):
     '''
     ensure directories leading up to path are importable, omitting
-    parent directory, eg path='/hooks/helpers/foo'/:
+    parent directory, eg path='/hooks/helpers/foo/':
         hooks/
         hooks/helpers/__init__.py
         hooks/helpers/foo/__init__.py
