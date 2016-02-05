@@ -57,13 +57,32 @@ class RelationError(Exception):
 
 
 class CharmLinter(Linter):
+
+    # _WINDOWS_HOOKS_EXTS is the list of possible extensions for hooks
+    # on Windows. File extensions must be present in Windows ad thus
+    # we must specially check for them when linting the hooks.
+    _WINDOWS_HOOKS_EXTS = [".ps1", ".cmd", ".bat", ".exe"]
+
     def check_hook(self, hook, hooks_path, recommended=False):
         hook_path = os.path.join(hooks_path, hook)
+        ispscharm = False # flag to indicate whether PowerShell charm or not.
+
+        # iterate through the possible hook-extension
+        # combinations and find the right one:
+        for path in [hook_path + ext for ext in self._WINDOWS_HOOKS_EXTS]:
+            if os.path.isfile(path):
+                hook_path = path
+                ispscharm = True
+                break
 
         try:
             mode = os.stat(hook_path)[ST_MODE]
-            if not mode & S_IXUSR:
+
+            # NOTE: hooks on Windows are judged as executable depending on
+            # their extension; not their mode.
+            if (not mode & S_IXUSR) and not ispscharm:
                 self.info(hook + " not executable")
+
             with open(hook_path, 'r') as hook_file:
                 count = 0
                 for line in hook_file:
