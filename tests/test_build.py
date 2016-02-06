@@ -49,6 +49,12 @@ class TestBuild(unittest.TestCase):
         config_data = yaml.load(config.open())['options']
         self.assertIn("bind-address", config_data)
         self.assertNotIn("vip", config_data)
+        self.assertIn("key", config_data)
+        self.assertEqual(config_data["key"]["default"], None)
+        # Issue #99 where strings lose their quotes in a charm build.
+        self.assertIn("numeric-string", config_data)
+        default_value = config_data['numeric-string']['default']
+        self.assertEqual(default_value, "0123456789", "value must be a string")
 
         cyaml = base / "layer.yaml"
         self.assertTrue(cyaml.exists())
@@ -79,8 +85,7 @@ class TestBuild(unittest.TestCase):
         self.assertEquals(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
-            u'01021a65fc131827805edfcbd4f81a897d'
-            u'01a0415f2a20a1179035dc85473a5f'
+            u'bc361aa3407cb8b514d3352984af306b4330d27a2e8f2c7891153ea99f6b11ac'
             ])
 
         storage_attached = base / "hooks/data-storage-attached"
