@@ -1,4 +1,8 @@
 options:
+    numeric-string:
+        default: "0123456789"
+        description: "Charm-tools issue #99 indicated there was a bug with rendering strings that start with zero losing their string quotes."
+        type: string
     dataset-size:
         default: '80%'
         description: How much data do you want to keep in memory in the DB. This will be used to tune settings in the database server appropriately. Any more specific settings will override these defaults though. This currently sets innodb_buffer_pool_size or key_cache_size depending on the setting in preferred-storage-engine. If query-cache-type is set to 'ON' or 'DEMAND' 20% of this is given to query-cache-size. Suffix this value with 'K','M','G', or 'T' to get the relevant kilo/mega/etc. bytes. If suffixed with %, one will get that percentage of RAM devoted to dataset and (if enabled) query cache.
@@ -137,5 +141,5 @@ options:
           Cron schedule used for backups. If empty backups are disabled
     backup_retention_count:
         default: 7
-        type: int 
+        type: int
         description: Number of recent backups to retain.
