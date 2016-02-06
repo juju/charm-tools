@@ -319,7 +319,8 @@ class YAMLTactic(SerializedTactic):
     def dump(self, data):
         yaml.dump(data, self.target_file.open('w'),
                   Dumper=yaml.RoundTripDumper,
-                  default_flow_style=False)
+                  default_flow_style=False,
+                  default_style='"')
 
 
 class JSONTactic(SerializedTactic):
