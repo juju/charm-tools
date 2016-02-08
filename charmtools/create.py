@@ -86,6 +86,9 @@ def main():
             "Using default charm template (%s). To select a different "
             "template, use the -t option.", DEFAULT_TEMPLATE)
         args.template = DEFAULT_TEMPLATE
+    elif args.template not in get_installed_templates():
+        raise Exception("No template available for '%s'. Available templates "
+                        "may be listed by running 'charm create --help'.")
 
     generator = CharmGenerator(args)
     try:
