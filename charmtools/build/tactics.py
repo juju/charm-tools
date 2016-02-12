@@ -493,6 +493,12 @@ class ConfigYAML(YAMLTactic):
     FILENAME = "config.yaml"
 
 
+class ActionsYAML(YAMLTactic):
+    """Rule driven actions.yaml generation"""
+    section = "actions"
+    FILENAME = "actions.yaml"
+
+
 class DistYAML(YAMLTactic):
     """Rule driven dist.yaml generation"""
     section = "dist"
@@ -678,6 +684,7 @@ DEFAULT_TACTICS = [
     ResourcesYAML,
     MetadataYAML,
     ConfigYAML,
+    ActionsYAML,
     LayerYAML,
     CopyTactic
 ]
