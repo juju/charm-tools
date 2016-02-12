@@ -561,7 +561,7 @@ def main(args=None):
         build.normalize_outputdir()
     try:
         build()
-    except BuildError as e:
+    except (BuildError, FetchError) as e:
         log.error(*e.args)
         raise SystemExit(1)
 
