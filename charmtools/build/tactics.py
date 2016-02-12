@@ -138,9 +138,10 @@ class CopyTactic(Tactic):
 
 
 class InterfaceCopy(Tactic):
-    def __init__(self, interface, relation_name, target, config):
+    def __init__(self, interface, relation_name, role, target, config):
         self.interface = interface
         self.relation_name = relation_name
+        self.role = role
         self._target = target
         self._config = config
 
@@ -182,6 +183,11 @@ class InterfaceCopy(Tactic):
         return sigs
 
     def lint(self):
+        impl = self.interface.directory / self.role + '.py'
+        if not impl.exists():
+            log.error('Missing implementation for interface role: %s.py', self.role)
+            return False
+        valid = True
         for entry in self.interface.directory.walkfiles():
             if entry.splitext()[1] != ".py":
                 continue
@@ -189,8 +195,11 @@ class InterfaceCopy(Tactic):
             target = self._target.directory / relpath
             if not target.exists():
                 continue
-            return utils.delta_python_dump(entry, target,
-                                           from_name=relpath)
+            unchanged = utils.delta_python_dump(entry, target,
+                                                from_name=relpath)
+            if not unchanged:
+                valid = False
+        return valid
 
 
 class DynamicHookBind(Tactic):
