@@ -29,6 +29,8 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/tester"
         bu.hide_metrics = True
+        remove_layer_file = self.dirname / 'trusty/tester/to_remove'
+        remove_layer_file.touch()
         bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -94,6 +96,12 @@ class TestBuild(unittest.TestCase):
         self.assertTrue(storage_detaching.exists())
         self.assertIn("Hook: data", storage_attached.text())
         self.assertIn("Hook: data", storage_detaching.text())
+
+        # confirm that files removed from a base layer get cleaned up
+        self.assertTrue((base / 'to_remove').exists())
+        remove_layer_file.remove()
+        bu()
+        self.assertFalse((base / 'to_remove').exists())
 
     def test_regenerate_inplace(self):
         # take a generated example where a base layer has changed
