@@ -1,3 +1,4 @@
+import errno
 import logging
 import os
 import re
@@ -308,12 +309,18 @@ class FetchError(Exception):
 
 def check_output(cmd, **kw):
     args = shlex.split(cmd)
-    p = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        **kw
-    )
+    try:
+        p = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            **kw
+        )
+    except OSError as e:
+        msg = 'Unable to run "%s": %s' % (args[0], e.strerror)
+        if e.errno == errno.ENOENT:
+            msg += '\nPlease install "%s" and try again' % args[0]
+        raise FetchError(msg)
     out, _ = p.communicate()
     if p.returncode != 0:
         raise FetchError(out)
