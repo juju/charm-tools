@@ -287,8 +287,8 @@ class TestBuild(unittest.TestCase):
                     '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
 
     @mock.patch.object(build.tactics, 'log')
-    @mock.patch.object(build.tactics.YAMLTactic, 'read')
-    def test_layer_options(self, read, log):
+    @mock.patch.object(build.tactics.YAMLTactic, 'read', lambda s: setattr(s, '_read', True))
+    def test_layer_options(self, log):
         entity = mock.MagicMock(name='entity')
         target = mock.MagicMock(name='target')
         config = mock.MagicMock(name='config')
@@ -309,8 +309,9 @@ class TestBuild(unittest.TestCase):
                 },
             }
         }
-        base.read()
-        base._read = True
+        assert base.lint()
+        self.assertEqual(base.data['options']['base']['foo'], 'FOO')
+
         top_layer = mock.MagicMock(name='top_layer')
         top_layer.name = 'top'
         top = build.tactics.LayerYAML(entity, top_layer, target, config)
@@ -328,14 +329,12 @@ class TestBuild(unittest.TestCase):
                 },
             }
         }
-        top.read()
-        top._read = True
+        assert top.lint()
         top.combine(base)
         assert not top.lint()
         log.error.assert_called_with('Invalid value for option %s: %s',
                                      'base.bar',
                                      "'bah' is not one of ['yes', 'no']")
-
         log.error.reset_mock()
         top.data['options']['base']['bar'] = 'yes'
         assert top.lint()
