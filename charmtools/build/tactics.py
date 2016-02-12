@@ -382,6 +382,7 @@ class LayerYAML(YAMLTactic):
     def read(self):
         if not self._read:
             super(LayerYAML, self).read()
+            self.data.setdefault('options', {})
             self.schema['properties'] = {
                 self.current.name: {
                     'type': 'object',
@@ -396,8 +397,7 @@ class LayerYAML(YAMLTactic):
         return self
 
     def lint(self):
-        if 'options' not in self.data:
-            return True
+        self.read()
         validator = extend_with_default(jsonschema.Draft4Validator)(self.schema)
         valid = True
         for error in validator.iter_errors(self.data['options']):
