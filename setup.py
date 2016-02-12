@@ -53,7 +53,9 @@ setup(
             'python = charmtools.templates.python_services'
             ':PythonServicesCharmTemplate',
             'ansible = charmtools.templates.ansible:AnsibleCharmTemplate',
-            'chef = charmtools.templates.chef:ChefCharmTemplate'
+            'chef = charmtools.templates.chef:ChefCharmTemplate',
+            'powershell = '
+                'charmtools.templates.powershell:PowerShellCharmTemplate',
         ]
     },
 )
