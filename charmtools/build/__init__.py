@@ -313,10 +313,10 @@ class Builder(object):
         target_config = layers["layers"][-1].config
         specs = []
         used_interfaces = set()
-        for kind in ("provides", "requires", "peers"):
-            for k, v in meta.get(kind, {}).items():
+        for role in ("provides", "requires", "peers"):
+            for k, v in meta.get(role, {}).items():
                 # ex: ["provides", "db", "mysql"]
-                specs.append([kind, k, v["interface"]])
+                specs.append([role, k, v["interface"]])
                 used_interfaces.add(v["interface"])
 
         for iface in layers["interfaces"]:
@@ -326,7 +326,7 @@ class Builder(object):
                          "used in metadata.yaml".format(
                              iface.name))
                 continue
-            for kind, relation_name, interface_name in specs:
+            for role, relation_name, interface_name in specs:
                 if interface_name != iface.name:
                     continue
 
@@ -334,7 +334,7 @@ class Builder(object):
                 # COPY phase
                 plan.append(
                     charmtools.build.tactics.InterfaceCopy(
-                        iface, relation_name,
+                        iface, relation_name, role,
                         self.target, target_config)
                 )
                 # Link Phase
@@ -446,7 +446,7 @@ class Builder(object):
                     "Continuing with known changes to target layer. "
                     "Changes will be overwritten")
             else:
-                raise ValueError(
+                raise BuildError(
                     "Unable to continue due to unexpected modifications "
                     "(try --force)")
         return a, c, d
