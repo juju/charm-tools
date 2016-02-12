@@ -154,10 +154,6 @@ class InterfaceCopy(Tactic):
         # directory
         log.debug("Copying Interface %s: %s",
                   self.interface.name, self.target)
-        # Ensure the path exists
-        if self.target.exists():
-            # XXX: fix this to do actual updates
-            return
         ignorer = utils.ignore_matcher(self.config.ignores)
         for entity, _ in utils.walk(self.interface.directory,
                                     lambda x: True,
