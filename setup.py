@@ -49,6 +49,8 @@ setup(
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
+            'reactive-python = charmtools.templates.reactive_python:ReactivePythonCharmTemplate',
+            'reactive-bash = charmtools.templates.reactive_bash:ReactiveBashCharmTemplate',
             'python-basic = charmtools.templates.python:PythonCharmTemplate',
             'python = charmtools.templates.python_services'
             ':PythonServicesCharmTemplate',
