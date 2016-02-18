@@ -53,7 +53,8 @@ def deepmerge(dest, src):
         if dest.get(k) and isinstance(v, dict):
             deepmerge(dest[k], v)
         elif dest.get(k) and isinstance(v, list):
-            dest[k].extend(v)
+            if not v in dest.get(k):
+                dest[k].extend(v)
         else:
             dest[k] = copy.deepcopy(v)
     return dest
