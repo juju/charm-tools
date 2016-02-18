@@ -85,7 +85,7 @@ class TestBuild(unittest.TestCase):
         self.assertEquals(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
-            u'bc361aa3407cb8b514d3352984af306b4330d27a2e8f2c7891153ea99f6b11ac'
+            u'0d7519db7301acb8efbd4f88bab5bc0a1b927842cffeab99404aa7a4dc03d17d'
             ])
 
         storage_attached = base / "hooks/data-storage-attached"
