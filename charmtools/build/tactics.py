@@ -138,9 +138,10 @@ class CopyTactic(Tactic):
 
 
 class InterfaceCopy(Tactic):
-    def __init__(self, interface, relation_name, target, config):
+    def __init__(self, interface, relation_name, role, target, config):
         self.interface = interface
         self.relation_name = relation_name
+        self.role = role
         self._target = target
         self._config = config
 
@@ -154,10 +155,6 @@ class InterfaceCopy(Tactic):
         # directory
         log.debug("Copying Interface %s: %s",
                   self.interface.name, self.target)
-        # Ensure the path exists
-        if self.target.exists():
-            # XXX: fix this to do actual updates
-            return
         ignorer = utils.ignore_matcher(self.config.ignores)
         for entity, _ in utils.walk(self.interface.directory,
                                     lambda x: True,
@@ -186,6 +183,11 @@ class InterfaceCopy(Tactic):
         return sigs
 
     def lint(self):
+        impl = self.interface.directory / self.role + '.py'
+        if not impl.exists():
+            log.error('Missing implementation for interface role: %s.py', self.role)
+            return False
+        valid = True
         for entry in self.interface.directory.walkfiles():
             if entry.splitext()[1] != ".py":
                 continue
@@ -193,8 +195,11 @@ class InterfaceCopy(Tactic):
             target = self._target.directory / relpath
             if not target.exists():
                 continue
-            return utils.delta_python_dump(entry, target,
-                                           from_name=relpath)
+            unchanged = utils.delta_python_dump(entry, target,
+                                                from_name=relpath)
+            if not unchanged:
+                valid = False
+        return valid
 
 
 class DynamicHookBind(Tactic):
@@ -383,6 +388,7 @@ class LayerYAML(YAMLTactic):
     def read(self):
         if not self._read:
             super(LayerYAML, self).read()
+            self.data.setdefault('options', {})
             self.schema['properties'] = {
                 self.current.name: {
                     'type': 'object',
@@ -397,8 +403,7 @@ class LayerYAML(YAMLTactic):
         return self
 
     def lint(self):
-        if 'options' not in self.data:
-            return True
+        self.read()
         validator = extend_with_default(jsonschema.Draft4Validator)(self.schema)
         valid = True
         for error in validator.iter_errors(self.data['options']):
@@ -494,6 +499,12 @@ class ConfigYAML(YAMLTactic):
     section = "config"
     prefix = "options"
     FILENAME = "config.yaml"
+
+
+class ActionsYAML(YAMLTactic):
+    """Rule driven actions.yaml generation"""
+    section = "actions"
+    FILENAME = "actions.yaml"
 
 
 class DistYAML(YAMLTactic):
@@ -681,6 +692,7 @@ DEFAULT_TACTICS = [
     ResourcesYAML,
     MetadataYAML,
     ConfigYAML,
+    ActionsYAML,
     LayerYAML,
     CopyTactic
 ]

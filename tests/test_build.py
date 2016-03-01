@@ -29,6 +29,8 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/tester"
         bu.hide_metrics = True
+        remove_layer_file = self.dirname / 'trusty/tester/to_remove'
+        remove_layer_file.touch()
         bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -94,6 +96,12 @@ class TestBuild(unittest.TestCase):
         self.assertTrue(storage_detaching.exists())
         self.assertIn("Hook: data", storage_attached.text())
         self.assertIn("Hook: data", storage_detaching.text())
+
+        # confirm that files removed from a base layer get cleaned up
+        self.assertTrue((base / 'to_remove').exists())
+        remove_layer_file.remove()
+        bu()
+        self.assertFalse((base / 'to_remove').exists())
 
     def test_regenerate_inplace(self):
         # take a generated example where a base layer has changed
@@ -279,8 +287,8 @@ class TestBuild(unittest.TestCase):
                     '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
 
     @mock.patch.object(build.tactics, 'log')
-    @mock.patch.object(build.tactics.YAMLTactic, 'read')
-    def test_layer_options(self, read, log):
+    @mock.patch.object(build.tactics.YAMLTactic, 'read', lambda s: setattr(s, '_read', True))
+    def test_layer_options(self, log):
         entity = mock.MagicMock(name='entity')
         target = mock.MagicMock(name='target')
         config = mock.MagicMock(name='config')
@@ -301,8 +309,9 @@ class TestBuild(unittest.TestCase):
                 },
             }
         }
-        base.read()
-        base._read = True
+        assert base.lint()
+        self.assertEqual(base.data['options']['base']['foo'], 'FOO')
+
         top_layer = mock.MagicMock(name='top_layer')
         top_layer.name = 'top'
         top = build.tactics.LayerYAML(entity, top_layer, target, config)
@@ -320,14 +329,12 @@ class TestBuild(unittest.TestCase):
                 },
             }
         }
-        top.read()
-        top._read = True
+        assert top.lint()
         top.combine(base)
         assert not top.lint()
         log.error.assert_called_with('Invalid value for option %s: %s',
                                      'base.bar',
                                      "'bah' is not one of ['yes', 'no']")
-
         log.error.reset_mock()
         top.data['options']['base']['bar'] = 'yes'
         assert top.lint()

@@ -8,11 +8,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='charm-tools',
-    version="1.11.0",
+    version="2.0-alpha0",
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
-                      'pycrypto', 'paramiko', 'bzr', 'requests',
+                      'pycrypto', 'paramiko', 'requests',
                       'charmworldlib', 'blessings', 'ruamel.yaml',
                       'pathspec', 'otherstuf', 'path.py', 'pip',
                       'jujubundlelib', 'virtualenv', 'colander',
@@ -30,41 +30,28 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'charm = charmtools:charm',
             'charm-add = charmtools.generate:main',
             'charm-build = charmtools.build:main',
             'charm-compose = charmtools.build:deprecated_main',
             'charm-create = charmtools.create:main',
-            'charm-generate = charmtools.build:deprecated_main',
-            'charm-get = charmtools.get:main',
-            'charm-getall = charmtools.getall:main',
             'charm-help = charmtools.cli:usage',
-            'charm-info = charmtools.info:main',
-            'charm-inspect = charmtools.build:deprecated_main',
             'charm-layers = charmtools.build:inspect',
-            'charm-list = charmtools.list:main',
-            'charm-promulgate = charmtools.promulgate:main',
             'charm-proof = charmtools.proof:main',
-            'charm-refresh = charmtools.build:deprecated_main',
-            'charm-review = charmtools.review:main',
-            'charm-review-queue = charmtools.review_queue:main',
-            'charm-search = charmtools.search:main',
-            'charm-subscribers = charmtools.subscribers:main',
             'charm-test = charmtools.test:main',
-            'charm-unpromulgate = charmtools.unpromulgate:main',
-            'charm-update = charmtools.update:main',
             'charm-version = charmtools.version:main',
-            'juju-bundle = charmtools:bundle',
-            'juju-charm = charmtools:charm',
             'juju-test = charmtools.test:main',
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
+            'reactive-python = charmtools.templates.reactive_python:ReactivePythonCharmTemplate',
+            'reactive-bash = charmtools.templates.reactive_bash:ReactiveBashCharmTemplate',
             'python-basic = charmtools.templates.python:PythonCharmTemplate',
             'python = charmtools.templates.python_services'
             ':PythonServicesCharmTemplate',
             'ansible = charmtools.templates.ansible:AnsibleCharmTemplate',
-            'chef = charmtools.templates.chef:ChefCharmTemplate'
+            'chef = charmtools.templates.chef:ChefCharmTemplate',
+            'powershell = '
+                'charmtools.templates.powershell:PowerShellCharmTemplate',
         ]
     },
 )

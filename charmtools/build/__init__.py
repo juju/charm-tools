@@ -177,10 +177,14 @@ class Builder(object):
         # outside the series
         self.deps = (base / "deps")
         self.target_dir = (self.repo / self.name)
+        manifest = self.target_dir / '.build.manifest'
+        if manifest.exists():
+            self.old_manifest = json.loads(manifest.text())
 
     def find_or_create_repo(self, allow_create=True):
+        self.old_manifest = {'layers': {}, 'signatures': {}}
         # see if output dir is already in a repo, we can use that directly
-        if self.output_dir == path(self.charm).normpath():
+        if self.output_dir == path(self.charm).abspath():
             # we've indicated in the cmdline that we are doing an inplace
             # update
             if self.output_dir.parent.basename() == self.series:
@@ -188,6 +192,7 @@ class Builder(object):
                 self.repo = self.output_dir.parent.parent
                 self.deps = (self.repo / "deps")
                 self.target_dir = self.output_dir
+                self.old_manifest = json.loads((self.target_dir / '.build.manifest').text())
                 return
         if allow_create:
             self.create_repo()
@@ -313,10 +318,10 @@ class Builder(object):
         target_config = layers["layers"][-1].config
         specs = []
         used_interfaces = set()
-        for kind in ("provides", "requires", "peers"):
-            for k, v in meta.get(kind, {}).items():
+        for role in ("provides", "requires", "peers"):
+            for k, v in meta.get(role, {}).items():
                 # ex: ["provides", "db", "mysql"]
-                specs.append([kind, k, v["interface"]])
+                specs.append([role, k, v["interface"]])
                 used_interfaces.add(v["interface"])
 
         for iface in layers["interfaces"]:
@@ -326,7 +331,7 @@ class Builder(object):
                          "used in metadata.yaml".format(
                              iface.name))
                 continue
-            for kind, relation_name, interface_name in specs:
+            for role, relation_name, interface_name in specs:
                 if interface_name != iface.name:
                     continue
 
@@ -334,7 +339,7 @@ class Builder(object):
                 # COPY phase
                 plan.append(
                     charmtools.build.tactics.InterfaceCopy(
-                        iface, relation_name,
+                        iface, relation_name, role,
                         self.target, target_config)
                 )
                 # Link Phase
@@ -410,6 +415,7 @@ class Builder(object):
         # write out the sigs
         if "sign" in self.PHASES:
             self.write_signatures(signatures, layers)
+        self.clean_removed(signatures)
 
     def write_signatures(self, signatures, layers):
         sigs = self.target / ".build.manifest"
@@ -446,7 +452,7 @@ class Builder(object):
                     "Continuing with known changes to target layer. "
                     "Changes will be overwritten")
             else:
-                raise ValueError(
+                raise BuildError(
                     "Unable to continue due to unexpected modifications "
                     "(try --force)")
         return a, c, d
@@ -464,7 +470,7 @@ class Builder(object):
         inspector.inspect(self.charm, force_styling=self.force_raw)
 
     def normalize_outputdir(self):
-        od = path(self.charm).normpath()
+        od = path(self.charm).abspath()
         repo = os.environ.get('JUJU_REPOSITORY')
         if repo:
             repo = path(repo)
@@ -474,6 +480,16 @@ class Builder(object):
             od = od.basename
         log.info("Composing into {}".format(od))
         self.output_dir = od
+
+    def clean_removed(self, signatures):
+        """
+        Clean up any files that were accounted for in the previous build
+        manifest but which have been removed in the current set of sigs.
+        """
+        removed = set(self.old_manifest['signatures'].keys()) - set(signatures.keys())
+        for filename in removed:
+            filepath = self.target_dir / filename
+            filepath.remove()
 
 
 def configLogging(build):
@@ -522,12 +538,12 @@ def deprecated_main():
     else:
         old = sys.argv[1]
     new = namemap[old]
-    warnings.warn("{} has been deprecated, please use {}".format(old, new),
-                  DeprecationWarning)
-    if cmd == "inspect":
-        inspect()
-    else:
-        main()
+
+    class MockBuild(object):
+        log_level = 'INFO'
+
+    configLogging(MockBuild)
+    log.critical("{} has been deprecated, please use {}".format(old, new))
 
 
 def main(args=None):
@@ -561,7 +577,7 @@ def main(args=None):
         build.normalize_outputdir()
     try:
         build()
-    except BuildError as e:
+    except (BuildError, FetchError) as e:
         log.error(*e.args)
         raise SystemExit(1)
 
