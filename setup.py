@@ -37,6 +37,7 @@ setup(
             'charm-help = charmtools.cli:usage',
             'charm-layers = charmtools.build:inspect',
             'charm-proof = charmtools.proof:main',
+            'charm-pull-source = charmtools.pullsource:main',
             'charm-test = charmtools.test:main',
             'charm-version = charmtools.version:main',
             'juju-test = charmtools.test:main',

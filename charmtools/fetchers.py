@@ -10,7 +10,6 @@ import tempfile
 import requests
 import yaml
 
-from charmworldlib.bundle import Bundle
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +21,14 @@ def get(*args, **kw):
         kw['timeout'] = REQUEST_TIMEOUT_SECS
 
     return requests.get(*args, **kw)
+
+
+def is_int(string):
+    try:
+        int(string)
+        return True
+    except ValueError:
+        return False
 
 
 def rename(dir_):
@@ -50,6 +57,41 @@ def rename(dir_):
         # ex: switching the git branch marked in revision
         os.rename(dir_, new_dir)
     return new_dir
+
+
+def extract_archive(archive, dir_):
+    """Extract zip archive at filesystem path ``archive`` into directory
+    ``dir_`` and return the full path to the directory containing the
+    extracted archive.
+
+    """
+    tempdir = tempfile.mkdtemp(dir=dir_)
+    log.debug("Extracting %s to %s", archive, tempdir)
+    # Can't  extract with python due to bug that drops file
+    # permissions: http://bugs.python.org/issue15795
+    # In particular, it's important that executable test files in the
+    # archive remain executable, otherwise the tests won't be run.
+    # Instead we use a shell equivalent of the following:
+    #     archive = zipfile.ZipFile(archive, 'r')
+    #     archive.extractall(tempdir)
+    check_call('unzip {} -d {}'.format(archive, tempdir))
+    return tempdir
+
+
+def download_file(url, dir_):
+    """Download file at ``url`` into directory ``dir_`` and return the full
+    path to the downloaded file.
+
+    """
+    _, filename = tempfile.mkstemp(dir=dir_)
+    log.debug("Downloading %s", url)
+    r = get(url, stream=True)
+    with open(filename, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
+                f.flush()
+    return filename
 
 
 class Fetcher(object):
@@ -217,74 +259,59 @@ class StoreCharm(object):
 
 class CharmstoreDownloader(Fetcher):
     MATCH = re.compile(r"""
-    ^cs:(?P<charm>.*)$
+    ^cs:(?P<entity>.*)$
     """, re.VERBOSE)
 
-    STORE_URL = 'https://store.juju.ubuntu.com/charm/'
+    STORE_URL = 'https://api.jujucharms.com/charmstore/v4/{}'
+    ARCHIVE_URL = STORE_URL + '/archive'
+    REVISION_URL = STORE_URL + '/meta/id-revision'
 
     def __init__(self, *args, **kw):
         super(CharmstoreDownloader, self).__init__(*args, **kw)
-        self.charm = StoreCharm(self.charm)
 
     def fetch(self, dir_):
-        url = self.charm.data['canonical-url'][len('cs:'):]
-        url = self.STORE_URL + url
-        archive = self.download_file(url, dir_)
-        charm_dir = self.extract_archive(archive, dir_)
-        return rename(charm_dir)
-
-    def extract_archive(self, archive, dir_):
-        tempdir = tempfile.mkdtemp(dir=dir_)
-        log.debug("Extracting %s to %s", archive, tempdir)
-        # Can't  extract with python due to bug that drops file
-        # permissions: http://bugs.python.org/issue15795
-        # In particular, it's important that executable test files in the
-        # archive remain executable, otherwise the tests won't be run.
-        # Instead we use a shell equivalent of the following:
-        #     archive = zipfile.ZipFile(archive, 'r')
-        #     archive.extractall(tempdir)
-        check_call('unzip {} -d {}'.format(archive, tempdir))
-        return tempdir
-
-    def download_file(self, url, dir_):
-        _, filename = tempfile.mkstemp(dir=dir_)
-        log.debug("Downloading %s", url)
-        r = get(url, stream=True)
-        with open(filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:  # filter out keep-alive new chunks
-                    f.write(chunk)
-                    f.flush()
-        return filename
+        url = self.ARCHIVE_URL.format(self.entity)
+        archive = download_file(url, dir_)
+        entity_dir = extract_archive(archive, dir_)
+        return rename(entity_dir)
 
     def get_revision(self, dir_):
-        return self.charm.revision
+        url = self.REVISION_URL.format(self.entity)
+        return get(url).json()['Revision']
 
 
-class BundleDownloader(Fetcher):
+class BundleDownloader(CharmstoreDownloader):
     MATCH = re.compile(r"""
-    ^bundle:(?P<bundle>.*)$
+    ^bundle:(?P<entity>.*)$
     """, re.VERBOSE)
 
-    def fetch(self, dir_):
-        url = Bundle(self.bundle).deployer_file_url
-        bundle_dir = self.download_file(url, dir_)
-        return bundle_dir
+    def __init__(self, *args, **kw):
+        super(BundleDownloader, self).__init__(*args, **kw)
+        self.entity = normalize_bundle_name(self.entity)
 
-    def download_file(self, url, dir_):
-        bundle_dir = tempfile.mkdtemp(dir=dir_)
-        bundle_file = os.path.join(bundle_dir, 'bundles.yaml')
-        log.debug("Downloading %s to %s", url, bundle_file)
-        r = get(url, stream=True)
-        with open(bundle_file, 'w') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:  # filter out keep-alive new chunks
-                    f.write(chunk)
-                    f.flush()
-        return bundle_dir
 
-    def get_revision(self, dir_):
-        return Bundle(self.bundle).basket_revision
+def normalize_bundle_name(bundle_name):
+    """Convert old-style bundle name to new format.
+
+    Example:
+        ~charmers/mediawiki/6/single -> ~charmers/mediawiki-single-6
+
+    (for more examples see tests)
+
+    """
+    owner, bundle = None, bundle_name
+    if bundle.startswith('~'):
+        owner, bundle = bundle.split('/', 1)
+    bundle_parts = bundle.split('/')
+    if len(bundle_parts) == 3 and is_int(bundle_parts[1]):
+        bundle_parts = [
+            bundle_parts[0],
+            bundle_parts[2],
+            bundle_parts[1]]
+    bundle = '-'.join(bundle_parts)
+    if owner:
+        bundle = '/'.join((owner, bundle))
+    return bundle
 
 
 def bzr(cmd, **kw):
