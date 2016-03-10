@@ -66,17 +66,15 @@ def download_item(item, dir_):
 
     if item.startswith(LAYER_PREFIX):
         dir_ = dir_ or os.environ.get('LAYER_PATH')
-        name = 'layer-' + item[len(LAYER_PREFIX):]
     elif item.startswith(INTERFACE_PREFIX):
         dir_ = dir_ or os.environ.get('INTERFACE_PATH')
-        name = 'interface-' + item[len(INTERFACE_PREFIX):]
     else:
         dir_ = dir_ or os.environ.get('JUJU_REPOSITORY')
         if not item.startswith(CHARM_PREFIX):
             item = CHARM_PREFIX + item
 
         url_parts = item[len(CHARM_PREFIX):].split('/')
-        name = url_parts[-1]
+        charm_name = url_parts[-1]
         if len(url_parts) == 2 and not url_parts[0].startswith('~'):
             series_dir = url_parts[0]
         elif len(url_parts) == 3:
@@ -94,12 +92,13 @@ def download_item(item, dir_):
     try:
         fetcher = fetchers.get_fetcher(item)
         if isinstance(fetcher, fetchers.InterfaceFetcher):
-            if hasattr(fetcher, 'path'):
-                return "{}: {}".format(ERR_DIR_EXISTS, fetcher.path)
-
-        final_dest_dir = os.path.join(dir_, name)
-        if os.path.exists(final_dest_dir):
-            return "{}: {}".format(ERR_DIR_EXISTS, final_dest_dir)
+            target = fetcher.target(dir_)
+            if target.exists():
+                return "{}: {}".format(ERR_DIR_EXISTS, target)
+        else:
+            final_dest_dir = os.path.join(dir_, charm_name)
+            if os.path.exists(final_dest_dir):
+                return "{}: {}".format(ERR_DIR_EXISTS, final_dest_dir)
 
         dest = fetcher.fetch(dir_)
     except fetchers.FetchError:

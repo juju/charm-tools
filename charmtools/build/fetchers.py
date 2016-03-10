@@ -65,19 +65,44 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                         return result
             return {}
 
+    def target(self, dir_):
+        """Return a :class:`path` of the directory where the downloaded item
+        will be located.
+
+        :param str dir_: Directory into which the item will be downloaded.
+        :return: :class:`path`
+
+        """
+        if hasattr(self, "path"):
+            return self.path
+        elif hasattr(self, "repo"):
+            _, target = self._get_repo_fetcher_and_target(self.repo, dir_)
+            return target
+
+    def _get_repo_fetcher_and_target(self, repo, dir_):
+        """Returns a :class:`Fetcher` for ``repo``, and the destination dir
+        at which the downloaded repo will be created.
+
+        :param str repo: The repo url.
+        :param str dir_: Directory into which the repo will be downloaded.
+        :return: 2-tuple of (:class:`Fetcher`, :class:`path`)
+
+        """
+        # use the github fetcher for now
+        u = self.url[10:]
+        f = get_fetcher(repo)
+        if hasattr(f, "repo"):
+            basename = path(f.repo).name.splitext()[0]
+        else:
+            basename = u
+        return f, path(dir_) / basename
+
     def fetch(self, dir_):
         if hasattr(self, "path"):
             return super(InterfaceFetcher, self).fetch(dir_)
         elif hasattr(self, "repo"):
-            # use the github fetcher for now
-            u = self.url[10:]
-            f = get_fetcher(self.repo)
-            if hasattr(f, "repo"):
-                basename = path(f.repo).name.splitext()[0]
-            else:
-                basename = u
+            f, target = self._get_repo_fetcher_and_target(self.repo, dir_)
             res = f.fetch(dir_)
-            target = dir_ / basename
             if res != target:
                 target.rmtree_p()
                 path(res).rename(target)
