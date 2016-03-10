@@ -27,7 +27,7 @@ The "thing-to-download" can be specified using any of the following forms:
  - [cs:]~user/charm
  - [cs:]~user/series/charm
  - layer:layer-name
- - interface:layer-name
+ - interface:interface-name
 
 If a download directory is not specified, the following environment vars
 will be used to determine the download location:
