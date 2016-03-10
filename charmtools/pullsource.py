@@ -58,6 +58,8 @@ LAYER_PREFIX = 'layer:'
 INTERFACE_PREFIX = 'interface:'
 CHARM_PREFIX = 'cs:'
 
+ERR_DIR_EXISTS = "Aborting, destination directory exists"
+
 
 def download_item(item, dir_):
     series_dir = None
@@ -89,12 +91,19 @@ def download_item(item, dir_):
             os.mkdir(series_path)
         dir_ = series_path
 
-    final_dest_dir = os.path.join(dir_, name)
-    if os.path.exists(final_dest_dir):
-        return "Aborting, destination directory exists: " + final_dest_dir
+    try:
+        fetcher = fetchers.get_fetcher(item)
+        if isinstance(fetcher, fetchers.InterfaceFetcher):
+            if hasattr(fetcher, 'path'):
+                return "{}: {}".format(ERR_DIR_EXISTS, fetcher.path)
 
-    fetcher = fetchers.get_fetcher(item)
-    dest = fetcher.fetch(dir_)
+        final_dest_dir = os.path.join(dir_, name)
+        if os.path.exists(final_dest_dir):
+            return "{}: {}".format(ERR_DIR_EXISTS, final_dest_dir)
+
+        dest = fetcher.fetch(dir_)
+    except fetchers.FetchError:
+        return "Can't find source for {}".format(item)
 
     print('Downloaded {} to {}'.format(item, dest))
 
@@ -135,7 +144,7 @@ def main():
     else:
         logging.basicConfig(
             format='%(levelname)s: %(message)s',
-            level=logging.INFO,
+            level=logging.WARN,
         )
 
     return download_item(args.item, args.dir)

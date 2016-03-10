@@ -15,7 +15,7 @@ mock==1.0.1
 nose==1.2.1
 oauth==1.0.1
 otherstuf==1.1.0
-path.py==7.4
+path.py==8.1.2
 pathspec==0.3.3
 pip>=7.1.2
 requests==2.7.0
