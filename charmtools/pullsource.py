@@ -50,6 +50,11 @@ import sys
 import textwrap
 
 from .build import fetchers
+from fetchers import (
+    CharmstoreDownloader,
+    FETCHERS,
+    get,
+)
 
 
 log = logging.getLogger(__name__)
@@ -59,6 +64,28 @@ INTERFACE_PREFIX = 'interface:'
 CHARM_PREFIX = 'cs:'
 
 ERR_DIR_EXISTS = "Aborting, destination directory exists"
+
+
+class CharmstoreRepoDownloader(CharmstoreDownloader):
+    EXTRA_INFO_URL = CharmstoreDownloader.STORE_URL + '/meta/extra-info'
+
+    def fetch(self, dir_):
+        url = self.EXTRA_INFO_URL.format(self.entity)
+        repo_url = get(url).json().get('bzr-url')
+        if repo_url:
+            try:
+                fetcher = fetchers.get_fetcher(repo_url)
+            except fetchers.FetchError:
+                log.debug(
+                    "No fetcher for %s, downloading from charmstore",
+                    repo_url)
+                return super(CharmstoreRepoDownloader, self).fetch(dir_)
+            else:
+                return fetcher.fetch(dir_)
+
+        return super(CharmstoreRepoDownloader, self).fetch(dir_)
+
+FETCHERS.insert(0, CharmstoreRepoDownloader)
 
 
 def download_item(item, dir_):
