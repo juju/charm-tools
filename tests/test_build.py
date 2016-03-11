@@ -31,7 +31,11 @@ class TestBuild(unittest.TestCase):
         bu.hide_metrics = True
         remove_layer_file = self.dirname / 'trusty/tester/to_remove'
         remove_layer_file.touch()
-        bu()
+        with mock.patch.object(build, 'log') as log:
+            bu()
+            log.warn.assert_called_with(
+                'Please add a `repo` key to your layer.yaml, '
+                'with a url from which your layer can be cloned.')
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
 
