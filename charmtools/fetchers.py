@@ -122,7 +122,7 @@ class Fetcher(object):
 
 class BzrFetcher(Fetcher):
     MATCH = re.compile(r"""
-    ^(lp:|launchpad:|https?://((code|www)\.)?launchpad.net/)
+    ^(lp:|launchpad:|https?://((code|www)\.)?launchpad.net/|bzr\+ssh://[^/]+/)
     (?P<repo>[^@]*)(@(?P<revision>.*))?$
     """, re.VERBOSE)
 
@@ -177,7 +177,7 @@ class LaunchpadGitFetcher(Fetcher):
 
 class GithubFetcher(Fetcher):
     MATCH = re.compile(r"""
-    ^(gh:|github:|https?://(www\.)?github.com/)
+    ^(gh:|github:|https?://(www\.)?github.com/|git@github.com:)
     (?P<repo>[^@]*)(@(?P<revision>.*))?$
     """, re.VERBOSE)
 
