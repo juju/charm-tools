@@ -15,11 +15,15 @@ import yaml
 from charmtools.build import inspector
 import charmtools.build.tactics
 from charmtools.build.config import (BuildConfig, DEFAULT_IGNORES)
-from charmtools.build.fetchers import (InterfaceFetcher,
-                                       LayerFetcher,
-                                       get_fetcher,
-                                       FetchError)
+from charmtools.build.fetchers import (
+    InterfaceFetcher,
+    LayerFetcher,
+    get_fetcher,
+    FetchError,
+)
 from charmtools import utils
+from .. import repofinder
+
 
 log = logging.getLogger("build")
 
@@ -126,7 +130,15 @@ class Builder(object):
         self.force = False
         self._name = None
         self._charm = None
+        self._top_layer = None
         self.hide_metrics = False
+
+    @property
+    def top_layer(self):
+        if not self._top_layer:
+            self._top_layer = Layer(self.charm, self.deps).fetch()
+
+        return self._top_layer
 
     @property
     def charm(self):
@@ -211,14 +223,13 @@ class Builder(object):
 
     def fetch(self):
         self.target_dir.makedirs_p()
-        layer = Layer(self.charm, self.deps).fetch()
-        if not layer.configured:
+        if not self.top_layer.configured:
             log.warn("The top level layer expects a "
                      "valid layer.yaml file")
         # Manually create a layer object for the output
         self.target = Layer(self.name, self.repo)
         self.target.directory = self.target_dir
-        return self.fetch_deps(layer)
+        return self.fetch_deps(self.top_layer)
 
     def fetch_deps(self, layer):
         results = {"layers": [], "interfaces": []}
@@ -431,6 +442,8 @@ class Builder(object):
         self.exec_plan(self.plan, self.layers)
 
     def validate(self):
+        self._validate_charm_repo()
+
         p = self.target_dir / ".build.manifest"
         if not p.exists():
             return [], [], []
@@ -455,7 +468,19 @@ class Builder(object):
                 raise BuildError(
                     "Unable to continue due to unexpected modifications "
                     "(try --force)")
+
         return a, c, d
+
+    def _validate_charm_repo(self):
+        if 'repo' not in self.top_layer.config:
+            msg = 'Please add a `repo` key to your {}'.format(
+                self.top_layer.config_file.name)
+            recommended_repo = repofinder.get_recommended_repo(self.charm)
+            if recommended_repo:
+                msg += ', e.g. repo: {}'.format(recommended_repo)
+            else:
+                msg += ', with a url from which your layer can be cloned.'
+            log.warn(msg)
 
     def __call__(self):
         self.find_or_create_repo()
