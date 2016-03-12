@@ -88,8 +88,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
         :return: 2-tuple of (:class:`Fetcher`, :class:`path`)
 
         """
-        # use the github fetcher for now
-        u = self.url[10:]
+        u = self.url[len(self.NAMESPACE) + 1:]
         f = get_fetcher(repo)
         if hasattr(f, "repo"):
             basename = path(f.repo).name.splitext()[0]

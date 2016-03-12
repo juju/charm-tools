@@ -258,6 +258,9 @@ class StoreCharm(object):
 
 
 class CharmstoreDownloader(Fetcher):
+    """Downloads and extracts a charm archive from the charm store.
+
+    """
     MATCH = re.compile(r"""
     ^cs:(?P<entity>.*)$
     """, re.VERBOSE)
