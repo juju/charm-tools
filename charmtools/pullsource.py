@@ -20,7 +20,7 @@
 
 """Downloads the source code for a charm, layer, or interface.
 
-The "thing-to-download" can be specified using any of the following forms:
+The item to download can be specified using any of the following forms:
 
  - [cs:]charm
  - [cs:]series/charm
@@ -28,6 +28,10 @@ The "thing-to-download" can be specified using any of the following forms:
  - [cs:]~user/series/charm
  - layer:layer-name
  - interface:interface-name
+
+If the item is a layered charm, and the top layer of the charm has a repo
+key in layer.yaml, the top layer repo will be cloned. Otherwise, the charm
+archive will be downloaded and extracted from the charm store.
 
 If a download directory is not specified, the following environment vars
 will be used to determine the download location:
@@ -49,6 +53,8 @@ import os
 import sys
 import textwrap
 
+import yaml
+
 from .build import fetchers
 from fetchers import (
     CharmstoreDownloader,
@@ -67,6 +73,12 @@ ERR_DIR_EXISTS = "Aborting, destination directory exists"
 
 
 class CharmstoreRepoDownloader(CharmstoreDownloader):
+    """Clones a charm's bzr repo.
+
+    If the a bzr repo is not set, falls back to
+    :class:`fetchers.CharmstoreDownloader`.
+
+    """
     EXTRA_INFO_URL = CharmstoreDownloader.STORE_URL + '/meta/extra-info'
 
     def fetch(self, dir_):
@@ -82,10 +94,43 @@ class CharmstoreRepoDownloader(CharmstoreDownloader):
                 return super(CharmstoreRepoDownloader, self).fetch(dir_)
             else:
                 return fetcher.fetch(dir_)
-
         return super(CharmstoreRepoDownloader, self).fetch(dir_)
 
 FETCHERS.insert(0, CharmstoreRepoDownloader)
+
+
+class CharmstoreLayerDownloader(CharmstoreRepoDownloader):
+    """Clones the repo containing the top layer of a charm.
+
+    If the charm is not a layered charm, or the repo for the
+    top layer can not be determined, falls back to using
+    :class:`CharmstoreRepoDownloader`.
+
+    """
+    LAYER_CONFIGS = ['layer.yaml', 'composer.yaml']
+
+    def fetch(self, dir_):
+        for cfg in self.LAYER_CONFIGS:
+            url = '{}/{}'.format(
+                self.ARCHIVE_URL.format(self.entity), cfg)
+            result = get(url)
+            if not result.ok:
+                continue
+            repo_url = yaml.safe_load(result.text).get('repo')
+            if not repo_url:
+                continue
+            try:
+                fetcher = fetchers.get_fetcher(repo_url)
+            except fetchers.FetchError:
+                log.debug(
+                    'Charm %s has a repo set in %s, but no fetcher could '
+                    'be found for the repo (%s).', self.entity, cfg, repo_url)
+                break
+            else:
+                return fetcher.fetch(dir_)
+        return super(CharmstoreLayerDownloader, self).fetch(dir_)
+
+FETCHERS.insert(0, CharmstoreLayerDownloader)
 
 
 def download_item(item, dir_):
