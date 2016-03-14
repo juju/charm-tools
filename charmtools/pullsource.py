@@ -48,9 +48,12 @@ The download is aborted if the destination directory already exists.
 """
 
 import argparse
+import atexit
 import logging
 import os
+import shutil
 import sys
+import tempfile
 import textwrap
 
 import yaml
@@ -138,15 +141,17 @@ def download_item(item, dir_):
 
     if item.startswith(LAYER_PREFIX):
         dir_ = dir_ or os.environ.get('LAYER_PATH')
+        name = item[len(LAYER_PREFIX):]
     elif item.startswith(INTERFACE_PREFIX):
         dir_ = dir_ or os.environ.get('INTERFACE_PATH')
+        name = item[len(INTERFACE_PREFIX):]
     else:
         dir_ = dir_ or os.environ.get('JUJU_REPOSITORY')
         if not item.startswith(CHARM_PREFIX):
             item = CHARM_PREFIX + item
 
         url_parts = item[len(CHARM_PREFIX):].split('/')
-        charm_name = url_parts[-1]
+        name = url_parts[-1]
         if len(url_parts) == 2 and not url_parts[0].startswith('~'):
             series_dir = url_parts[0]
         elif len(url_parts) == 3:
@@ -155,28 +160,31 @@ def download_item(item, dir_):
     dir_ = dir_ or os.getcwd()
     dir_ = os.path.abspath(os.path.expanduser(dir_))
 
+    # Create series dir if we need to
     if series_dir:
         series_path = os.path.join(dir_, series_dir)
         if not os.path.exists(series_path):
             os.mkdir(series_path)
         dir_ = series_path
 
-    try:
-        fetcher = fetchers.get_fetcher(item)
-        if isinstance(fetcher, fetchers.InterfaceFetcher):
-            target = fetcher.target(dir_)
-            if target.exists():
-                return "{}: {}".format(ERR_DIR_EXISTS, target)
-        else:
-            final_dest_dir = os.path.join(dir_, charm_name)
-            if os.path.exists(final_dest_dir):
-                return "{}: {}".format(ERR_DIR_EXISTS, final_dest_dir)
+    # Abort if destination dir already exists
+    final_dest_dir = os.path.join(dir_, name)
+    if os.path.exists(final_dest_dir):
+        return "{}: {}".format(ERR_DIR_EXISTS, final_dest_dir)
 
-        dest = fetcher.fetch(dir_)
+    # Create tempdir for initial download
+    tempdir = tempfile.mkdtemp()
+    atexit.register(shutil.rmtree, tempdir)
+    try:
+        # Download the item
+        fetcher = fetchers.get_fetcher(item)
+        download_dir = fetcher.fetch(tempdir)
     except fetchers.FetchError:
         return "Can't find source for {}".format(item)
 
-    print('Downloaded {} to {}'.format(item, dest))
+    # Copy download dir to final destination dir
+    shutil.copytree(download_dir, final_dest_dir)
+    print('Downloaded {} to {}'.format(item, final_dest_dir))
 
 
 def setup_parser():
