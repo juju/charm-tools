@@ -7,6 +7,7 @@ from charmtools.fetchers import (
     BzrFetcher,
     BzrMergeProposalFetcher,
     GithubFetcher,
+    GitFetcher,
     BitbucketFetcher,
     LocalFetcher,
     CharmstoreDownloader,
@@ -126,6 +127,31 @@ class GithubFetcherTest(unittest.TestCase):
 
         for test in good_tests:
             self.assertEqual(test['repo'], 'charms/meteor')
+
+        for test in bad_tests:
+            self.assertEqual(test, {})
+
+
+class GitFetcherTest(unittest.TestCase):
+    def test_can_fetch(self):
+        f = GitFetcher.can_fetch
+
+        good_tests = [
+            'git@foobar.com:charms/meteor',
+            'https://foobar.com/meteor.git',
+        ]
+
+        bad_tests = [
+            f('lp:~tvansteenburgh/charms/precise/foo'),
+            f('lp:~tvansteenburgh/charms/precise/foo/+merge/12345'),
+            f('bb:charms/meteor'),
+            f('local:~/src/charms/precise/meteor'),
+            f('cs:precise/meteor'),
+            f('bundle:mediawiki/single'),
+        ]
+
+        for test in good_tests:
+            self.assertEqual(f(test)['repo'], test)
 
         for test in bad_tests:
             self.assertEqual(test, {})

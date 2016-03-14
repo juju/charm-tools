@@ -190,6 +190,22 @@ class GithubFetcher(Fetcher):
         return rename(dir_)
 
 
+class GitFetcher(Fetcher):
+    """Generic git fetcher.
+
+    Matches any url that starts with "git" or ends with ".git".
+
+    """
+    MATCH = re.compile(r"""
+    ^(?P<repo>git.*|.*\.git)?$
+    """, re.VERBOSE)
+
+    def fetch(self, dir_):
+        dir_ = tempfile.mkdtemp(dir=dir_)
+        git('clone {} {}'.format(self.repo, dir_))
+        return rename(dir_)
+
+
 class BitbucketFetcher(Fetcher):
     MATCH = re.compile(r"""
     ^(bb:|bitbucket:|https?://(www\.)?bitbucket.org/)
@@ -230,31 +246,6 @@ class LocalFetcher(Fetcher):
         dst = os.path.join(dir_, os.path.basename(self.path.rstrip(os.sep)))
         shutil.copytree(self.path, dst, symlinks=True)
         return dst
-
-
-class StoreCharm(object):
-    STORE_URL = 'https://store.juju.ubuntu.com/charm-info'
-
-    def __init__(self, name):
-        self.name = name
-        self.data = self.fetch()
-
-    def __getattr__(self, key):
-        return self.data[key]
-
-    def fetch(self):
-        params = {
-            'stats': 0,
-            'charms': self.name,
-        }
-        r = get(self.STORE_URL, params=params).json()
-        charm_data = r[self.name]
-        if 'errors' in charm_data:
-            raise FetchError(
-                'Error retrieving "{}" from charm store: {}'.format(
-                    self.name, '; '.join(charm_data['errors']))
-            )
-        return charm_data
 
 
 class CharmstoreDownloader(Fetcher):
@@ -367,6 +358,7 @@ FETCHERS = [
     CharmstoreDownloader,
     BundleDownloader,
     LaunchpadGitFetcher,
+    GitFetcher,
 ]
 
 
