@@ -232,31 +232,6 @@ class LocalFetcher(Fetcher):
         return dst
 
 
-class StoreCharm(object):
-    STORE_URL = 'https://store.juju.ubuntu.com/charm-info'
-
-    def __init__(self, name):
-        self.name = name
-        self.data = self.fetch()
-
-    def __getattr__(self, key):
-        return self.data[key]
-
-    def fetch(self):
-        params = {
-            'stats': 0,
-            'charms': self.name,
-        }
-        r = get(self.STORE_URL, params=params).json()
-        charm_data = r[self.name]
-        if 'errors' in charm_data:
-            raise FetchError(
-                'Error retrieving "{}" from charm store: {}'.format(
-                    self.name, '; '.join(charm_data['errors']))
-            )
-        return charm_data
-
-
 class CharmstoreDownloader(Fetcher):
     """Downloads and extracts a charm archive from the charm store.
 
