@@ -190,6 +190,22 @@ class GithubFetcher(Fetcher):
         return rename(dir_)
 
 
+class GitFetcher(Fetcher):
+    """Generic git fetcher.
+
+    Matches any url that starts with "git" or ends with ".git".
+
+    """
+    MATCH = re.compile(r"""
+    ^(?P<repo>git.*|.*\.git)?$
+    """, re.VERBOSE)
+
+    def fetch(self, dir_):
+        dir_ = tempfile.mkdtemp(dir=dir_)
+        git('clone {} {}'.format(self.repo, dir_))
+        return rename(dir_)
+
+
 class BitbucketFetcher(Fetcher):
     MATCH = re.compile(r"""
     ^(bb:|bitbucket:|https?://(www\.)?bitbucket.org/)
@@ -342,6 +358,7 @@ FETCHERS = [
     CharmstoreDownloader,
     BundleDownloader,
     LaunchpadGitFetcher,
+    GitFetcher,
 ]
 
 
