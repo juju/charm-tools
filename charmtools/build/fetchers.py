@@ -36,22 +36,24 @@ class InterfaceFetcher(fetchers.LocalFetcher):
 
     @classmethod
     def can_fetch(cls, url):
-        # Search local path first, then
-        # the interface webservice
+        # Search local path first, then the interface webservice
         if url.startswith("{}:".format(cls.NAMESPACE)):
-            url = url[len(cls.NAMESPACE) + 1:]
+            name = url[len(cls.NAMESPACE) + 1:]
+            prefixed_name = '{}-{}'.format(cls.NAMESPACE, name)
             search_path = [os.environ.get("JUJU_REPOSITORY", ".")]
             cp = os.environ.get(cls.ENVIRON)
             if cp:
                 search_path.extend(cp.split(os.pathsep))
             for part in search_path:
-                p = (path(part) / url).normpath()
-                if p.exists():
-                    return dict(path=p)
+                basepath = path(part)
+                for dirname in (name, prefixed_name):
+                    p = (basepath / dirname).normpath()
+                    if p.exists():
+                        return dict(path=p)
 
-            choices = [url]
-            if url.startswith(cls.OPTIONAL_PREFIX):
-                choices.append(url[len(cls.OPTIONAL_PREFIX):])
+            choices = [name]
+            if name.startswith(cls.OPTIONAL_PREFIX):
+                choices.append(name[len(cls.OPTIONAL_PREFIX):])
             for choice in choices:
                 uri = "%s%s/%s/" % (
                     cls.INTERFACE_DOMAIN, cls.ENDPOINT, choice)
