@@ -174,6 +174,10 @@ class Builder(object):
     def charm_name(self):
         return "{}/{}".format(self.series, self.name)
 
+    @property
+    def manifest(self):
+        return self.target_dir / '.build.manifest'
+
     def status(self):
         result = {}
         result.update(vars(self))
@@ -189,12 +193,8 @@ class Builder(object):
         # outside the series
         self.deps = (base / "deps")
         self.target_dir = (self.repo / self.name)
-        manifest = self.target_dir / '.build.manifest'
-        if manifest.exists():
-            self.old_manifest = json.loads(manifest.text())
 
     def find_or_create_repo(self, allow_create=True):
-        self.old_manifest = {'layers': {}, 'signatures': {}}
         # see if output dir is already in a repo, we can use that directly
         if self.output_dir == path(self.charm).abspath():
             # we've indicated in the cmdline that we are doing an inplace
@@ -204,7 +204,6 @@ class Builder(object):
                 self.repo = self.output_dir.parent.parent
                 self.deps = (self.repo / "deps")
                 self.target_dir = self.output_dir
-                self.old_manifest = json.loads((self.target_dir / '.build.manifest').text())
                 return
         if allow_create:
             self.create_repo()
@@ -425,15 +424,22 @@ class Builder(object):
                     sig = tactic.sign()
                     if sig:
                         signatures.update(sig)
+        new_repo = not self.manifest.exists()
+        if new_repo:
+            added, changed, removed = set(), set(), set()
+        else:
+            ignores = utils.ignore_matcher(DEFAULT_IGNORES)
+            added, changed, _ = utils.delta_signatures(self.manifest, ignores)
+            removed = self.clean_removed(signatures)
         # write out the sigs
         if "sign" in self.PHASES:
             self.write_signatures(signatures, layers)
-        self.clean_removed(signatures)
+        if self.report:
+            self.write_report(new_repo, added, changed, removed)
 
     def write_signatures(self, signatures, layers):
-        sigs = self.target / ".build.manifest"
         signatures['.build.manifest'] = ["build", 'dynamic', 'unchecked']
-        sigs.write_text(json.dumps(dict(
+        self.manifest.write_text(json.dumps(dict(
             signatures=signatures,
             layers=layers,
         ), indent=2))
@@ -446,11 +452,10 @@ class Builder(object):
     def validate(self):
         self._validate_charm_repo()
 
-        p = self.target_dir / ".build.manifest"
-        if not p.exists():
+        if not self.manifest.exists():
             return [], [], []
         ignorer = utils.ignore_matcher(DEFAULT_IGNORES)
-        a, c, d = utils.delta_signatures(p, ignorer)
+        a, c, d = utils.delta_signatures(self.manifest, ignorer)
 
         for f in a:
             log.warn(
@@ -513,10 +518,34 @@ class Builder(object):
         Clean up any files that were accounted for in the previous build
         manifest but which have been removed in the current set of sigs.
         """
-        removed = set(self.old_manifest['signatures'].keys()) - set(signatures.keys())
+        old_sigs = json.loads(self.manifest.text())['signatures']
+        old_files = set(old_sigs.keys()) - {'.build.manifest'}
+        new_files = set(signatures.keys())
+        removed = old_files - new_files
         for filename in removed:
             filepath = self.target_dir / filename
             filepath.remove()
+        return removed
+
+    def write_report(self, new_repo, added, changed, removed):
+        """
+        Log messages indicating what changed with this (re)build.
+        """
+        log.info('')
+        log.info('---------------------------------------')
+        log.info('              Build Report')
+        log.info('---------------------------------------')
+
+        if new_repo:
+            log.info('New build; all files were modified.')
+            return
+        elif any([added, changed, removed]):
+            sigils = ['+', ' ', '-']
+            for sigil, filenames in zip(sigils, [added, changed, removed]):
+                for filename in filenames:
+                    log.info(' {} {}'.format(sigil, filename))
+        else:
+            log.info('No new changes; no files were modified.')
 
 
 def configLogging(build):
@@ -588,6 +617,8 @@ def main(args=None):
                         default="http://interfaces.juju.solutions")
     parser.add_argument('-n', '--name',
                         help="Build a charm of 'name' from 'charm'")
+    parser.add_argument('-r', '--report', action="store_true",
+                        help="Show post-build report of changes")
     parser.add_argument('charm', nargs="?", default=".", type=path)
     # Namespace will set the options as attrs of build
     parser.parse_args(args, namespace=build)
