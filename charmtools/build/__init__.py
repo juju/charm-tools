@@ -256,17 +256,19 @@ class Builder(object):
             baselayers = [baselayers]
 
         for base in baselayers:
+            # The order of these commands is important. We only want to
+            # fetch something if we haven't already fetched it.
             if base.startswith("interface:"):
-                iface = Interface(base, self.deps).fetch()
+                iface = Interface(base, self.deps)
                 if iface.name in [i.name for i in results['interfaces']]:
                     continue
-                results["interfaces"].append(iface)
+                results["interfaces"].append(iface.fetch())
             else:
-                base_layer = Layer(base, self.deps).fetch()
-                self.fetch_dep(base_layer, results)
+                base_layer = Layer(base, self.deps)
                 if base_layer.name in [i.name for i in results['layers']]:
                     continue
-                results["layers"].append(base_layer)
+                results["layers"].append(base_layer.fetch())
+                self.fetch_dep(base_layer, results)
 
     def build_tactics(self, entry, current, config, output_files):
         # Delegate to the config object, it's rules
