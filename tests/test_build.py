@@ -29,6 +29,7 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/tester"
         bu.hide_metrics = True
+        bu.report = False
         remove_layer_file = self.dirname / 'trusty/tester/to_remove'
         remove_layer_file.touch()
         with mock.patch.object(build, 'log') as log:
@@ -118,6 +119,7 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/b"
         bu.hide_metrics = True
+        bu.report = False
         bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -136,6 +138,7 @@ class TestBuild(unittest.TestCase):
             bu.name = "foo"
             bu.charm = "."
             bu.hide_metrics = True
+            bu.report = False
             bu()
             base = bu.output_dir
             self.assertTrue(base.exists())
@@ -192,6 +195,7 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/c-reactive"
         bu.hide_metrics = True
+        bu.report = False
         bu()
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
@@ -229,6 +233,7 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/use-layers"
         bu.hide_metrics = True
+        bu.report = False
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
 
@@ -253,6 +258,7 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/chlayer"
         bu.hide_metrics = True
+        bu.report = False
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
@@ -273,6 +279,7 @@ class TestBuild(unittest.TestCase):
         bu.name = "foo"
         bu.charm = "trusty/whlayer"
         bu.hide_metrics = True
+        bu.report = False
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
