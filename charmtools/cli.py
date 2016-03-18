@@ -13,7 +13,9 @@ def parser_defaults(parser):
 
 
 def usage(exit_code=0, bundle=False):
-    sys.stderr.write('usage: %s subcommand\n' % os.path.basename(sys.argv[0]))
+    sys.stderr.write(
+        'Get help for a charm subcommand\n\n'
+        'usage: %s subcommand\n' % os.path.basename(sys.argv[0]))
     subs = subcommands(os.path.dirname(os.path.realpath(__file__)))
     sys.stderr.write('\n  Available subcommands are:\n    ')
     sys.stderr.write('\n    '.join(subs))

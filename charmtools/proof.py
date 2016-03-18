@@ -22,11 +22,12 @@ import argparse
 from bundles import Bundle
 from charms import Charm
 from cli import parser_defaults
+from . import utils
 
 
 def get_args(args=None):
     parser = argparse.ArgumentParser(
-        description='Performs static analysis on charms and bundles')
+        description='Perform static analysis on a charm or bundle')
     parser.add_argument('-n', '--offline', action='store_false',
                         help='Only perform offline proofing')
     parser.add_argument('--server', default=None,
@@ -37,6 +38,7 @@ def get_args(args=None):
                         help=argparse.SUPPRESS)
     parser.add_argument('charm_name', nargs='?', default=os.getcwd(),
                         help='path of charm dir to check. Defaults to PWD')
+    utils.add_plugin_description(parser)
     parser = parser_defaults(parser)
     args = parser.parse_args(args)
 

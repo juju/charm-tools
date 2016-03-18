@@ -1,3 +1,4 @@
+import argparse
 import copy
 import collections
 import hashlib
@@ -524,3 +525,14 @@ def delta_python_dump(orig, dest, patterns=REACTIVE_PATTERNS,
                    m=message)
         i += 1
     return i == 0
+
+
+class Description(argparse._StoreTrueAction):
+    """A argparse action that prints its parent parser's description and exits."""
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(parser.description.split('\n')[0].strip('. '))
+        raise SystemExit()
+
+
+def add_plugin_description(parser):
+    parser.add_argument('--description', action=Description)

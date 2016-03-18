@@ -24,6 +24,7 @@ from Cheetah.Template import Template
 from cli import parser_defaults
 from charms import Charm
 from charmworldlib.charm import Charms
+from . import utils
 
 TPL_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
 CHARM_TPL = os.path.join(TPL_DIR, 'charm')
@@ -100,9 +101,10 @@ sudo apt-get install amulet python3-requests -y
 
 def parser(args=None):
     parser = argparse.ArgumentParser(
-        description='Builds portions of a charm or bundle')
+        description='Add icon, readme, or tests to a charm')
     parser.add_argument('subcommand', choices=['tests', 'readme', 'icon'],
                         help='Which type of generator to run')
+    utils.add_plugin_description(parser)
     parser = parser_defaults(parser)
     return parser.parse_known_args(args)
 

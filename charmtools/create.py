@@ -28,6 +28,7 @@ from charmtools.generators import (
     CharmGeneratorException,
     get_installed_templates,
 )
+from . import utils
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +36,8 @@ DEFAULT_TEMPLATE = 'reactive-python'
 
 
 def setup_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description='Create a new charm')
 
     parser.add_argument(
         'charmname',
@@ -60,6 +62,7 @@ def setup_parser():
         help='Print debug information',
         action='store_true', default=False,
     )
+    utils.add_plugin_description(parser)
 
     return parser
 

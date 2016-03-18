@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Downloads the source code for a charm, layer, or interface.
+"""Download the source code for a charm, layer, or interface.
 
 The item to download can be specified using any of the following forms:
 
@@ -58,6 +58,7 @@ import textwrap
 
 import yaml
 
+from . import utils
 from .build import fetchers
 from fetchers import (
     CharmstoreDownloader,
@@ -207,6 +208,7 @@ def setup_parser():
         help='Show verbose output',
         action='store_true', default=False,
     )
+    utils.add_plugin_description(parser)
 
     return parser
 
