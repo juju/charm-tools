@@ -570,11 +570,13 @@ def configLogging(build):
 
 def inspect(args=None):
     build = Builder()
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description='Inspect the layers of a built charm')
     parser.add_argument('-r', '--force-raw', action="store_true",
                         help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('charm', nargs="?", default=".", type=path)
+    utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
     parser.parse_args(args, namespace=build)
     configLogging(build)
@@ -599,13 +601,18 @@ def deprecated_main():
         log_level = 'INFO'
 
     configLogging(MockBuild)
-    log.critical("{} has been deprecated, please use {}".format(old, new))
+
+    msg = "{} has been deprecated, please use {}".format(old, new)
+    if '--description' in sys.argv:
+        print(msg)
+    else:
+        log.critical(msg)
 
 
 def main(args=None):
     build = Builder()
     parser = argparse.ArgumentParser(
-        description="Build a charm from layers and interfaces.",
+        description="Build a charm from layers and interfaces",
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
@@ -620,6 +627,7 @@ def main(args=None):
     parser.add_argument('-r', '--report', action="store_true",
                         help="Show post-build report of changes")
     parser.add_argument('charm', nargs="?", default=".", type=path)
+    utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
     parser.parse_args(args, namespace=build)
     if build.charm == "help":
