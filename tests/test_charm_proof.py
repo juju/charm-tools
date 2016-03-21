@@ -33,6 +33,7 @@ from charmtools.charms import CharmLinter as Linter
 from charmtools.charms import validate_maintainer
 from charmtools.charms import validate_categories_and_tags
 from charmtools.charms import validate_storage
+from charmtools.charms import validate_series
 
 
 class TestCharmProof(TestCase):
@@ -578,6 +579,34 @@ class StorageValidationTest(TestCase):
             call('storage.data: Unrecognized keys in mapping: '
                  '"{\'unknown\': \'invalid key\'}"'),
         ], any_order=True)
+
+
+class SeriesValidationTest(TestCase):
+    def test_series_not_list(self):
+        """Charm has a series key, but the value is not a list."""
+        linter = Mock()
+        charm = {
+            'series': 'trusty',
+        }
+        validate_series(charm, linter)
+        linter.err.assert_called_once_with(
+                'series: must be a list of series names')
+
+    def test_series_list(self):
+        """Charm has a series key that is a list."""
+        linter = Mock()
+        charm = {
+            'series': ['trusty'],
+        }
+        validate_series(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_no_series(self):
+        """Charm does not have a series key."""
+        linter = Mock()
+        charm = {}
+        validate_series(charm, linter)
+        self.assertFalse(linter.err.called)
 
 
 if __name__ == '__main__':
