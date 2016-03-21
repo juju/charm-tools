@@ -17,6 +17,7 @@ KNOWN_METADATA_KEYS = [
     'summary',
     'maintainer',
     'maintainers',
+    'min-juju-version',
     'description',
     'categories',
     'subordinate',
@@ -286,6 +287,7 @@ class Charm(object):
             validate_categories_and_tags(charm, lint)
             validate_storage(charm, lint)
             validate_series(charm, lint)
+            validate_min_juju_version(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -498,6 +500,30 @@ class StorageItem(colander.MappingSchema):
             ),
             name='range',
         )
+
+
+def validate_min_juju_version(charm, linter):
+    """Validate min-juju-version in charm metadata.
+
+    Must match the regex and be 2.0.0 or greater.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'min-juju-version' not in charm:
+        return
+
+    pattern = r'^(\d{1,9})\.(\d{1,9})(\.|-(\w+))(\d{1,9})(\.\d{1,9})?$'
+    match = re.match(pattern, charm['min-juju-version'])
+    if not match:
+        linter.err('min-juju-version: invalid format, try X.Y.Z')
+        return
+
+    if int(match.group(1)) < 2:
+        linter.err(
+            'min-juju-version: invalid version, must be 2.0.0 or greater')
 
 
 def validate_series(charm, linter):

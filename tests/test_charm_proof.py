@@ -34,6 +34,7 @@ from charmtools.charms import validate_maintainer
 from charmtools.charms import validate_categories_and_tags
 from charmtools.charms import validate_storage
 from charmtools.charms import validate_series
+from charmtools.charms import validate_min_juju_version
 
 
 class TestCharmProof(TestCase):
@@ -607,6 +608,57 @@ class SeriesValidationTest(TestCase):
         charm = {}
         validate_series(charm, linter)
         self.assertFalse(linter.err.called)
+
+
+class MinJujuVersionValidationTest(TestCase):
+    def test_invalid_version_formats(self):
+        """Test invalid version formats"""
+        linter = Mock()
+        versions = [
+            '2',  # need major.minor.patch
+            '2.0',  # need major.minor.patch
+            '2-beta3',  # missing minor
+        ]
+        for v in versions:
+            charm = {
+                'min-juju-version': v,
+            }
+            validate_min_juju_version(charm, linter)
+            linter.err.assert_called_once_with(
+                'min-juju-version: invalid format, try X.Y.Z')
+            linter.reset_mock()
+
+    def test_invalid_versions(self):
+        """Test invalid versions (good format, bad version)"""
+        linter = Mock()
+        versions = [
+            '1.25.3',  # need 2.0.0 or greater
+        ]
+        for v in versions:
+            charm = {
+                'min-juju-version': v,
+            }
+            validate_min_juju_version(charm, linter)
+            linter.err.assert_called_once_with(
+                'min-juju-version: invalid version, must be 2.0.0 or greater')
+            linter.reset_mock()
+
+    def test_valid_versions(self):
+        """Test valid version formats"""
+        linter = Mock()
+        versions = [
+            '2.0.1',
+            '2.0.1.1',
+            '2.1-beta2',
+            '2.1-beta2.1',
+        ]
+        for v in versions:
+            charm = {
+                'min-juju-version': v,
+            }
+            validate_min_juju_version(charm, linter)
+            self.assertFalse(linter.err.called)
+            linter.reset_mock()
 
 
 if __name__ == '__main__':
