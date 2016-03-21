@@ -25,6 +25,7 @@ KNOWN_METADATA_KEYS = [
     'format',
     'peers',
     'tags',
+    'series',
     'storage',
 ]
 
@@ -65,7 +66,7 @@ class CharmLinter(Linter):
 
     def check_hook(self, hook, hooks_path, recommended=False):
         hook_path = os.path.join(hooks_path, hook)
-        ispscharm = False # flag to indicate whether PowerShell charm or not.
+        ispscharm = False  # flag to indicate whether PowerShell charm or not.
 
         # iterate through the possible hook-extension
         # combinations and find the right one:
@@ -157,7 +158,7 @@ class CharmLinter(Linter):
         try:
             with open(config_path) as config_file:
                 config = yaml.safe_load(config_file.read())
-        except Exception, error:
+        except Exception as error:
             self.err('Cannot parse config.yaml: %s' % error)
             return
         if not isinstance(config, dict):
@@ -284,6 +285,7 @@ class Charm(object):
             validate_maintainer(charm, lint)
             validate_categories_and_tags(charm, lint)
             validate_storage(charm, lint)
+            validate_series(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -496,6 +498,26 @@ class StorageItem(colander.MappingSchema):
             ),
             name='range',
         )
+
+
+def validate_series(charm, linter):
+    """Validate supported series list in charm metadata.
+
+    We don't validate the actual series names because:
+
+    1. `charm push` does that anyway
+    2. our list of valid series would be constantly falling out-of-date
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'series' not in charm:
+        return
+
+    if not isinstance(charm['series'], list):
+        linter.err('series: must be a list of series names')
 
 
 def validate_storage(charm, linter):
