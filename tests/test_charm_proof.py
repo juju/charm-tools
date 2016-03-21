@@ -35,6 +35,7 @@ from charmtools.charms import validate_categories_and_tags
 from charmtools.charms import validate_storage
 from charmtools.charms import validate_series
 from charmtools.charms import validate_min_juju_version
+from charmtools.charms import validate_extra_bindings
 
 
 class TestCharmProof(TestCase):
@@ -659,6 +660,29 @@ class MinJujuVersionValidationTest(TestCase):
             validate_min_juju_version(charm, linter)
             self.assertFalse(linter.err.called)
             linter.reset_mock()
+
+
+class ExtraBindingsValidationTest(TestCase):
+    def test_invalid(self):
+        """Charm has a invalid extra-bindings metadata."""
+        linter = Mock()
+        charm = {
+            'extra-bindings': 'public',
+        }
+        validate_extra_bindings(charm, linter)
+        linter.err.assert_called_once_with(
+            'extra-bindings: must be a dictionary')
+
+    def test_valid(self):
+        """Charm has a valid extra-bindings metadata."""
+        linter = Mock()
+        charm = {
+            'extra-bindings': {
+                'public': None,
+            }
+        }
+        validate_extra_bindings(charm, linter)
+        self.assertFalse(linter.err.called)
 
 
 if __name__ == '__main__':

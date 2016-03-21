@@ -28,6 +28,7 @@ KNOWN_METADATA_KEYS = [
     'tags',
     'series',
     'storage',
+    'extra-bindings',
 ]
 
 KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
@@ -288,6 +289,7 @@ class Charm(object):
             validate_storage(charm, lint)
             validate_series(charm, lint)
             validate_min_juju_version(charm, lint)
+            validate_extra_bindings(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -500,6 +502,21 @@ class StorageItem(colander.MappingSchema):
             ),
             name='range',
         )
+
+
+def validate_extra_bindings(charm, linter):
+    """Validate extra-bindings in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'extra-bindings' not in charm:
+        return
+
+    if not isinstance(charm['extra-bindings'], dict):
+        linter.err('extra-bindings: must be a dictionary')
 
 
 def validate_min_juju_version(charm, linter):
