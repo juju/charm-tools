@@ -16,11 +16,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import charmtools.bundles
-import os.path
-import shutil
-import sys
-import tempfile
-import textwrap
 import unittest
 
 
@@ -35,9 +30,10 @@ class TestCharmProof(unittest.TestCase):
                     'charm': 'cs:precise/memcached',
                     'num_units': 1,
                 },
-            }}, 'my-service')
+            }
+        })
         self.assertIn(
-            'W: my-service: memcached: charm URL should include a revision',
+            'W: memcached: charm URL should include a revision',
             self.linter.lint)
 
     def test_no_warning_when_charm_urls_include_revisions(self):
@@ -47,7 +43,8 @@ class TestCharmProof(unittest.TestCase):
                     'charm': 'cs:precise/memcached-99',
                     'num_units': 1,
                 },
-            }}, 'my-service')
+            }
+        })
         self.assertNotIn(
             'W: memcached: charm URL should include a revision',
             self.linter.lint)
@@ -59,10 +56,11 @@ class TestCharmProof(unittest.TestCase):
                     'charm': 'cs:precise/memcached',
                     'num_units': 1,
                 },
-            }}, 'my-service')
+            }
+        })
         self.assertIn(
-            'W: my-service: memcached: No annotations found, will render '
-                'poorly in GUI',
+            'W: memcached: No annotations found, will render '
+            'poorly in GUI',
             self.linter.lint)
 
     def test_no_warning_when_annotations_are_included(self):
@@ -81,5 +79,5 @@ class TestCharmProof(unittest.TestCase):
             }})
         self.assertNotIn(
             'W: my-service: memcached: No annotations found, will render '
-                'poorly in GUI',
+            'poorly in GUI',
             self.linter.lint)

@@ -19,7 +19,7 @@ import sys
 import argparse
 
 from mr import Mr
-from charmworldlib import charm as cwc
+from charmstore import Charm
 
 
 def setup_parser():
@@ -39,7 +39,7 @@ def parse_charm_id(charm_id):
         charm_id = charm_id.replace('cs:', '')
 
     try:
-        charm = cwc.Charm(charm_id)
+        charm = Charm(charm_id)
     except:
         return None
 
