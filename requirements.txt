@@ -1,7 +1,7 @@
 PyYAML==3.11
 blessings==1.6
 bzr>=2.6.0
-charmworldlib>=0.4.2
+libcharmstore>=0.0.3
 cheetah==2.4.4
 colander==1.0
 coverage==3.7.1
@@ -18,7 +18,7 @@ otherstuf==1.1.0
 path.py==8.1.2
 pathspec==0.3.3
 pip>=7.1.2
-requests==2.7.0
+requests==2.6.0
 responses==0.4.0
 ruamel.yaml==0.10.2
 virtualenv>=1.11.4

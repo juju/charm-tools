@@ -19,11 +19,11 @@ import re
 import argparse
 
 from cli import parser_defaults
-from charmworldlib import charm
+from charmstore import Charm
 
 
 def info(charm_id, is_bundle=False):
-    c = charm.Charm(charm_id)
+    c = Charm(charm_id)
     readme = [s for s in c.files if re.match("^readme", s, re.IGNORECASE)]
 
     if not readme:

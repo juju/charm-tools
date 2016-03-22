@@ -23,7 +23,8 @@ from Cheetah.Template import Template
 
 from cli import parser_defaults
 from charms import Charm
-from charmworldlib.charm import Charms
+from charmstore import CharmStore
+from charmstore.error import CharmNotFound
 from . import utils
 
 TPL_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
@@ -31,9 +32,17 @@ CHARM_TPL = os.path.join(TPL_DIR, 'charm')
 
 
 def graph(interface, endpoint, series='trusty'):
-    matches = {'requires': 'provides', 'provides': 'requires'}
-    c = Charms()
-    charms = c.search({matches[endpoint]: interface, 'series': series})
+    matches = {
+        'requires': 'provides',
+        'provides': 'requires',
+    }
+    match = matches[endpoint]
+    c = CharmStore()
+    try:
+        charms = getattr(c, match)(interface)
+    except CharmNotFound:
+        return None
+    charms = [c for c in charms if c.series == series]
     if charms:
         return charms[0]
     else:
