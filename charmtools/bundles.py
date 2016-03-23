@@ -24,7 +24,7 @@ class BundleLinter(Linter):
                     self.warn('%s: No annotations found, will render '
                               'poorly in GUI' % svc)
                 if ('charm' in sdata and
-                        not charm_url_includes_id(sdata['charm'])):
+                        not charm_url_includes_id(sdata['charm'] or '')):
                     self.warn(
                         '%s: charm URL should include a revision' % svc)
         else:
