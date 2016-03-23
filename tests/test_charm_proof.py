@@ -36,6 +36,7 @@ from charmtools.charms import validate_storage
 from charmtools.charms import validate_series
 from charmtools.charms import validate_min_juju_version
 from charmtools.charms import validate_extra_bindings
+from charmtools.charms import validate_payloads
 
 
 class TestCharmProof(TestCase):
@@ -579,6 +580,84 @@ class StorageValidationTest(TestCase):
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
             call('storage.data: Unrecognized keys in mapping: '
+                 '"{\'unknown\': \'invalid key\'}"'),
+        ], any_order=True)
+
+
+class PayloadsValidationTest(TestCase):
+    def test_minimal_payloads_config(self):
+        """Charm has the minimum allowed payloads configuration."""
+        linter = Mock()
+        charm = {
+            'payloads': {
+                'test': {
+                    'type': 'docker',
+                }
+            }
+        }
+        validate_payloads(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_complete_payloads_config(self):
+        """Charm has payloads using all types."""
+        linter = Mock()
+        charm = {
+            'payloads': {
+                'vm': {
+                    'type': 'kvm',
+                },
+                'app-container': {
+                    'type': 'docker',
+                },
+            }
+        }
+        validate_payloads(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_payloads_without_defs(self):
+        """Charm has payloads key but no definitions."""
+        linter = Mock()
+        charm = {
+            'payloads': {}
+        }
+        validate_payloads(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('payloads: must be a dictionary of payload definitions'),
+        ], any_order=True)
+
+    def test_payloads_invalid_values(self):
+        """Charm has payloads with invalid values."""
+        linter = Mock()
+        charm = {
+            'payloads': {
+                'buzz': {
+                    'type': 'dockerdockerdocker',
+                },
+            }
+        }
+        validate_payloads(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('payloads.buzz.type: "dockerdockerdocker" is not one of '
+                 'kvm, docker'),
+        ], any_order=True)
+
+    def test_payloads_unknown_keys(self):
+        """Charm has payloads with illegal keys."""
+        linter = Mock()
+        charm = {
+            'payloads': {
+                'vm': {
+                    'type': 'kvm',
+                    'unknown': 'invalid key',
+                },
+            }
+        }
+        validate_payloads(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('payloads.vm: Unrecognized keys in mapping: '
                  '"{\'unknown\': \'invalid key\'}"'),
         ], any_order=True)
 

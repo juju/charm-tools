@@ -290,6 +290,7 @@ class Charm(object):
             validate_series(charm, lint)
             validate_min_juju_version(charm, lint)
             validate_extra_bindings(charm, lint)
+            validate_payloads(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -504,6 +505,17 @@ class StorageItem(colander.MappingSchema):
         )
 
 
+class PayloadItem(colander.MappingSchema):
+    def schema_type(self, **kw):
+        return colander.Mapping(unknown='raise')
+
+    type_ = colander.SchemaNode(
+        colander.String(),
+        validator=colander.OneOf(['kvm', 'docker']),
+        name='type',
+    )
+
+
 def validate_extra_bindings(charm, linter):
     """Validate extra-bindings in charm metadata.
 
@@ -588,6 +600,33 @@ def validate_storage(charm, linter):
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('storage.{}: {}'.format(k, v))
+
+
+def validate_payloads(charm, linter):
+    """Validate paylaod configuration in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'payloads' not in charm:
+        return
+
+    if (not isinstance(charm['payloads'], dict) or
+            not charm['payloads']):
+        linter.err('payloads: must be a dictionary of payload definitions')
+        return
+
+    schema = colander.SchemaNode(colander.Mapping())
+    for payload_def in charm['payloads']:
+        schema.add(PayloadItem(name=payload_def))
+
+    try:
+        schema.deserialize(charm['payloads'])
+    except colander.Invalid as e:
+        for k, v in e.asdict().items():
+            linter.err('payloads.{}: {}'.format(k, v))
 
 
 def validate_maintainer(charm, linter):
