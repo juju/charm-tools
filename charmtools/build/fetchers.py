@@ -33,23 +33,26 @@ class InterfaceFetcher(fetchers.LocalFetcher):
     ENVIRON = "INTERFACE_PATH"
     OPTIONAL_PREFIX = "juju-relation-"
     ENDPOINT = "/api/v1/interface"
+    NO_LOCAL_LAYERS = False
 
     @classmethod
     def can_fetch(cls, url):
         # Search local path first, then the interface webservice
         if url.startswith("{}:".format(cls.NAMESPACE)):
             name = url[len(cls.NAMESPACE) + 1:]
-            prefixed_name = '{}-{}'.format(cls.NAMESPACE, name)
-            search_path = [os.environ.get("JUJU_REPOSITORY", ".")]
-            cp = os.environ.get(cls.ENVIRON)
-            if cp:
-                search_path.extend(cp.split(os.pathsep))
-            for part in search_path:
-                basepath = path(part)
-                for dirname in (name, prefixed_name):
-                    p = (basepath / dirname).normpath()
-                    if p.exists():
-                        return dict(path=p)
+
+            if not cls.NO_LOCAL_LAYERS:
+                prefixed_name = '{}-{}'.format(cls.NAMESPACE, name)
+                search_path = [os.environ.get("JUJU_REPOSITORY", ".")]
+                cp = os.environ.get(cls.ENVIRON)
+                if cp:
+                    search_path.extend(cp.split(os.pathsep))
+                for part in search_path:
+                    basepath = path(part)
+                    for dirname in (name, prefixed_name):
+                        p = (basepath / dirname).normpath()
+                        if p.exists():
+                            return dict(path=p)
 
             choices = [name]
             if name.startswith(cls.OPTIONAL_PREFIX):

@@ -622,6 +622,10 @@ def main(args=None):
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
                         default="http://interfaces.juju.solutions")
+    parser.add_argument('--no-local-layers', action="store_true",
+                        help="Don't use local layers when building. "
+                        "Forces included layers to be downloaded "
+                        "from the interface service.")
     parser.add_argument('-n', '--name',
                         help="Build a charm of 'name' from 'charm'")
     parser.add_argument('-r', '--report', action="store_true",
@@ -637,6 +641,9 @@ def main(args=None):
     # Monkey patch in the domain for the interface webservice
     InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
     LayerFetcher.INTERFACE_DOMAIN = build.interface_service
+
+    InterfaceFetcher.NO_LOCAL_LAYERS = build.no_local_layers
+
     configLogging(build)
 
     if not build.output_dir:
