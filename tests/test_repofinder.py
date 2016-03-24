@@ -26,7 +26,7 @@ class TestRepoFinder(unittest.TestCase):
             'https://tvansteenburgh@bitbucket.org/tvansteenburgh/loopy'
         )
 
-    def test__parse_bzr(self):
+    def test__parse_bzr_parent(self):
         s = textwrap.dedent("""\
         Standalone tree (format: 2a)
         Location:
@@ -40,4 +40,33 @@ class TestRepoFinder(unittest.TestCase):
         self.assertEqual(
             repofinder._parse_bzr(s),
             'bzr+ssh://bazaar.launchpad.net/+branch/juju-deployer/'
+        )
+
+    def test__parse_bzr_push(self):
+        s = textwrap.dedent("""\
+        Standalone tree (format: 2a)
+        Location:
+          branch root: .
+
+        Related branches:
+            push branch: bzr+ssh://bazaar.launchpad.net/~tvansteenburgh/juju-deployer/1269783-force-terminate/
+          submit branch: bzr+ssh://bazaar.launchpad.net/~bac/juju-deployer/update-store-url/
+        """)
+        self.assertEqual(
+            repofinder._parse_bzr(s),
+            'bzr+ssh://bazaar.launchpad.net/~tvansteenburgh/juju-deployer/1269783-force-terminate/'
+        )
+
+    def test__parse_bzr_submit(self):
+        s = textwrap.dedent("""\
+        Standalone tree (format: 2a)
+        Location:
+          branch root: .
+
+        Related branches:
+          submit branch: bzr+ssh://bazaar.launchpad.net/~bac/juju-deployer/update-store-url/
+        """)
+        self.assertEqual(
+            repofinder._parse_bzr(s),
+            'bzr+ssh://bazaar.launchpad.net/~bac/juju-deployer/update-store-url/'
         )

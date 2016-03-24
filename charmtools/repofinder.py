@@ -65,11 +65,22 @@ def _parse_git(txt):
 
 
 def _parse_bzr(txt):
-    pat = re.compile(r'parent branch: (?P<url>.*)')
+    branch_types = ['parent', 'push', 'submit']
+    pat = re.compile(
+        r'(?P<branch_type>({})) branch: (?P<url>.*)'.format(
+            '|'.join(branch_types)))
+    matches = {}
     for line in txt.split('\n'):
         match = pat.search(line)
         if match:
-            return match.groupdict()['url'].strip()
+            d = match.groupdict()
+            matches[d['branch_type']] = d['url'].strip()
+    if not matches:
+        return
+    for typ in branch_types:
+        url = matches.get(typ)
+        if url:
+            return url
 
 
 def _parse_hg(txt):
