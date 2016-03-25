@@ -154,8 +154,9 @@ class ProcessResult(object):
 
     def throw_on_error(self):
         if not bool(self):
-            raise subprocess.CalledProcessError(
-                self.exit_code, self.command, output=self.output)
+            sys.stderr.write(
+                '{}\n\nCommand failed: {}\n'.format(self.output, self.cmd))
+            sys.exit(self.exit_code)
 
 
 class Process(object):
