@@ -152,7 +152,7 @@ class ProcessResult(object):
 
     __nonzero__ = __bool__
 
-    def throw_on_error(self):
+    def exit_on_error(self):
         if not bool(self):
             sys.stderr.write(
                 '{}\n\nCommand failed: {}\n'.format(self.output, self.cmd))
@@ -160,19 +160,19 @@ class ProcessResult(object):
 
 
 class Process(object):
-    def __init__(self, command=None, throw=False, log=log, **kwargs):
+    def __init__(self, command=None, exit=False, log=log, **kwargs):
         if isinstance(command, str):
             command = (command, )
         self.command = command
-        self._throw_on_error = False
+        self._exit_on_error = exit
         self.log = log
         self._kw = kwargs
 
     def __repr__(self):
         return "<Command %s>" % (self.command, )
 
-    def throw_on_error(self, throw=True):
-        self._throw_on_error = throw
+    def exit_on_error(self, exit=True):
+        self._exit_on_error = exit
         return self
 
     def __call__(self, *args, **kw):
@@ -198,8 +198,8 @@ class Process(object):
         exit_code = p.poll()
         result = ProcessResult(all_args, exit_code, stdout, stderr)
         self.log.debug("process: %s (%d)", result.cmd, result.exit_code)
-        if self._throw_on_error:
-            result.throw_on_error()
+        if self._exit_on_error:
+            result.exit_on_error()
         return result
 
 command = Process
@@ -217,7 +217,7 @@ class Commander(object):
 
     def check(self, *args, **kwargs):
         kwargs.update({'log': self.log})
-        return command(command=args, **kwargs).throw_on_error()
+        return command(command=args, **kwargs).exit_on_error()
 
     def __call__(self, *args, **kwargs):
         kwargs.update({'log': self.log})
