@@ -550,7 +550,7 @@ class InstallerTactic(Tactic):
                            "install",
                            "--user",
                            "--ignore-installed",
-                           spec), env=localenv).throw_on_error()()
+                           spec), env=localenv).exit_on_error()()
             self._tracked = []
             # We now manage two classes of explicit mappings
             # When python packages are installed into a prefix
@@ -619,7 +619,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             utils.Process((pip, 'install',
                            '--no-binary', ':all:',
                            '-d', temp_dir) +
-                          reqs).throw_on_error()()
+                          reqs).exit_on_error()()
             for wheel in temp_dir.files():
                 dest = wheelhouse / wheel.basename()
                 dest.remove_p()
@@ -633,8 +633,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
-            utils.Process(('virtualenv', '--python', 'python3', venv)).throw_on_error()()
-            utils.Process((pip, 'install', '-U', 'pip', 'wheel')).throw_on_error()()
+            utils.Process(('virtualenv', '--python', 'python3', venv)).exit_on_error()()
+            utils.Process((pip, 'install', '-U', 'pip', 'wheel')).exit_on_error()()
         for tactic in self.previous:
             tactic(venv)
         self._add(pip, wheelhouse, '-r', self.entity)
