@@ -40,7 +40,7 @@ def get_recommended_repo(path):
                     repo = cmd.parse(output)
                     if repo:
                         return repo
-            except subprocess.CalledProcessError:
+            except (subprocess.CalledProcessError, OSError):
                 continue
 
 
