@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import sys
-import warnings
 
 import blessings
 from collections import OrderedDict
@@ -124,6 +123,7 @@ class Builder(object):
     """
     PHASES = ['lint', 'read', 'call', 'sign', 'build']
     HOOK_TEMPLATE_FILE = path('hooks/hook.template')
+    DEFAULT_SERIES = 'trusty'
 
     def __init__(self):
         self.config = BuildConfig()
@@ -149,6 +149,16 @@ class Builder(object):
         self._charm = path(value)
 
     @property
+    def charm_metadata(self):
+        if not hasattr(self, '_charm_metadata'):
+            md = path(self.charm) / "metadata.yaml"
+            setattr(
+                self, '_charm_metadata',
+                yaml.load(md.open()) if md.exists() else None)
+
+        return self._charm_metadata
+
+    @property
     def name(self):
         if self._name:
             return self._name
@@ -158,10 +168,8 @@ class Builder(object):
 
         # however if the current layer has a metadata.yaml we can
         # use its name
-        md = path(self.charm) / "metadata.yaml"
-        if md.exists():
-            data = yaml.load(md.open())
-            name = data.get("name")
+        if self.charm_metadata:
+            name = self.charm_metadata.get("name")
             if name:
                 self._name = name
         return self._name
@@ -171,12 +179,19 @@ class Builder(object):
         self._name = value
 
     @property
-    def charm_name(self):
-        return "{}/{}".format(self.series, self.name)
-
-    @property
     def manifest(self):
         return self.target_dir / '.build.manifest'
+
+    def check_series(self):
+        """Make sure this is a either a multi-series charm, or we have a
+        build series defined. If not, fall back to a default series.
+
+        """
+        if self.series:
+            return
+        if self.charm_metadata and self.charm_metadata.get('series'):
+            return
+        self.series = self.DEFAULT_SERIES
 
     def status(self):
         result = {}
@@ -188,7 +203,7 @@ class Builder(object):
     def create_repo(self):
         # Generated output will go into this directory
         base = path(self.output_dir)
-        self.repo = (base / self.series)
+        self.repo = (base / self.series if self.series else base)
         # And anything it includes from will be placed here
         # outside the series
         self.deps = (base / "deps")
@@ -199,7 +214,8 @@ class Builder(object):
         if self.output_dir == path(self.charm).abspath():
             # we've indicated in the cmdline that we are doing an inplace
             # update
-            if self.output_dir.parent.basename() == self.series:
+            if (self.series and
+                    self.output_dir.parent.basename() == self.series):
                 # we're already in a repo
                 self.repo = self.output_dir.parent.parent
                 self.deps = (self.repo / "deps")
@@ -209,6 +225,7 @@ class Builder(object):
             self.create_repo()
         else:
             raise ValueError("%s doesn't seem valid", self.charm.directory)
+        log.info("Destination charm directory: {}".format(self.target_dir))
 
     @property
     def layers(self):
@@ -319,7 +336,8 @@ class Builder(object):
             raise BuildError('At least one layer must provide metadata.yaml')
         meta = metadata_tactic[0].process()
         if not meta and layers.get('interfaces'):
-            raise BuildError('Includes interfaces but no metadata.yaml to bind them')
+            raise BuildError(
+                'Includes interfaces but no metadata.yaml to bind them')
         elif self.HOOK_TEMPLATE_FILE not in output_files:
             raise BuildError('At least one layer must provide %s',
                              self.HOOK_TEMPLATE_FILE)
@@ -617,7 +635,7 @@ def main(args=None):
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-o', '--output-dir', type=path)
-    parser.add_argument('-s', '--series', default="trusty")
+    parser.add_argument('-s', '--series', default=None)
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
@@ -648,6 +666,9 @@ def main(args=None):
 
     if not build.output_dir:
         build.normalize_outputdir()
+    if not build.series:
+        build.check_series()
+
     try:
         build()
     except (BuildError, FetchError) as e:
