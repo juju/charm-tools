@@ -22,7 +22,7 @@ setup(
     maintainer_email='marco@ceppi.net',
     description=('Tools for maintaining Juju charms'),
     license='GPL v3',
-    url='https://launchpad.net/charm-tools',
+    url='https://github.com/juju/charm-tools',
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
