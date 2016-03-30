@@ -653,16 +653,12 @@ def validate_actions(actions, action_hooks, linter):
     if not actions:
         return
 
-    if 'actions' not in actions:
-        linter.err("actions: actions.yaml needs to declare an 'actions:' key")
-        return
-
-    if not isinstance(actions['actions'], dict):
+    if not isinstance(actions, dict):
         linter.err('actions: must be a dictionary of json schemas')
         return
 
     # TODO: Schema validation
-    for k in actions['actions']:
+    for k in actions:
         if k.startswith('juju-'):
             linter.err('actions.{}: juju is a reserved namespace'.format(k))
             continue
