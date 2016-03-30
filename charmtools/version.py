@@ -1,6 +1,20 @@
 
 import pkg_resources
 
+from cli import parser_defaults
+from charmtools import utils
+
+
+def get_args(args=None):
+    parser = argparse.ArgumentParser(
+        description='display tooling version information')
+    utils.add_plugin_description(parser)
+    parser = parser_defaults(parser)
+    args = parser.parse_args(args)
+
+    return args
+
+
 def charm_version():
     try:
         from apt.cache import Cache
@@ -18,6 +32,8 @@ def charm_version():
 
 
 def main():
+    get_args()
+
     version = pkg_resources.get_distribution("charm-tools").version
 
     print "charm %s" % charm_version()
