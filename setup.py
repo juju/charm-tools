@@ -32,7 +32,6 @@ setup(
         'console_scripts': [
             'charm-add = charmtools.generate:main',
             'charm-build = charmtools.build:main',
-            'charm-compose = charmtools.build:deprecated_main',
             'charm-create = charmtools.create:main',
             'charm-help = charmtools.cli:usage',
             'charm-layers = charmtools.build:inspect',
