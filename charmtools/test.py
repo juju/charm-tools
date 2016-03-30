@@ -567,7 +567,7 @@ def setup_parser():
     parser = argparse.ArgumentParser(
         prog='juju test',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='Execute charm functional tests',
+        description='execute charm functional tests',
         epilog="""\
 `%(prog)s` should always be run from within a CHARM_DIR.
 

@@ -37,7 +37,7 @@ DEFAULT_TEMPLATE = 'reactive-python'
 
 def setup_parser():
     parser = argparse.ArgumentParser(
-        description='Create a new charm')
+        description='create a new charm')
 
     parser.add_argument(
         'charmname',

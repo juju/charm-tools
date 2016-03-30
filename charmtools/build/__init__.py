@@ -589,7 +589,7 @@ def configLogging(build):
 def inspect(args=None):
     build = Builder()
     parser = argparse.ArgumentParser(
-        description='Inspect the layers of a built charm')
+        description='inspect the layers of a built charm')
     parser.add_argument('-r', '--force-raw', action="store_true",
                         help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
@@ -630,7 +630,7 @@ def deprecated_main():
 def main(args=None):
     build = Builder()
     parser = argparse.ArgumentParser(
-        description="Build a charm from layers and interfaces",
+        description="build a charm from layers and interfaces",
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")

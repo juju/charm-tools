@@ -110,7 +110,7 @@ sudo apt-get install amulet python3-requests -y
 
 def parser(args=None):
     parser = argparse.ArgumentParser(
-        description='Add icon, readme, or tests to a charm')
+        description='add icon, readme, or tests to a charm')
     parser.add_argument('subcommand', choices=['tests', 'readme', 'icon'],
                         help='Which type of generator to run')
     utils.add_plugin_description(parser)
@@ -120,7 +120,7 @@ def parser(args=None):
 
 def tests_parser(args):
     # This bites, need an argparser experter
-    parser = argparse.ArgumentParser(description="Add tests to a charm")
+    parser = argparse.ArgumentParser(description="add tests to a charm")
     parser.add_argument('--series', '-s', default='trusty',
                         help='Series for the generated test')
     return parser.parse_args(args)

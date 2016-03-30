@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Download the source code for a charm, layer, or interface.
+"""download the source code for a charm, layer, or interface.
 
 The item to download can be specified using any of the following forms:
 
