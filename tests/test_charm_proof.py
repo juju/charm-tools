@@ -22,7 +22,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from textwrap import dedent
 from unittest import main, TestCase
-from mock import Mock, call
+from mock import Mock, call, patch
 
 proof_path = dirname(dirname(dirname(abspath(__file__))))
 proof_path = join(proof_path, 'charmtools')
@@ -37,6 +37,7 @@ from charmtools.charms import validate_series
 from charmtools.charms import validate_min_juju_version
 from charmtools.charms import validate_extra_bindings
 from charmtools.charms import validate_payloads
+from charmtools.charms import validate_actions
 
 
 class TestCharmProof(TestCase):
@@ -660,6 +661,52 @@ class PayloadsValidationTest(TestCase):
             call('payloads.vm: Unrecognized keys in mapping: '
                  '"{\'unknown\': \'invalid key\'}"'),
         ], any_order=True)
+
+
+class ActionsValidationTest(TestCase):
+    def test_minimal_actions_config(self):
+        """Charm has the minimum allowed actions configuration."""
+        linter = Mock()
+        actions = {
+            'actions': {}
+        }
+        validate_actions(actions, 'actions', linter)
+        self.assertFalse(linter.err.called)
+
+    def test_complete_actions_config(self):
+        """Charm has multiple actions."""
+        linter = Mock()
+        actions = {
+            'actions': {
+                'do': {
+                    'description': 'a thing',
+                },
+                'do-not': {
+                    'description': 'not a thing',
+                },
+            }
+        }
+        with patch('os.path.exists'):
+            validate_actions(actions, 'actions', linter)
+        self.assertFalse(linter.err.called)
+
+    def test_juju_actions_fail(self):
+        """Charm has multiple actions."""
+        linter = Mock()
+        actions = {
+            'actions': {
+                'juju-do': {
+                    'description': 'a thing',
+                },
+                'do-not': {
+                    'description': 'not a thing',
+                },
+            }
+        }
+
+        with patch('os.path.exists'):
+            validate_actions(actions, 'actions', linter)
+        self.assertEqual(linter.err.call_count, 1)
 
 
 class SeriesValidationTest(TestCase):

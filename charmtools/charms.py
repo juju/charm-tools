@@ -257,7 +257,9 @@ class Charm(object):
             return lint.lint, lint.exit_code
 
         hooks_path = os.path.join(charm_path, 'hooks')
+        actions_path = os.path.join(charm_path, 'actions')
         yaml_path = os.path.join(charm_path, 'metadata.yaml')
+        actions_yaml_path = os.path.join(charm_path, 'actions.yaml')
         try:
             yamlfile = open(yaml_path, 'r')
             try:
@@ -410,6 +412,15 @@ class Charm(object):
                 lint.check_hook('config-changed', hooks_path, recommended=True)
             else:
                 lint.check_hook('config-changed', hooks_path)
+
+            if os.path.exists(actions_yaml_file):
+                with open(actions_yaml_file) as f:
+                    try:
+                        actions = yaml.safe_load(f.read())
+                    except Exception as e:
+                        lint.crit('cannot parse ' + actions_yaml_path + ":" + str(e))
+                    validate_actions(actions, actions_path, lint)
+
         except IOError:
             lint.err("could not find metadata file for " + charm_name)
             lint.exit_code = -1
@@ -627,6 +638,39 @@ def validate_payloads(charm, linter):
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('payloads.{}: {}'.format(k, v))
+
+
+def validate_actions(actions, action_hooks, linter):
+    """Validate actions in a charm.
+
+    :param actions: dict of charm actions parsed from actions.yaml
+    :param action_hooks: path of charm's /actions/ directory
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+
+    if not actions:
+        return
+
+    if 'actions' not in actions:
+        linter.err("actions: actions.yaml needs to declare an 'actions:' key")
+        return
+
+    if not isinstance(actions['actions'], dict):
+        linter.err('actions: must be a dictionary of json schemas')
+        return
+
+    # TODO: Schema validation
+    for k in actions['actions']:
+        if k.startswith('juju-'):
+            linter.err('actions.{}: juju is a reserved namespace'.format(k))
+            continue
+        h = os.path.join(action_hooks, k)
+        if not os.path.isfile(h):
+            linter.warn('actions.{0}: actions/{0} does not exist'.format(k))
+        elif not os.access(fpath, os.X_OK):
+            linter.err('actions.{0}: actions/{0} is not executable'.format(k))
 
 
 def validate_maintainer(charm, linter):
