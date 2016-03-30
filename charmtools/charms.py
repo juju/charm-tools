@@ -259,7 +259,7 @@ class Charm(object):
         hooks_path = os.path.join(charm_path, 'hooks')
         actions_path = os.path.join(charm_path, 'actions')
         yaml_path = os.path.join(charm_path, 'metadata.yaml')
-        actions_yaml_path = os.path.join(charm_path, 'actions.yaml')
+        actions_yaml_file = os.path.join(charm_path, 'actions.yaml')
         try:
             yamlfile = open(yaml_path, 'r')
             try:
@@ -418,7 +418,7 @@ class Charm(object):
                     try:
                         actions = yaml.safe_load(f.read())
                     except Exception as e:
-                        lint.crit('cannot parse ' + actions_yaml_path + ":" + str(e))
+                        lint.crit('cannot parse ' + actions_yaml_file + ":" + str(e))
                     validate_actions(actions, actions_path, lint)
 
         except IOError:
