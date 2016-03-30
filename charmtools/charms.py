@@ -665,7 +665,7 @@ def validate_actions(actions, action_hooks, linter):
         h = os.path.join(action_hooks, k)
         if not os.path.isfile(h):
             linter.warn('actions.{0}: actions/{0} does not exist'.format(k))
-        elif not os.access(fpath, os.X_OK):
+        elif not os.access(h, os.X_OK):
             linter.err('actions.{0}: actions/{0} is not executable'.format(k))
 
 
