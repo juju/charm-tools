@@ -668,7 +668,7 @@ class ActionsValidationTest(TestCase):
         """Charm has the minimum allowed actions configuration."""
         linter = Mock()
         actions = {
-            'actions': {}
+            'an-action': {}
         }
         validate_actions(actions, 'actions', linter)
         self.assertFalse(linter.err.called)
@@ -677,14 +677,12 @@ class ActionsValidationTest(TestCase):
         """Charm has multiple actions."""
         linter = Mock()
         actions = {
-            'actions': {
-                'do': {
-                    'description': 'a thing',
-                },
-                'do-not': {
-                    'description': 'not a thing',
-                },
-            }
+            'do': {
+                'description': 'a thing',
+            },
+            'do-not': {
+                'description': 'not a thing',
+            },
         }
         with patch('os.path.exists'):
             validate_actions(actions, 'actions', linter)
@@ -694,14 +692,12 @@ class ActionsValidationTest(TestCase):
         """Charm has multiple actions."""
         linter = Mock()
         actions = {
-            'actions': {
-                'juju-do': {
-                    'description': 'a thing',
-                },
-                'do-not': {
-                    'description': 'not a thing',
-                },
-            }
+            'juju-do': {
+                'description': 'a thing',
+            },
+            'do-not': {
+                'description': 'not a thing',
+            },
         }
 
         with patch('os.path.exists'):

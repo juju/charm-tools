@@ -259,7 +259,7 @@ class Charm(object):
         hooks_path = os.path.join(charm_path, 'hooks')
         actions_path = os.path.join(charm_path, 'actions')
         yaml_path = os.path.join(charm_path, 'metadata.yaml')
-        actions_yaml_path = os.path.join(charm_path, 'actions.yaml')
+        actions_yaml_file = os.path.join(charm_path, 'actions.yaml')
         try:
             yamlfile = open(yaml_path, 'r')
             try:
@@ -418,7 +418,7 @@ class Charm(object):
                     try:
                         actions = yaml.safe_load(f.read())
                     except Exception as e:
-                        lint.crit('cannot parse ' + actions_yaml_path + ":" + str(e))
+                        lint.crit('cannot parse ' + actions_yaml_file + ":" + str(e))
                     validate_actions(actions, actions_path, lint)
 
         except IOError:
@@ -653,23 +653,19 @@ def validate_actions(actions, action_hooks, linter):
     if not actions:
         return
 
-    if 'actions' not in actions:
-        linter.err("actions: actions.yaml needs to declare an 'actions:' key")
-        return
-
-    if not isinstance(actions['actions'], dict):
+    if not isinstance(actions, dict):
         linter.err('actions: must be a dictionary of json schemas')
         return
 
     # TODO: Schema validation
-    for k in actions['actions']:
-        if k.startswith('juju-'):
+    for k in actions:
+        if k.startswith('juju'):
             linter.err('actions.{}: juju is a reserved namespace'.format(k))
             continue
         h = os.path.join(action_hooks, k)
         if not os.path.isfile(h):
             linter.warn('actions.{0}: actions/{0} does not exist'.format(k))
-        elif not os.access(fpath, os.X_OK):
+        elif not os.access(h, os.X_OK):
             linter.err('actions.{0}: actions/{0} is not executable'.format(k))
 
 
