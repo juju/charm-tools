@@ -24,7 +24,7 @@ setup(
     license='GPL v3',
     url='https://launchpad.net/charm-tools',
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
     ],
