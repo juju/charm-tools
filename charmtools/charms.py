@@ -659,7 +659,7 @@ def validate_actions(actions, action_hooks, linter):
 
     # TODO: Schema validation
     for k in actions:
-        if k.startswith('juju-'):
+        if k.startswith('juju'):
             linter.err('actions.{}: juju is a reserved namespace'.format(k))
             continue
         h = os.path.join(action_hooks, k)
