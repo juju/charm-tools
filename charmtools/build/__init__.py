@@ -203,7 +203,7 @@ class Builder(object):
     def create_repo(self):
         # Generated output will go into this directory
         base = path(self.output_dir)
-        self.repo = (base / self.series if self.series else base)
+        self.repo = (base / (self.series if self.series else 'builds'))
         # And anything it includes from will be placed here
         # outside the series
         self.deps = (base / "deps")
