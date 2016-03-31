@@ -1,5 +1,6 @@
 
 import pkg_resources
+import argparse
 
 from cli import parser_defaults
 from charmtools import utils
