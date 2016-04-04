@@ -68,7 +68,7 @@ class TestBuild(unittest.TestCase):
         cyaml_data = yaml.load(cyaml.open())
         self.assertEquals(cyaml_data['includes'], ['trusty/mysql'])
         self.assertEquals(cyaml_data['is'], 'foo')
-        self.assertEquals(cyaml_data['options']['mysql']['qux'], 'one')
+        self.assertEquals(cyaml_data['options']['trusty/mysql']['qux'], 'one')
 
         self.assertTrue((base / "hooks/config-changed").exists())
 
@@ -328,9 +328,6 @@ class TestBuild(unittest.TestCase):
         top = build.tactics.LayerYAML(entity, top_layer, target, config)
         top.data = {
             'options': {
-                'base': {
-                    'bar': 'bah',
-                },
             },
             'defines': {
                 'qux': {
@@ -341,6 +338,12 @@ class TestBuild(unittest.TestCase):
             }
         }
         assert top.lint()
+        top.data['options'].update({
+            'base': {
+                'bar': 'bah',
+            }
+        })
+        assert not top.lint()
         top.combine(base)
         assert not top.lint()
         log.error.assert_called_with('Invalid value for option %s: %s',
