@@ -7,5 +7,5 @@ config:
 tactics:
     - layer.custom.READMETactic
 options:
-  mysql:
+  trusty/mysql:
     qux: 'one'

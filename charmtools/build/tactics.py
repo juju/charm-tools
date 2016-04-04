@@ -374,7 +374,8 @@ class LayerYAML(YAMLTactic):
         super(LayerYAML, self).__init__(*args, **kwargs)
         self.schema = {
             'type': 'object',
-            'properties': {}
+            'properties': {},
+            'additionalProperties': False,
         }
 
     @property
@@ -405,6 +406,14 @@ class LayerYAML(YAMLTactic):
 
     def lint(self):
         self.read()
+        defined_layer_names = set(self.schema['properties'].keys())
+        options_layer_names = set(self.data['options'].keys())
+        unknown_layer_names = options_layer_names - defined_layer_names
+        if unknown_layer_names:
+            log.error('Options set for undefined layer{s}: {layers}'.format(
+                s='s' if len(unknown_layer_names) > 1 else '',
+                layers=', '.join(unknown_layer_names)))
+            return False
         validator = extend_with_default(jsonschema.Draft4Validator)(self.schema)
         valid = True
         for error in validator.iter_errors(self.data['options']):
