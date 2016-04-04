@@ -542,7 +542,7 @@ class Builder(object):
         removed = old_files - new_files
         for filename in removed:
             filepath = self.target_dir / filename
-            filepath.remove()
+            filepath.remove_p()
         return removed
 
     def write_report(self, new_repo, added, changed, removed):
