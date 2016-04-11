@@ -14,6 +14,7 @@ import yaml
 from charmtools.build import inspector
 import charmtools.build.tactics
 from charmtools.build.config import (BuildConfig, DEFAULT_IGNORES)
+from charmtools.build.errors import BuildError
 from charmtools.build.fetchers import (
     InterfaceFetcher,
     LayerFetcher,
@@ -25,10 +26,6 @@ from .. import repofinder
 
 
 log = logging.getLogger("build")
-
-
-class BuildError(Exception):
-    pass
 
 
 class Configable(object):
@@ -152,9 +149,14 @@ class Builder(object):
     def charm_metadata(self):
         if not hasattr(self, '_charm_metadata'):
             md = path(self.charm) / "metadata.yaml"
-            setattr(
-                self, '_charm_metadata',
-                yaml.load(md.open()) if md.exists() else None)
+            try:
+                setattr(
+                    self, '_charm_metadata',
+                    yaml.load(md.open()) if md.exists() else None)
+            except yaml.YAMLError as e:
+                log.debug(e)
+                raise BuildError("Failed to process {0}. "
+                                 "Ensure the YAML is valid".format(md))
 
         return self._charm_metadata
 
@@ -664,12 +666,12 @@ def main(args=None):
 
     configLogging(build)
 
-    if not build.output_dir:
-        build.normalize_outputdir()
-    if not build.series:
-        build.check_series()
-
     try:
+        if not build.output_dir:
+            build.normalize_outputdir()
+        if not build.series:
+            build.check_series()
+
         build()
     except (BuildError, FetchError) as e:
         log.error(*e.args)

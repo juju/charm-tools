@@ -1,0 +1,17 @@
+name: invalid-layer
+summary: This is an invalid layer for testing purposes.
+maintainers:
+    - Matthew Bruzek <matthew.bruzek@canonical.com>
+description: |
+  This is an invalid layer for testing purposes.
+tags:
+  - infrastructure
+subordinate: false
+provides:
+  invalid:
+<<<<<<
+    interface: tests
+=====
+requires:
+   etcd:
+     interface: etcd
