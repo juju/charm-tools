@@ -1,4 +1,5 @@
 from charmtools import build
+from charmtools.build.errors import BuildError
 from charmtools import utils
 from path import path
 from ruamel import yaml
@@ -20,6 +21,23 @@ class TestBuild(unittest.TestCase):
 
     def tearDown(self):
         path("out").rmtree_p()
+
+    def test_invalid_layer(self):
+        builder = build.Builder()
+        builder.log_level = "DEBUG"
+        builder.output_dir = "out"
+        builder.series = "trusty"
+        builder.name = "invalid-charm"
+        builder.charm = "trusty/invalid-layer"
+        metadata = path("tests/trusty/invalid-layer/metadata.yaml")
+        try:
+            builder()
+            print('exception not thrown')
+        except BuildError as e:
+            print("exception thrown")
+            message = str(e)
+            self.assertEqual("Failed to process {0}. "
+                "Ensure the YAML is valid".format(metadata.abspath()), message)
 
     def test_tester_layer(self):
         bu = build.Builder()

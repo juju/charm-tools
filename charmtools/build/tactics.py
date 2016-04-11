@@ -1,12 +1,13 @@
-import logging
 import json
-from ruamel import yaml
+import jsonschema
+import logging
 import os
 import tempfile
-import jsonschema
 
 from path import path
+from ruamel import yaml
 from charmtools import utils
+from charmtools.build.errors import BuildError
 
 log = logging.getLogger(__name__)
 
@@ -320,9 +321,16 @@ class YAMLTactic(SerializedTactic):
     prefix = None
 
     def load(self, fn):
-        return yaml.load(fn, Loader=yaml.RoundTripLoader)
+        """Load the yaml file and return the contents as objects."""
+        try:
+            return yaml.load(fn, Loader=yaml.RoundTripLoader)
+        except yaml.YAMLError as e:
+            log.debug(e)
+            raise BuildError("Failed to process {0}. "
+                             "Ensure the YAML is valid".format(fn.name))
 
     def dump(self, data):
+        """Write the data to the target yaml file."""
         with open(self.target_file, 'w') as fd:
             yaml.dump(data, fd,
                       Dumper=yaml.RoundTripDumper,
