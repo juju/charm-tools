@@ -677,7 +677,14 @@ def main(args=None):
 
         lint, exit_code = proof.proof(os.getcwd(), False, False)
         if lint:
-            print("\n".join(lint))
+            llog = logging.getLogger("proof")
+            for line in lint:
+                if line[0] == "I":
+                    llog.info(line)
+                elif line[0] == "W":
+                    llog.warn(line)
+                elif line[0] == "E":
+                    llog.error(line)
     except (BuildError, FetchError) as e:
         log.error(*e.args)
         raise SystemExit(1)
