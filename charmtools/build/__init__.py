@@ -23,6 +23,7 @@ from charmtools.build.fetchers import (
 )
 from charmtools import utils
 from .. import repofinder
+from .. import proof
 
 
 log = logging.getLogger("build")
@@ -673,6 +674,10 @@ def main(args=None):
             build.check_series()
 
         build()
+
+        lint, exit_code = proof.proof(os.getcwd(), False, False)
+        if lint:
+            print("\n".join(lint))
     except (BuildError, FetchError) as e:
         log.error(*e.args)
         raise SystemExit(1)
