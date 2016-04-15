@@ -15,12 +15,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import argparse
-import blessings
-import logging
 import os
 import sys
+import argparse
 
 from bundles import Bundle
 from charms import Charm
@@ -60,34 +57,11 @@ def proof(path, is_bundle, debug):
     return lint, err_code
 
 
-def configLogging(build):
-    global log
-    logging.captureWarnings(True)
-    clifmt = utils.ColoredFormatter(
-        blessings.Terminal(),
-        '%(name)s: %(message)s')
-    root_logger = logging.getLogger()
-    clihandler = logging.StreamHandler(sys.stdout)
-    clihandler.setFormatter(clifmt)
-    if isinstance(build.log_level, str):
-        build.log_level = build.log_level.upper()
-    root_logger.setLevel(build.log_level)
-    log.setLevel(build.log_level)
-    root_logger.addHandler(clihandler)
-
-
 def main():
     args_ = get_args()
     lint, exit_code = proof(args_.charm_name, args_.bundle, args_.debug)
     if lint:
-        llog = logging.getLogger("proof")
-        for line in lint:
-            if line[0] == "I":
-                llog.info(line)
-            elif line[0] == "W":
-                llog.warn(line)
-            elif line[0] == "E":
-                llog.error(line)
+        print("\n".join(lint))
     sys.exit(exit_code)
 
 
