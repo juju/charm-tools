@@ -537,3 +537,11 @@ class Description(argparse._StoreTrueAction):
 
 def add_plugin_description(parser):
     parser.add_argument('--description', action=Description)
+
+
+def get_juju_version():
+    output = subprocess.check_output(['juju', 'version'])
+    m = re.search('^(\d\.\d+)', output)
+    if m:
+        return float(m.group(0))
+    return None
