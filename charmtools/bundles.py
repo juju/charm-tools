@@ -4,6 +4,7 @@ import re
 import yaml
 
 from linter import Linter
+from utils import get_juju_version
 import jujubundlelib.validation
 
 
@@ -39,6 +40,13 @@ class BundleLinter(Linter):
                 'https://jujucharms.com/docs/stable/charms-bundles '
                 'for the supported format.')
             return
+
+        # Pushing a bundle to the charm store (Juju 2+) requires a bundle.yaml.
+        ver = get_juju_version()
+        if ver and ver >= 2.0:
+            if not os.path.isfile(os.path.join(
+                    bundle.bundle_path, 'bundle.yaml')):
+                self.err('Juju %s requires a bundle.yaml' % ver)
 
         readmes = glob.glob(os.path.join(bundle.bundle_path, 'README*'))
         if len(readmes) < 1:
