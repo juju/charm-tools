@@ -41,13 +41,6 @@ class BundleLinter(Linter):
                 'for the supported format.')
             return
 
-        # Pushing a bundle to the charm store (Juju 2+) requires a bundle.yaml.
-        ver = get_juju_version()
-        if ver and ver >= 2.0:
-            if not os.path.isfile(os.path.join(
-                    bundle.bundle_path, 'bundle.yaml')):
-                self.err('Juju %s requires a bundle.yaml' % ver)
-
         readmes = glob.glob(os.path.join(bundle.bundle_path, 'README*'))
         if len(readmes) < 1:
             self.warn('No readme file found')
@@ -62,8 +55,7 @@ class Bundle(object):
     def __init__(self, path, debug=False):
         self.bundle_path = os.path.abspath(path)
         self.supported_files = [
-            'bundle.yaml', 'bundle.json',    # v4
-            'bundles.yaml', 'bundles.json',  # v3
+            'bundle.yaml'
         ]
         self.debug = debug
         if not self.is_bundle():
