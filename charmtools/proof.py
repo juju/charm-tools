@@ -46,7 +46,7 @@ def proof(path, is_bundle, debug):
             try:
                 c = Bundle(path, debug)
             except Exception as e:
-                return ["FATAL: No bundle.yaml (Bundle) or metadata.yaml"
+                return ["FATAL: No bundle.yaml (Bundle) or metadata.yaml "
                         "(Charm) found, cannot proof"], 200
     else:
         try:
