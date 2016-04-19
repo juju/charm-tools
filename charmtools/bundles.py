@@ -4,7 +4,6 @@ import re
 import yaml
 
 from linter import Linter
-from utils import get_juju_version
 import jujubundlelib.validation
 
 
