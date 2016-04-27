@@ -22,8 +22,8 @@ Otherwise, if you have a feature request or issue with any other charm command p
 ## Checklist
 
  - [X] Confirmed this is an issue with charm-tools, not charmstore-client
- - [] Provide versions of tools used
- - [] Described the feature or ways to replicate the issue
+ - [ ] Provide versions of tools used
+ - [ ] Described the feature or ways to replicate the issue
 
 ## What version am I running?
 
