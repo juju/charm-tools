@@ -31,10 +31,10 @@ setup(
     entry_points={
         'console_scripts': [
             'charm-add = charmtools.generate:main',
-            'charm-build = charmtools.build:main',
+            'charm-build = charmtools.build.builder:main',
             'charm-create = charmtools.create:main',
             'charm-help = charmtools.cli:usage',
-            'charm-layers = charmtools.build:inspect',
+            'charm-layers = charmtools.build.builder:inspect',
             'charm-proof = charmtools.proof:main',
             'charm-pull-source = charmtools.pullsource:main',
             'charm-test = charmtools.test:main',
