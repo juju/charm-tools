@@ -2,6 +2,7 @@ import argparse
 import copy
 import collections
 import hashlib
+import importlib
 import json
 import logging
 import os
@@ -307,25 +308,21 @@ def which(program):
     return None
 
 
-def load_class(dpath, workingdir=None):
-    # we expect the last element of the path
+
+def load_class(full_class_string, workingdir=None):
+    """
+    dynamically load a class from a string
+    """
+
+    module_path, class_str = full_class_string.rsplit(".", 1)
     if not workingdir:
         workingdir = os.getcwd()
-    with cd(workingdir):
-        modpath, classname = dpath.rsplit('.', 1)
-        modpath = path(modpath.replace(".", "/"))
-        if not modpath.exists():
-            modpath += ".py"
-        if not modpath.exists():
-            raise OSError("Unable to load {} from {}".format(
-                dpath, workingdir))
-        namespace = {}
-        execfile(modpath, globals(), namespace)
-        klass = namespace.get(classname)
-        if klass is None:
-            raise ImportError("Unable to load class {} at {}".format(
-                classname, dpath))
-        return klass
+    sys.path.insert(0, workingdir)
+    try:
+        module = importlib.import_module(module_path)
+        return getattr(module, class_str)
+    finally:
+        sys.path.pop(0)
 
 
 def walk(pathobj, fn, matcher=None, kind=None, **kwargs):
