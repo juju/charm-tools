@@ -156,7 +156,8 @@ class InterfaceCopy(Tactic):
         # directory
         log.debug("Copying Interface %s: %s",
                   self.interface.name, self.target)
-        ignorer = utils.ignore_matcher(self.config.ignores)
+        ignorer = utils.ignore_matcher(self.config.ignores +
+                                       self.interface.config.ignores)
         for entity, _ in utils.walk(self.interface.directory,
                                     lambda x: True,
                                     matcher=ignorer,
