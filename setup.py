@@ -12,7 +12,7 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
-                      'pycrypto', 'paramiko', 'requests',
+                      'pycrypto', 'paramiko<2.0.0', 'requests',
                       'charmworldlib', 'blessings', 'ruamel.yaml',
                       'pathspec', 'otherstuf', 'path.py', 'pip',
                       'jujubundlelib', 'virtualenv', 'colander',
