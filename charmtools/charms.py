@@ -29,6 +29,7 @@ KNOWN_METADATA_KEYS = [
     'series',
     'storage',
     'extra-bindings',
+    'payloads',
 ]
 
 KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']

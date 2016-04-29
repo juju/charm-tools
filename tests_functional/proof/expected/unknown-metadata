@@ -1,5 +1,6 @@
 E: Unknown root metadata field (foo)
 I: metadata name (test) must match directory name (unknown-metadata) exactly for local deployment.
+E: payloads.testy.type: "toot" is not one of kvm, docker
 W: no copyright file
 W: Includes template README.ex file
 W: README.ex includes boilerplate: Describe the intended usage of this charm and anything unique about how this charm relates to others here.
