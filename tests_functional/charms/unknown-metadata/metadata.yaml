@@ -18,3 +18,8 @@ peers:
   relation-name:
     interface: interface-name
   non-map: [ interface, interface-name ]
+payloads:
+  testy:
+    type: toot
+  toot:
+    type: kvm
