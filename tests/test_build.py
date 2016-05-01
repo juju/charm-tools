@@ -50,7 +50,7 @@ class TestBuild(unittest.TestCase):
         bu.report = False
         remove_layer_file = self.dirname / 'trusty/tester/to_remove'
         remove_layer_file.touch()
-        with mock.patch.object(build, 'log') as log:
+        with mock.patch.object(build.builder, 'log') as log:
             bu()
             log.warn.assert_called_with(
                 'Please add a `repo` key to your layer.yaml, '
