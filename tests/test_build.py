@@ -304,11 +304,6 @@ class TestBuild(unittest.TestCase):
         with mock.patch("path.Path.mkdir_p"):
             with mock.patch("path.Path.files"):
                 bu()
-                Process.assert_has_call((
-                    '/tmp/bin/pip3', 'install',
-                    '--no-binary', ':all:',
-                    '-d', '/tmp',
-                    'pip'))
                 Process.assert_called_with((
                     '/tmp/bin/pip3', 'install',
                     '--no-binary', ':all:',
