@@ -5,6 +5,12 @@ from collections import namedtuple
 
 from . import utils
 
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    import os
+    DEVNULL = open(os.devnull, 'wb')
+
 
 def get_recommended_repo(path):
     """Given vcs directory ``path``, returns the url from which the repo
@@ -35,7 +41,7 @@ def get_recommended_repo(path):
     with utils.cd(str(path)):
         for cmd in cmds:
             try:
-                output = subprocess.check_output(cmd.args)
+                output = subprocess.check_output(cmd.args, stderr=DEVNULL)
                 if output:
                     repo = cmd.parse(output)
                     if repo:
