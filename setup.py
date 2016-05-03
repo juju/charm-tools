@@ -12,7 +12,7 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
-                      'pycrypto', 'paramiko', 'requests',
+                      'pycrypto', 'paramiko<2.0.0', 'requests',
                       'libcharmstore', 'blessings', 'ruamel.yaml',
                       'pathspec', 'otherstuf', 'path.py', 'pip',
                       'jujubundlelib', 'virtualenv', 'colander',
@@ -31,10 +31,10 @@ setup(
     entry_points={
         'console_scripts': [
             'charm-add = charmtools.generate:main',
-            'charm-build = charmtools.build:main',
+            'charm-build = charmtools.build.builder:main',
             'charm-create = charmtools.create:main',
             'charm-help = charmtools.cli:usage',
-            'charm-layers = charmtools.build:inspect',
+            'charm-layers = charmtools.build.builder:inspect',
             'charm-proof = charmtools.proof:main',
             'charm-pull-source = charmtools.pullsource:main',
             'charm-test = charmtools.test:main',

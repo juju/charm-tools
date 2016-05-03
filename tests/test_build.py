@@ -50,7 +50,7 @@ class TestBuild(unittest.TestCase):
         bu.report = False
         remove_layer_file = self.dirname / 'trusty/tester/to_remove'
         remove_layer_file.touch()
-        with mock.patch.object(build, 'log') as log:
+        with mock.patch.object(build.builder, 'log') as log:
             bu()
             log.warn.assert_called_with(
                 'Please add a `repo` key to your layer.yaml, '
@@ -304,11 +304,6 @@ class TestBuild(unittest.TestCase):
         with mock.patch("path.Path.mkdir_p"):
             with mock.patch("path.Path.files"):
                 bu()
-                Process.assert_has_call((
-                    '/tmp/bin/pip3', 'install',
-                    '--no-binary', ':all:',
-                    '-d', '/tmp',
-                    'pip'))
                 Process.assert_called_with((
                     '/tmp/bin/pip3', 'install',
                     '--no-binary', ':all:',
