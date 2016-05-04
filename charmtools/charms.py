@@ -30,6 +30,8 @@ KNOWN_METADATA_KEYS = [
     'storage',
     'extra-bindings',
     'payloads',
+    'terms',
+    'resources',
 ]
 
 KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
@@ -294,6 +296,8 @@ class Charm(object):
             validate_min_juju_version(charm, lint)
             validate_extra_bindings(charm, lint)
             validate_payloads(charm, lint)
+            validate_terms(charm, lint)
+            validate_resources(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -464,6 +468,25 @@ class Boolean(object):
                 node, '"%s" is not one of true, false' % cstruct)
 
 
+class ResourceItem(colander.MappingSchema):
+    def schema_type(self, **kw):
+        return colander.Mapping(unknown='raise')
+
+    type_ = colander.SchemaNode(
+        colander.String(),
+        validator=colander.OneOf(['file']),
+        name='type',
+    )
+    filename = colander.SchemaNode(
+        colander.String(),
+        missing='',
+    )
+    description = colander.SchemaNode(
+        colander.String(),
+        missing='',
+    )
+
+
 class StorageItem(colander.MappingSchema):
     def schema_type(self, **kw):
         return colander.Mapping(unknown='raise')
@@ -526,6 +549,48 @@ class PayloadItem(colander.MappingSchema):
         validator=colander.OneOf(['kvm', 'docker']),
         name='type',
     )
+
+
+def validate_terms(charm, linter):
+    """Validate terms in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'terms' not in charm:
+        return
+
+    if not isinstance(charm['terms'], list):
+        linter.err('terms: must be a list of term ids')
+
+
+def validate_resources(charm, linter):
+    """Validate resources in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'resources' not in charm:
+        return
+
+    if (not isinstance(charm['resources'], dict) or
+            not charm['resources']):
+        linter.err('resources: must be a dictionary of resource definitions')
+        return
+
+    schema = colander.SchemaNode(colander.Mapping())
+    for resource_def in charm['resources']:
+        schema.add(ResourceItem(name=resource_def))
+
+    try:
+        schema.deserialize(charm['resources'])
+    except colander.Invalid as e:
+        for k, v in e.asdict().items():
+            linter.err('resources.{}: {}'.format(k, v))
 
 
 def validate_extra_bindings(charm, linter):

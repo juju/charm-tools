@@ -38,6 +38,8 @@ from charmtools.charms import validate_min_juju_version
 from charmtools.charms import validate_extra_bindings
 from charmtools.charms import validate_payloads
 from charmtools.charms import validate_actions
+from charmtools.charms import validate_terms
+from charmtools.charms import validate_resources
 
 
 class TestCharmProof(TestCase):
@@ -585,6 +587,68 @@ class StorageValidationTest(TestCase):
         ], any_order=True)
 
 
+class ResourcesValidationTest(TestCase):
+    def test_minimal_resources_config(self):
+        """Charm has the minimum allowed resources configuration."""
+        linter = Mock()
+        charm = {
+            'resources': {
+                'test': {
+                    'type': 'file',
+                    'filename': 'file.tgz',
+                }
+            }
+        }
+        validate_resources(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_resources_without_defs(self):
+        """Charm has resources key but no definitions."""
+        linter = Mock()
+        charm = {
+            'resources': {}
+        }
+        validate_resources(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('resources: must be a dictionary of resource definitions'),
+        ], any_order=True)
+
+    def test_resources_invalid_values(self):
+        """Charm has resources with invalid values."""
+        linter = Mock()
+        charm = {
+            'resources': {
+                'buzz': {
+                    'type': 'snap',
+                },
+            }
+        }
+        validate_resources(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('resources.buzz.type: "snap" is not one of file'),
+        ], any_order=True)
+
+    def test_resources_unknown_keys(self):
+        """Charm has resources with illegal keys."""
+        linter = Mock()
+        charm = {
+            'resources': {
+                'vm': {
+                    'type': 'file',
+                    'unknown': 'invalid key',
+                },
+            }
+        }
+        validate_resources(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('resources.vm: Unrecognized keys in mapping: '
+                 '"{\'unknown\': \'invalid key\'}"'),
+        ], any_order=True)
+
+
 class PayloadsValidationTest(TestCase):
     def test_minimal_payloads_config(self):
         """Charm has the minimum allowed payloads configuration."""
@@ -730,6 +794,34 @@ class SeriesValidationTest(TestCase):
         linter = Mock()
         charm = {}
         validate_series(charm, linter)
+        self.assertFalse(linter.err.called)
+
+
+class TermsValidationTest(TestCase):
+    def test_terms_not_list(self):
+        """Charm has a terms key, but the value is not a list."""
+        linter = Mock()
+        charm = {
+            'terms': 'lorem-ipsum',
+        }
+        validate_terms(charm, linter)
+        linter.err.assert_called_once_with(
+                'terms: must be a list of term ids')
+
+    def test_terms_list(self):
+        """Charm has a terms key that is a list."""
+        linter = Mock()
+        charm = {
+            'terms': ['lorem-ipsum'],
+        }
+        validate_terms(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_no_terms(self):
+        """Charm does not have a terms key."""
+        linter = Mock()
+        charm = {}
+        validate_terms(charm, linter)
         self.assertFalse(linter.err.called)
 
 
