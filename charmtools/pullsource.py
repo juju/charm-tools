@@ -184,7 +184,7 @@ def download_item(item, dir_):
         return "Can't find source for {}".format(item)
 
     # Copy download dir to final destination dir
-    shutil.copytree(download_dir, final_dest_dir)
+    shutil.copytree(download_dir, final_dest_dir, symlinks=True)
     print('Downloaded {} to {}'.format(item, final_dest_dir))
 
 
