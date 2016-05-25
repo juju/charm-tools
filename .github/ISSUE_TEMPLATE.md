@@ -1,10 +1,4 @@
-Thanks for reporting this issue! We welcome all new feature requests and bugs
-found as we work diligently to produce a useful and stable tool for building
-managing, and authoring charms + bundles.
-
-Due to changes in the charm command, if this is an issue with one of the
-following, please report it agains the [juju/charmstore-client](https://github.com/juju/charmstore-client/issues)
-repository.
+Due to changes in the charm command, if this is an issue with one of the following, please report it against https://github.com/juju/charmstore-client/issues
 
 - `charm grant` or `charm revoke`
 - `charm list` or `charm list-resources`
