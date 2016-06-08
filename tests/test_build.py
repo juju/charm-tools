@@ -80,11 +80,15 @@ class TestBuild(unittest.TestCase):
         self.assertIn("numeric-string", config_data)
         default_value = config_data['numeric-string']['default']
         self.assertEqual(default_value, "0123456789", "value must be a string")
+        # Issue 218, ensure proper order of layer application
+        self.assertEqual(config_data['backup_retention_count']['default'], 7,
+                         'Config from layers was merged in wrong order')
 
         cyaml = base / "layer.yaml"
         self.assertTrue(cyaml.exists())
         cyaml_data = yaml.load(cyaml.open())
-        self.assertEquals(cyaml_data['includes'], ['trusty/mysql'])
+        self.assertEquals(cyaml_data['includes'], ['trusty/test-base',
+                                                   'trusty/mysql'])
         self.assertEquals(cyaml_data['is'], 'foo')
         self.assertEquals(cyaml_data['options']['trusty/mysql']['qux'], 'one')
 

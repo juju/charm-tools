@@ -1,3 +1,4 @@
+includes: ['trusty/test-base']
 defines:
   qux:
     enum: ['one', 'two']
