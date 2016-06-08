@@ -285,8 +285,9 @@ class Builder(object):
                 base_layer = Layer(base, self.deps)
                 if base_layer.name in [i.name for i in results['layers']]:
                     continue
-                results["layers"].append(base_layer.fetch())
+                base_layer.fetch()
                 self.fetch_dep(base_layer, results)
+                results["layers"].append(base_layer)
 
     def build_tactics(self, entry, current, config, output_files):
         # Delegate to the config object, it's rules

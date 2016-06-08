@@ -1,0 +1,5 @@
+options:
+    backup_retention_count:
+        default: 0
+        type: int
+        description: Number of recent backups to retain.
