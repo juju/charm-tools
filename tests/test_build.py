@@ -67,6 +67,12 @@ class TestBuild(unittest.TestCase):
         metadata_data = yaml.load(metadata.open())
         self.assertIn("shared-db", metadata_data['provides'])
         self.assertIn("storage", metadata_data['provides'])
+        # The maintainer, maintainers values should only be from the top layer.
+        self.assertIn("maintainer", metadata_data)
+        self.assertEqual(metadata_data['maintainer'], "Tester <test@er.com>")
+        self.assertNotIn("maintainers", metadata_data)
+        # The tags list must be de-duplicated.
+        self.assertEqual(metadata_data['tags'], ["databases"])
 
         # Config should have keys but not the ones in deletes
         config = base / "config.yaml"
@@ -114,7 +120,7 @@ class TestBuild(unittest.TestCase):
         self.assertEquals(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
-            u'0d7519db7301acb8efbd4f88bab5bc0a1b927842cffeab99404aa7a4dc03d17d'
+            u'5691b0c0aaf43d0f27d8eca6afbd1145aa3f4307456757e592827f002cf603f2'
             ])
 
         storage_attached = base / "hooks/data-storage-attached"

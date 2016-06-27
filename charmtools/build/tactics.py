@@ -470,19 +470,29 @@ class MetadataYAML(YAMLTactic):
     """Rule Driven metadata.yaml generation"""
     section = "metadata"
     FILENAME = "metadata.yaml"
-    KEY_ORDER = ["name", "summary", "maintainer",
-                 "description", "tags",
-                 "requires", "provides", "peers"]
+    KEY_ORDER = ["name",
+                 "summary",
+                 "maintainer",
+                 "maintainers",
+                 "description",
+                 "tags",
+                 "requires",
+                 "provides",
+                 "peers"]
 
     def __init__(self, *args, **kwargs):
         super(MetadataYAML, self).__init__(*args, **kwargs)
         self.storage = {}
+        self.maintainer = None
+        self.maintainers = []
 
     def read(self):
         if not self._read:
             super(MetadataYAML, self).read()
             self.storage = {name: self.current.url
                             for name in self.data.get('storage', {}).keys()}
+            self.maintainer = self.data.get('maintainer')
+            self.maintainers = self.data.get('maintainers')
 
     def combine(self, existing):
         super(MetadataYAML, self).combine(existing)
@@ -491,6 +501,14 @@ class MetadataYAML(YAMLTactic):
 
     def apply_edits(self):
         super(MetadataYAML, self).apply_edits()
+        # Remove the merged maintainers from the self.data
+        self.data.pop('maintainer', None)
+        self.data.pop('maintainers', [])
+        # Set the maintainer and maintainers only from this layer.
+        if self.maintainer:
+            self.data['maintainer'] = self.maintainer
+        if self.maintainers:
+            self.data['maintainers'] = self.maintainers
         if not self.config or not self.config.get(self.section):
             return
         for key in self.config[self.section].get('deletes', []):
@@ -501,14 +519,16 @@ class MetadataYAML(YAMLTactic):
                 continue
             self.storage.pop(name, None)
 
+
     def dump(self, data):
         final = yaml.comments.CommentedMap()
-        # attempt keys in know order
+        # attempt keys in the desired order
         for k in self.KEY_ORDER:
             if k in data:
                 final[k] = data[k]
-        missing = set(data.keys()) - set(self.KEY_ORDER)
-        for k in sorted(missing):
+        # Get the remaining keys that are unordered.
+        remaining = set(data.keys()) - set(self.KEY_ORDER)
+        for k in sorted(remaining):
             final[k] = data[k]
         super(MetadataYAML, self).dump(final)
 

@@ -1,12 +1,12 @@
 name: tester
 summary: An imagined extension to the mysql charm
-maintainer: None
+maintainer: Tester <test@er.com>
 description: |
   MySQL is a fast, stable and true multi-user, multi-threaded SQL database
   server. SQL (Structured Query Language) is the most popular database query
   language in the world. The main goals of MySQL are speed, robustness and
   ease of use.
-categories:
+tags:
     - databases
 provides:
   storage:
