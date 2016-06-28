@@ -187,7 +187,7 @@ class InterfaceCopy(Tactic):
     def lint(self):
         impl = self.interface.directory / self.role + '.py'
         if not impl.exists():
-            log.error('Missing implementation for interface role: %s.py', self.role)
+            log.error('Missing implementation for interface role: %s.py', self.role)  # noqa
             return False
         valid = True
         for entry in self.interface.directory.walkfiles():
@@ -220,7 +220,7 @@ class DynamicHookBind(Tactic):
         for target in self.targets:
             target.parent.makedirs_p()
             target.write_text(template.format(self.name))
-            target.chmod(0755)
+            target.chmod(0o755)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
@@ -371,8 +371,8 @@ class LayerYAML(YAMLTactic):
         layer "foo" defining ``bar: {type: string}`` will accept
         ``options: {foo: {bar: "foo"}}`` in the final ``layer.yaml``.
 
-      * ``options`` This object can contain option name/value sections for other
-        layers.  For example, if the current layer includes the previously
+      * ``options`` This object can contain option name/value sections for
+        other layers. For example, if the current layer includes the previously
         referenced "foo" layer, it could include ``foo: {bar: "foo"}`` in its
         ``options`` section.
 
@@ -423,10 +423,10 @@ class LayerYAML(YAMLTactic):
                 s='s' if len(unknown_layer_names) > 1 else '',
                 layers=', '.join(unknown_layer_names)))
             return False
-        validator = extend_with_default(jsonschema.Draft4Validator)(self.schema)
+        validator = extend_with_default(jsonschema.Draft4Validator)(self.schema)  # noqa
         valid = True
         for error in validator.iter_errors(self.data['options']):
-            log.error('Invalid value for option %s: %s', '.'.join(error.absolute_path), error.message)
+            log.error('Invalid value for option %s: %s', '.'.join(error.absolute_path), error.message)  # noqa
             valid = False
         return valid
 
@@ -470,15 +470,17 @@ class MetadataYAML(YAMLTactic):
     """Rule Driven metadata.yaml generation"""
     section = "metadata"
     FILENAME = "metadata.yaml"
-    KEY_ORDER = ["name",
-                 "summary",
-                 "maintainer",
-                 "maintainers",
-                 "description",
-                 "tags",
-                 "requires",
-                 "provides",
-                 "peers"]
+    KEY_ORDER = [
+        "name",
+        "summary",
+        "maintainer",
+        "maintainers",
+        "description",
+        "tags",
+        "requires",
+        "provides",
+        "peers",
+    ]
 
     def __init__(self, *args, **kwargs):
         super(MetadataYAML, self).__init__(*args, **kwargs)
@@ -518,7 +520,6 @@ class MetadataYAML(YAMLTactic):
             if '.' in name:
                 continue
             self.storage.pop(name, None)
-
 
     def dump(self, data):
         final = yaml.comments.CommentedMap()
@@ -645,7 +646,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         self.previous = []
 
     def __str__(self):
-        return "Building wheelhouse in {}".format(self.target.directory / 'wheelhouse')
+        return "Building wheelhouse in {}".format(self.target.directory / 'wheelhouse')  # noqa
 
     def combine(self, existing):
         self.previous = existing.previous + [existing]
@@ -671,8 +672,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
-            utils.Process(('virtualenv', '--python', 'python3', venv)).exit_on_error()()
-            utils.Process((pip, 'install', '-U', 'pip', 'wheel')).exit_on_error()()
+            utils.Process(('virtualenv', '--python', 'python3', venv)).exit_on_error()()  # noqa
+            utils.Process((pip, 'install', '-U', 'pip', 'wheel')).exit_on_error()()  # noqa
         for tactic in self.previous:
             tactic(venv)
         self._add(pip, wheelhouse, '-r', self.entity)
