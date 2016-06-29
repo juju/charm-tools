@@ -46,17 +46,21 @@ def tempdir(chdir=True):
 
 def deepmerge(dest, src):
     """
-    Deep merge of two dicts.
+    Deep merge all the keys in src. When the value of the key is a dict,
+    recursively call deepmerge. When the value of the key is a list, iterate
+    the entire list and de-duplicate the list. When neither a dict or a list
+    call the python copy.deepcopy method.
 
-    This is destructive (`dest` is modified), but values
-    from `src` are passed through `copy.deepcopy`.
+    This is destructive (`dest` is modified), as values from `src` may be
+    passed through `copy.deepcopy`.
     """
     for k, v in src.iteritems():
         if dest.get(k) and isinstance(v, dict):
             deepmerge(dest[k], v)
         elif dest.get(k) and isinstance(v, list):
-            if not v in dest.get(k):
-                dest[k].extend(v)
+            for item in v:
+                if item not in dest[k]:
+                    dest[k].append(item)
         else:
             dest[k] = copy.deepcopy(v)
     return dest
