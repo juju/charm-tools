@@ -187,7 +187,8 @@ class InterfaceCopy(Tactic):
     def lint(self):
         impl = self.interface.directory / self.role + '.py'
         if not impl.exists():
-            log.error('Missing implementation for interface role: %s.py', self.role)  # noqa
+            log.error('Missing implementation for interface role: %s.py',
+                      self.role)
             return False
         valid = True
         for entry in self.interface.directory.walkfiles():
@@ -423,10 +424,12 @@ class LayerYAML(YAMLTactic):
                 s='s' if len(unknown_layer_names) > 1 else '',
                 layers=', '.join(unknown_layer_names)))
             return False
-        validator = extend_with_default(jsonschema.Draft4Validator)(self.schema)  # noqa
+        validator = extend_with_default(
+            jsonschema.Draft4Validator)(self.schema)
         valid = True
         for error in validator.iter_errors(self.data['options']):
-            log.error('Invalid value for option %s: %s', '.'.join(error.absolute_path), error.message)  # noqa
+            log.error('Invalid value for option %s: %s',
+                      '.'.join(error.absolute_path), error.message)
             valid = False
         return valid
 
@@ -646,7 +649,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
         self.previous = []
 
     def __str__(self):
-        return "Building wheelhouse in {}".format(self.target.directory / 'wheelhouse')  # noqa
+        directory = self.target.directory / 'wheelhouse'
+        return "Building wheelhouse in {}".format(directory)
 
     def combine(self, existing):
         self.previous = existing.previous + [existing]
@@ -672,8 +676,10 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
-            utils.Process(('virtualenv', '--python', 'python3', venv)).exit_on_error()()  # noqa
-            utils.Process((pip, 'install', '-U', 'pip', 'wheel')).exit_on_error()()  # noqa
+            utils.Process(
+                ('virtualenv', '--python', 'python3', venv)).exit_on_error()()
+            utils.Process(
+                (pip, 'install', '-U', 'pip', 'wheel')).exit_on_error()()
         for tactic in self.previous:
             tactic(venv)
         self._add(pip, wheelhouse, '-r', self.entity)
