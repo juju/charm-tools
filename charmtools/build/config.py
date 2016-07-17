@@ -1,7 +1,6 @@
-from .tactics import DEFAULT_TACTICS, load_tactic
+from .tactics import load_tactic
 
 
-import pathspec
 from ruamel import yaml
 import logging
 from path import path
@@ -24,8 +23,6 @@ class BuildConfig(chainstuf):
     like overrides, or warnings if things are overridden that
     shouldn't be.
     """
-    DEFAULT_FILE = "layer.yaml"
-    OLD_CONFIG = "composer.yaml"
 
     def __init__(self, *args, **kwargs):
         super(BuildConfig, self).__init__(*args, **kwargs)
@@ -76,39 +73,35 @@ class BuildConfig(chainstuf):
         c.configure(config_file, allow_missing)
         return c
 
-    def add_config(self, config_file, allow_missing=False):
-        c = self.new_child()
-        c.configure(config_file, allow_missing)
-        return c
+    def add_config(self, config):
+        new_config = self.new_child()
+        new_config.update(config)
+        return new_config
 
     @property
     def name(self):
         return self.get('name')
 
     @property
-    def ignores(self):
-        return self.rget('ignore') + DEFAULT_IGNORES
-
     def tactics(self):
-        # XXX: combine from config layer
-        return self.rget('_tactics') + DEFAULT_TACTICS
+        return self.rget('_tactics')
 
-    def tactic(self, entity, current, target, next_config):
-        # Produce a tactic for the entity in question
-        # These will be accumulate through the layers
-        # and executed later
-        bd = current.directory
-        # Ignore handling
-        if next_config:
-            spec = pathspec.PathSpec.from_lines(pathspec.GitIgnorePattern,
-                                                next_config.ignores)
-            p = entity.relpath(bd)
-            matches = spec.match_files((p,))
-            if p in matches:
-                return None
+    @property
+    def ignores(self):
+        """
+        The ignores for this layer (lower layers are not included).
+        """
+        ignores = list(DEFAULT_IGNORES)
+        if self.maps:
+            ignores.extend(self.maps[0].get('ignore', []))
+        return ignores
 
-        for tactic in self.tactics():
-            if tactic.trigger(entity.relpath(bd)):
-                return tactic(target=target, entity=entity,
-                              current=current, config=next_config)
-        return None
+    @property
+    def excludes(self):
+        """
+        The excludes for this layer (lower layers are not included).
+        """
+        excludes = list(DEFAULT_IGNORES)
+        if self.maps:
+            excludes.extend(self.maps[0].get('exclude', []))
+        return excludes

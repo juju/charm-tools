@@ -3,3 +3,11 @@ defines:
   qux:
     enum: ['one', 'two']
     description: 'The qux of the situation'
+ignore:
+  - ignore
+  - override-ignore
+  - actions.yaml
+exclude:
+  - exclude
+  - override-exclude
+  - resources.yaml

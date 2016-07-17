@@ -16,7 +16,8 @@ from collections import OrderedDict
 from charmtools import (utils, repofinder, proof)
 from charmtools.build import inspector
 from charmtools.build.errors import BuildError
-from charmtools.build.config import (BuildConfig, DEFAULT_IGNORES)
+from charmtools.build.config import BuildConfig
+from charmtools.build.tactics import Tactic
 from charmtools.build.fetchers import (
     InterfaceFetcher,
     LayerFetcher,
@@ -29,10 +30,12 @@ log = logging.getLogger("build")
 
 class Configable(object):
     CONFIG_FILE = None
+    OLD_CONFIG_FILE = None
 
     def __init__(self):
         self._config = BuildConfig()
-        self.config_file = None
+        self.config_file = self.CONFIG_FILE
+        self.old_config_file = self.OLD_CONFIG_FILE
 
     @property
     def config(self):
@@ -40,6 +43,8 @@ class Configable(object):
             return self._config
         if self.config_file and self.config_file.exists():
             self._config.configure(self.config_file)
+        elif self.old_config_file and self.old_config_file.exists():
+            self._config.configure(self.old_config_file)
         return self._config
 
     @property
@@ -91,24 +96,23 @@ class Fetched(Configable):
                 "Do you need to set {}?".format(
                     self.url, self.ENVIRON))
 
-        self.config_file = self.directory / self.CONFIG_FILE
-        if not self.config_file.exists():
-            if self.OLD_CONFIG and (self.directory / self.OLD_CONFIG).exists():
-                self.config_file = (self.directory / self.OLD_CONFIG)
+        if self.config_file:
+            self.config_file = self.directory / self.config_file
+        if self.old_config_file:
+            self.old_config_file = self.directory / self.old_config_file
         self._name = self.config.name
         return self
 
 
 class Interface(Fetched):
     CONFIG_FILE = "interface.yaml"
-    OLD_CONFIG = None
     NAMESPACE = "interface"
     ENVIRON = "INTERFACE_PATH"
 
 
 class Layer(Fetched):
     CONFIG_FILE = "layer.yaml"
-    OLD_CONFIG = "composer.yaml"
+    OLD_CONFIG_FILE = "composer.yaml"
     NAMESPACE = "layer"
     ENVIRON = "LAYER_PATH"
 
@@ -288,28 +292,21 @@ class Builder(object):
                 self.fetch_dep(base_layer, results)
                 results["layers"].append(base_layer)
 
-    def build_tactics(self, entry, current, config, output_files):
-        # Delegate to the config object, it's rules
-        # will produce a tactic
-        relname = entry.relpath(current.directory)
-        current = current.config.tactic(entry, current, self.target, config)
-        existing = output_files.get(relname)
-        if existing is not None:
-            tactic = current.combine(existing)
-        else:
-            tactic = current
+    def build_tactics(self, entry, layer, next_config, output_files):
+        relname = entry.relpath(layer.directory)
+        existing_tactic = output_files.get(relname)
+        tactic = Tactic.get(
+            entry,
+            self.target,
+            layer,
+            next_config,
+            existing_tactic,
+        )
         output_files[relname] = tactic
 
     def plan_layers(self, layers, output_files):
-        config = BuildConfig()
-        cfgfn = layers["layers"][0] / BuildConfig.DEFAULT_FILE
-        if cfgfn.exists():
-            config = config.add_config(
-                cfgfn, True)
-        else:
-            cfgfn = layers["layers"][0] / BuildConfig.OLD_CONFIG
-            config = config.add_config(
-                cfgfn, True)
+        next_config = BuildConfig()
+        next_config.add_config(layers["layers"][0].config)
 
         layers["layers"][-1].url = self.name
 
@@ -317,12 +314,17 @@ class Builder(object):
             log.info("Processing layer: %s", layer.url)
             if i + 1 < len(layers["layers"]):
                 next_layer = layers["layers"][i + 1]
-                config = config.add_config(
-                    next_layer / BuildConfig.DEFAULT_FILE, True)
+                next_config = next_config.add_config(next_layer.config)
+            else:
+                # Add an empty level to the configs to represent that there
+                # is no layer after the current one.  This is important for
+                # the IgnoreTactic, which needs to look ahead so that it can
+                # handle ignoring entire directories.
+                next_config = next_config.add_config({})
             list(e for e in utils.walk(layer.directory,
                                        self.build_tactics,
-                                       current=layer,
-                                       config=config,
+                                       layer=layer,
+                                       next_config=next_config,
                                        output_files=output_files))
         plan = [t for t in output_files.values() if t]
         return plan
@@ -449,8 +451,7 @@ class Builder(object):
         if new_repo:
             added, changed, removed = set(), set(), set()
         else:
-            ignores = utils.ignore_matcher(DEFAULT_IGNORES)
-            added, changed, _ = utils.delta_signatures(self.manifest, ignores)
+            added, changed, _ = utils.delta_signatures(self.manifest)
             removed = self.clean_removed(signatures)
         # write out the sigs
         if "sign" in self.PHASES:
@@ -475,8 +476,7 @@ class Builder(object):
 
         if not self.manifest.exists():
             return [], [], []
-        ignorer = utils.ignore_matcher(DEFAULT_IGNORES)
-        a, c, d = utils.delta_signatures(self.manifest, ignorer)
+        a, c, d = utils.delta_signatures(self.manifest)
 
         for f in a:
             log.warn(

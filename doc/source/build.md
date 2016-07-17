@@ -1,9 +1,6 @@
 Juju Charm Building
 ===================
 
-Status | *Beta*
-------- -------
-
 Today its very common to fork charms for minor changes or to have to use
 subordinate charms to take advantages of frameworks where you need to deploy a
 custom workload to an existing runtime. With charm build you should be
@@ -79,6 +76,11 @@ the inclusion of specialized directives for processing some types of files.
         metadata:
             deletes:
                 - key names
+        ignore:
+            - tests
+        exclude:
+            - unit_tests
+            - README.md
 
 
 Includes is a list of one or more layers and interfaces that should be
@@ -89,9 +91,22 @@ Tactics is a list of Tactics to be loaded. See charmtools.build.tactics.Tactics
 for the default interface. You'll typically need to implement at least a
 trigger() method and a __call__() method.
 
-config and metadata take optional lists of keys to remove from config.yaml and
-metadata.yaml when generating their data. This allows for charms to, for
+`config` and `metadata` take lists of keys to remove from `config.yaml` and
+`metadata.yaml` when generating their data. This allows for charms to, for
 example, narrow what they expose to clients.
+
+`ignore` is a list of files or directories to ignore from a lower layer,
+using the same format as a `.gitignore` or `.bzrignore` file.  Thus, if any
+lower layer provides, in the example above, a `tests` directory, it will not
+be included in the built charm, although any `tests` directory in this or a
+higher level layer *will* be included.
+
+`exclude` is a list of files or directories to exclude from this layer,
+using the same format as a `.gitignore` or `.bzrignore` file.  Thus, if the
+current layer provides, in the example above, a `unit_tests` directory and a
+`README.md` file, it will not be included in the built charm, although any
+`unit_tests` directory or `README.md` file in either a lower or higher level
+layer *will* be included, using the same compositing rules as normal.
 
 
 charm layers
