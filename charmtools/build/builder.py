@@ -675,7 +675,7 @@ def main(args=None):
 
         build()
 
-        lint, exit_code = proof.proof(os.getcwd(), False, False)
+        lint, exit_code = proof.proof(build.output_dir, False, False)
         if lint:
             llog = logging.getLogger("proof")
             for line in lint:
