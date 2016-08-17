@@ -69,7 +69,7 @@ class ReactivePythonCharmTemplate(CharmTemplate):
         os.unlink(backupname)
 
     def _clone_template(self, config, output_dir):
-        cmd = "git clone --recursive {} {}".format(
+        cmd = "git clone {} {}".format(
             self._TEMPLATE_URL, output_dir
         )
 
