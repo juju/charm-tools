@@ -16,7 +16,7 @@ setup(
                       'libcharmstore', 'blessings', 'ruamel.yaml',
                       'pathspec', 'otherstuf', 'path.py', 'pip',
                       'jujubundlelib', 'virtualenv', 'colander',
-                      'jsonschema'],
+                      'jsonschema', 'secretstorage<2.3.0'],
     include_package_data=True,
     maintainer='Marco Ceppi',
     maintainer_email='marco@ceppi.net',
