@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='charm-tools',
-    version="2.1.3",
+    version="2.1.4",
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
