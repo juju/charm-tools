@@ -21,7 +21,7 @@ class TestConfig(unittest.TestCase):
         c._tactics = ['a', 'b', 'c']
         c = c.new_child()
         c._tactics = ['d', 'c']
-        self.assertEqual(c.tactics()[:5], ['d', 'c', 'a', 'b', 'c'])
+        self.assertEqual(c.tactics[:5], ['d', 'c', 'a', 'b', 'c'])
 
 
 if __name__ == '__main__':

@@ -26,12 +26,27 @@ class Tactic(object):
     """
     kind = "static"  # used in signatures
 
-    def __init__(self, entity, current, target, config):
+    @classmethod
+    def get(cls, entity, target, layer, next_config, existing_tactic):
+        """
+        Factory method to get an instance of the correct Tactic to handle the
+        given entity.
+        """
+        for candidate in next_config.tactics + DEFAULT_TACTICS:
+            if candidate.trigger(entity, target, layer, next_config):
+                tactic = candidate(entity, target, layer, next_config)
+                if existing_tactic is not None:
+                    tactic = tactic.combine(existing_tactic)
+                return tactic
+        raise BuildError('Unable to process file: {} '
+                         '(no tactics matched)'.format(entity))
+
+    def __init__(self, entity, target, layer, next_config):
         self.entity = entity
-        self._current = current
+        self._layer = layer
         self._target = target
-        self._raw_data = None
-        self._config = config
+        self.data = None
+        self._next_config = next_config
 
     def __call__(self):
         raise NotImplementedError
@@ -41,9 +56,9 @@ class Tactic(object):
             self.__class__.__name__, self.entity, self.target_file)
 
     @property
-    def current(self):
+    def layer(self):
         """The file in the current layer under consideration"""
-        return self._current
+        return self._layer
 
     @property
     def target(self):
@@ -52,7 +67,7 @@ class Tactic(object):
 
     @property
     def relpath(self):
-        return self.entity.relpath(self.current.directory)
+        return self.entity.relpath(self.layer.directory)
 
     @property
     def target_file(self):
@@ -61,17 +76,22 @@ class Tactic(object):
 
     @property
     def layer_name(self):
-        return self.current.directory.name
+        return str(self.layer.directory.name)
 
     @property
     def repo_path(self):
-        return path("/".join(self.current.directory.splitall()[-2:]))
+        return path("/".join(self.layer.directory.splitall()[-2:]))
 
     @property
     def config(self):
-        # Return the config of the layer *above* you
-        # as that is the one that controls your compositing
-        return self._config
+        """
+        Return the combined config from the layer above this (if any), this,
+        and all lower layers.
+
+        Note that it includes one layer higher so that the tactic can make
+        decisions based on the upcoming layer.
+        """
+        return self._next_config
 
     def combine(self, existing):
         """Produce a tactic informed by the last tactic for an entry.
@@ -80,7 +100,7 @@ class Tactic(object):
         return self
 
     @classmethod
-    def trigger(cls, relpath):
+    def trigger(cls, entity, target, layer, next_config):
         """Should the rule trigger for a given path object"""
         return False
 
@@ -90,7 +110,7 @@ class Tactic(object):
         target = self.target_file
         sig = {}
         if target.exists() and target.isfile():
-            sig[self.relpath] = (self.current.url,
+            sig[self.relpath] = (self.layer.url,
                                  self.kind,
                                  utils.sign(self.target_file))
         return sig
@@ -106,16 +126,78 @@ class ExactMatch(object):
     FILENAME = None
 
     @classmethod
-    def trigger(cls, relpath):
+    def trigger(cls, entity, target, layer, next_config):
+        relpath = entity.relpath(layer.directory)
         return cls.FILENAME == relpath
+
+
+class IgnoreTactic(Tactic):
+    """
+    Tactic to handle per-layer ignores.
+
+    If a given layer's ``layer.yaml`` has an ``ignore`` list, then any file
+    or directory included in that list that is provided by base layers will
+    be ignored, though any matching file or directory provided by the current
+    or any higher level layers will be included.
+
+    The ``ignore`` list uses the same format as a ``.gitignore`` file.
+    """
+    @classmethod
+    def trigger(cls, entity, target, layer, next_config):
+        """
+        Match if the given entity will be ignored by the next layer.
+        """
+        relpath = entity.relpath(layer.directory)
+        ignored = utils.ignore_matcher(next_config.ignores)
+        return not ignored(relpath)
+
+    def __call__(cls):
+        """
+        If this tactic has not been replaced by another from a higher layer,
+        then we want to drop the file entirely, so do nothing.
+        """
+        pass
+
+
+class ExcludeTactic(Tactic):
+    """
+    Tactic to handle per-layer excludes.
+
+    If a given layer's ``layer.yaml`` has an ``exclude`` list, then any file
+    or directory included in that list that is provided by the current layer
+    will be ignored, though any matching file or directory provided by base
+    layers or any higher level layers will be included.
+
+    The ``exclude`` list uses the same format as a ``.gitignore`` file.
+    """
+    @classmethod
+    def trigger(cls, entity, target, layer, next_config):
+        """
+        Match if the given entity is excluded by the current layer.
+        """
+        relpath = entity.relpath(layer.directory)
+        excluded = utils.ignore_matcher(layer.config.excludes)
+        return not excluded(relpath)
+
+    def combine(self, existing):
+        """
+        Combine with the tactic for this file from the lower layer by
+        returning the existing tactic, excluding any file or data from
+        this layer.
+        """
+        return existing
+
+    def __call__(self):
+        """
+        If no lower or higher level layer has provided a tactic for this file,
+        then we want to just skip processing of this file, so do nothing.
+        """
+        pass
 
 
 class CopyTactic(Tactic):
     def __call__(self):
         if self.entity.isdir():
-            return
-        should_ignore = utils.ignore_matcher(self.target.config.ignores)
-        if not should_ignore(self.relpath):
             return
         target = self.target_file
         log.debug("Copying %s: %s", self.layer_name, target)
@@ -134,7 +216,7 @@ class CopyTactic(Tactic):
         return "Copy {}".format(self.entity)
 
     @classmethod
-    def trigger(cls, relpath):
+    def trigger(cls, entity, target, layer, next_config):
         return True
 
 
@@ -144,7 +226,7 @@ class InterfaceCopy(Tactic):
         self.relation_name = relation_name
         self.role = role
         self._target = target
-        self._config = config
+        self._next_config = config
 
     @property
     def target(self):
@@ -288,7 +370,10 @@ class SerializedTactic(ExactMatch, Tactic):
         existing.read()
         self.read()
         # merge them
-        self.data = utils.deepmerge(existing.data, self.data)
+        if existing.data and self.data:
+            self.data = utils.deepmerge(existing.data, self.data)
+        elif existing.data:
+            self.data = dict(existing.data)
         return self
 
     def apply_edits(self):
@@ -394,15 +479,21 @@ class LayerYAML(YAMLTactic):
         return self.target.directory / "layer.yaml"
 
     @classmethod
-    def trigger(cls, relpath):
+    def trigger(cls, entity, target, layer, next_config):
+        relpath = entity.relpath(layer.directory)
         return relpath in cls.FILENAMES
 
     def read(self):
         if not self._read:
             super(LayerYAML, self).read()
+            ignores = self.data.get('ignore')
+            if isinstance(ignores, list):
+                self.data['ignore'] = {
+                    self.layer_name: ignores,
+                }
             self.data.setdefault('options', {})
             self.schema['properties'] = {
-                self.current.name: {
+                self.layer_name: {
                     'type': 'object',
                     'properties': self.data.pop('defines', {}),
                     'default': {},
@@ -410,6 +501,8 @@ class LayerYAML(YAMLTactic):
             }
 
     def combine(self, existing):
+        self.read()
+        existing.read()
         super(LayerYAML, self).combine(existing)
         self.schema = utils.deepmerge(existing.schema, self.schema)
         return self
@@ -441,7 +534,7 @@ class LayerYAML(YAMLTactic):
         # The split should result in the series/charm path only
         # XXX: there will be strange interactions with cs: vs local:
         if 'is' not in data:
-            data['is'] = str(self.current.url)
+            data['is'] = str(self.layer.url)
         inc = data.get('includes', [])
         norm = []
         for i in inc:
@@ -463,7 +556,7 @@ class LayerYAML(YAMLTactic):
         target = self.target_file
         sig = {}
         if target.exists() and target.isfile():
-            sig["layer.yaml"] = (self.current.url,
+            sig["layer.yaml"] = (self.layer.url,
                                  self.kind,
                                  utils.sign(self.target_file))
         return sig
@@ -494,7 +587,7 @@ class MetadataYAML(YAMLTactic):
     def read(self):
         if not self._read:
             super(MetadataYAML, self).read()
-            self.storage = {name: self.current.url
+            self.storage = {name: self.layer.url
                             for name in self.data.get('storage', {}).keys()}
             self.maintainer = self.data.get('maintainer')
             self.maintainers = self.data.get('maintainers')
@@ -569,7 +662,8 @@ class InstallerTactic(Tactic):
         return "Installing software to {}".format(self.relpath)
 
     @classmethod
-    def trigger(cls, relpath):
+    def trigger(cls, entity, target, layer, next_config):
+        relpath = entity.relpath(layer.directory)
         ext = relpath.splitext()[1]
         return ext in [".pypi", ]
 
@@ -631,11 +725,11 @@ class InstallerTactic(Tactic):
                 for entry, sig in utils.walk(d,
                                              utils.sign, kind="files"):
                     relpath = entry.relpath(self.target.directory)
-                    sigs[relpath] = (self.current.url, "dynamic", sig)
+                    sigs[relpath] = (self.layer.url, "dynamic", sig)
             elif d.isfile():
                 relpath = d.relpath(self.target.directory)
                 sigs[relpath] = (
-                    self.current.url, "dynamic", utils.sign(d))
+                    self.layer.url, "dynamic", utils.sign(d))
         return sigs
 
 
@@ -695,7 +789,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         for d in self.tracked:
             relpath = d.relpath(self.target.directory)
             sigs[relpath] = (
-                self.current.url, "dynamic", utils.sign(d))
+                self.layer.url, "dynamic", utils.sign(d))
         return sigs
 
 
@@ -731,6 +825,8 @@ def extend_with_default(validator_class):
 
 
 DEFAULT_TACTICS = [
+    IgnoreTactic,
+    ExcludeTactic,
     ManifestTactic,
     WheelhouseTactic,
     InstallerTactic,

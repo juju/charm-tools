@@ -364,7 +364,7 @@ def sign(pathobj):
     return hashlib.sha256(p.bytes()).hexdigest()
 
 
-def delta_signatures(manifest_filename, ignorer=None):
+def delta_signatures(manifest_filename):
     md = path(manifest_filename)
     repo = md.normpath().dirname()
 
@@ -378,8 +378,6 @@ def delta_signatures(manifest_filename, ignorer=None):
     for p, s in current.items():
         fp = repo / p
         if not fp.isfile():
-            continue
-        if ignorer and not ignorer(p):
             continue
 
         if p not in expected["signatures"]:

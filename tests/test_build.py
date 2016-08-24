@@ -50,6 +50,7 @@ class TestBuild(unittest.TestCase):
         bu.report = False
         remove_layer_file = self.dirname / 'trusty/tester/to_remove'
         remove_layer_file.touch()
+        self.addCleanup(remove_layer_file.remove_p)
         with mock.patch.object(build.builder, 'log') as log:
             bu()
             log.warn.assert_called_with(
@@ -60,6 +61,21 @@ class TestBuild(unittest.TestCase):
 
         # Verify ignore rules applied
         self.assertFalse((base / ".bzr").exists())
+        self.assertEqual((base / "ignore").text(), "mysql\n")
+        self.assertEqual((base / "exclude").text(), "test-base\n")
+        self.assertEqual((base / "override-ignore").text(), "tester\n")
+        self.assertEqual((base / "override-exclude").text(), "tester\n")
+        self.assertFalse((base / "tests/00-setup").exists())
+        self.assertFalse((base / "tests/15-configs").exists())
+        self.assertTrue((base / "tests/20-deploy").exists())
+        actions = yaml.load((base / "actions.yaml").text())
+        resources = yaml.load((base / "resources.yaml").text())
+        self.assertNotIn("test-base", actions)
+        self.assertIn("mysql", actions)
+        self.assertIn("tester", actions)
+        self.assertIn("test-base", resources)
+        self.assertNotIn("mysql", resources)
+        self.assertIn("tester", resources)
 
         # Metadata should have combined provides fields
         metadata = base / "metadata.yaml"
@@ -96,7 +112,7 @@ class TestBuild(unittest.TestCase):
         self.assertEquals(cyaml_data['includes'], ['trusty/test-base',
                                                    'trusty/mysql'])
         self.assertEquals(cyaml_data['is'], 'foo')
-        self.assertEquals(cyaml_data['options']['trusty/mysql']['qux'], 'one')
+        self.assertEquals(cyaml_data['options']['mysql']['qux'], 'one')
 
         self.assertTrue((base / "hooks/config-changed").exists())
 
@@ -321,15 +337,16 @@ class TestBuild(unittest.TestCase):
                     '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
 
     @mock.patch.object(build.tactics, 'log')
-    @mock.patch.object(build.tactics.YAMLTactic, 'read', lambda s: setattr(s, '_read', True))
+    @mock.patch.object(build.tactics.YAMLTactic, 'read',
+                       lambda s: setattr(s, '_read', True))
     def test_layer_options(self, log):
         entity = mock.MagicMock(name='entity')
         target = mock.MagicMock(name='target')
         config = mock.MagicMock(name='config')
 
         base_layer = mock.MagicMock(name='base_layer')
-        base_layer.name = 'base'
-        base = build.tactics.LayerYAML(entity, base_layer, target, config)
+        base_layer.directory.name = 'base'
+        base = build.tactics.LayerYAML(entity, target, base_layer, config)
         base.data = {
             'defines': {
                 'foo': {
@@ -347,8 +364,8 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(base.data['options']['base']['foo'], 'FOO')
 
         top_layer = mock.MagicMock(name='top_layer')
-        top_layer.name = 'top'
-        top = build.tactics.LayerYAML(entity, top_layer, target, config)
+        top_layer.directory.name = 'top'
+        top = build.tactics.LayerYAML(entity, target, top_layer, config)
         top.data = {
             'options': {
             },
