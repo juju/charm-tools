@@ -13,7 +13,7 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=['launchpadlib', 'argparse', 'cheetah', 'pyyaml',
                       'pycrypto', 'paramiko<2.0.0', 'requests',
-                      'libcharmstore', 'blessings', 'ruamel.yaml',
+                      'libcharmstore', 'blessings', 'ruamel.yaml==0.11.14',
                       'pathspec', 'otherstuf', 'path.py', 'pip',
                       'jujubundlelib', 'virtualenv', 'colander',
                       'jsonschema', 'secretstorage<2.3.0'],

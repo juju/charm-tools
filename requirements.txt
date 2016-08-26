@@ -17,7 +17,7 @@ pathspec==0.3.4
 pip>=7.1.2
 requests==2.9.1
 responses==0.3.0
-ruamel.yaml==0.10.23
+ruamel.yaml==0.11.14
 virtualenv>=1.11.4
 jsonschema==2.5.1
 secretstorage<2.3.0
