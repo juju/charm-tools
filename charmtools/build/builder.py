@@ -675,9 +675,14 @@ def main(args=None):
 
         build()
 
-        lint, exit_code = proof.proof(os.getcwd(), False, False)
+        lint, exit_code = proof.proof(build.output_dir, False, False)
+        lint = [l for l in lint if l[0] in ('I', 'W', 'E')]
         if lint:
             llog = logging.getLogger("proof")
+            llog.info('')
+            llog.info('---------------------------------------')
+            llog.info('              Charm Proof')
+            llog.info('---------------------------------------')
             for line in lint:
                 if line[0] == "I":
                     llog.info(line)
