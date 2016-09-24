@@ -66,7 +66,7 @@ class Fetched(Configable):
             return self._name
         if self.url.startswith(self.NAMESPACE):
             return self.url[len(self.NAMESPACE)+1:]
-        return self.url
+        return self.url.rsplit('/', 1)[-1]
 
     def __repr__(self):
         return "<{} {}:{}>".format(self.__class__.__name__,
@@ -436,7 +436,8 @@ class Builder(object):
                 if phase == "lint":
                     cont &= tactic.lint()
                     if cont is False and self.force is not True:
-                        return
+                        # no message, reason will already have been logged
+                        raise BuildError()
                 elif phase == "read":
                     # We use a read (into memory phase to make layer comps
                     # simpler)
@@ -689,7 +690,8 @@ def main(args=None):
             elif line[0] == "E":
                 llog.error(line)
     except (BuildError, FetchError) as e:
-        log.error(*e.args)
+        if e.args:
+            log.error(*e.args)
         raise SystemExit(1)
 
 

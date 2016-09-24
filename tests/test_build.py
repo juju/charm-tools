@@ -345,7 +345,8 @@ class TestBuild(unittest.TestCase):
         config = mock.MagicMock(name='config')
 
         base_layer = mock.MagicMock(name='base_layer')
-        base_layer.directory.name = 'base'
+        base_layer.directory.name = 'layer-base'
+        base_layer.name = 'base'
         base = build.tactics.LayerYAML(entity, target, base_layer, config)
         base.data = {
             'defines': {
@@ -364,7 +365,8 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(base.data['options']['base']['foo'], 'FOO')
 
         top_layer = mock.MagicMock(name='top_layer')
-        top_layer.directory.name = 'top'
+        top_layer.directory.name = 'layer-top'
+        top_layer.name = 'top'
         top = build.tactics.LayerYAML(entity, target, top_layer, config)
         top.data = {
             'options': {

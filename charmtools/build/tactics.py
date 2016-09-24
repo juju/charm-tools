@@ -76,7 +76,7 @@ class Tactic(object):
 
     @property
     def layer_name(self):
-        return str(self.layer.directory.name)
+        return self.layer.name
 
     @property
     def repo_path(self):
