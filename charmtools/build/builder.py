@@ -674,6 +674,20 @@ def main(args=None):
             build.check_series()
 
         build()
+
+        lint, exit_code = proof.proof(build.target_dir, False, False)
+        llog = logging.getLogger("proof")
+
+        if not lint:
+            llog.info('OK!')
+
+        for line in lint:
+            if line[0] == "I":
+                llog.info(line)
+            elif line[0] == "W":
+                llog.warn(line)
+            elif line[0] == "E":
+                llog.error(line)
     except (BuildError, FetchError) as e:
         log.error(*e.args)
         raise SystemExit(1)
