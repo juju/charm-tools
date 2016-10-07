@@ -753,7 +753,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def _add(self, pip, wheelhouse, *reqs):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
-            utils.Process((pip, 'install',
+            utils.Process((pip, 'download',
                            '--no-binary', ':all:',
                            '-d', temp_dir) +
                           reqs).exit_on_error()()

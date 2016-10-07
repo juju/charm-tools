@@ -331,7 +331,7 @@ class TestBuild(unittest.TestCase):
             with mock.patch("path.Path.files"):
                 bu()
                 Process.assert_called_with((
-                    '/tmp/bin/pip3', 'install',
+                    '/tmp/bin/pip3', 'download',
                     '--no-binary', ':all:',
                     '-d', '/tmp',
                     '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
