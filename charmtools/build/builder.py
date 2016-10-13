@@ -311,7 +311,9 @@ class Builder(object):
         layers["layers"][-1].url = self.name
 
         for i, layer in enumerate(layers["layers"]):
-            log.info("Processing layer: %s", layer.url)
+            log.info("Processing layer: %s%s", layer.url,
+                     "" if 'deps' in layer.directory.splitall()
+                     else " (from %s)" % layer.directory.relpath())
             if i + 1 < len(layers["layers"]):
                 next_layer = layers["layers"][i + 1]
                 next_config = next_config.add_config(next_layer.config)
