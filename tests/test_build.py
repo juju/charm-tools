@@ -405,6 +405,16 @@ class TestBuild(unittest.TestCase):
         })
 
 
+class TestFetchers(unittest.TestCase):
+    @mock.patch.object(build.fetchers, 'get_fetcher')
+    def test_get_repo_fetcher_target(self, get_fetcher):
+        f = get_fetcher()
+        f.repo = '/home/user/deps/foo/trunk'
+        fetcher = build.fetchers.InterfaceFetcher('interface:foo')
+        result = fetcher._get_repo_fetcher_and_target('repo', '/dir_')
+        self.assertEqual(result, (f, '/dir_/foo'))
+
+
 if __name__ == '__main__':
     logging.basicConfig()
     unittest.main()
