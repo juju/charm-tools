@@ -95,11 +95,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
         """
         u = self.url[len(self.NAMESPACE) + 1:]
         f = get_fetcher(repo)
-        if hasattr(f, "repo"):
-            basename = path(f.repo).name.splitext()[0]
-        else:
-            basename = u
-        return f, path(dir_) / basename
+        return f, path(dir_) / u
 
     def fetch(self, dir_):
         if hasattr(self, "path"):
