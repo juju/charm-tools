@@ -1,4 +1,5 @@
 
+import os
 import pkg_resources
 import argparse
 
@@ -17,6 +18,12 @@ def get_args(args=None):
 
 
 def charm_version():
+    if 'SNAP' in os.environ:
+        cscv = os.path.join(os.environ['SNAP'], 'charmstore-client-version')
+        if os.path.exists(cscv):
+            with open(cscv) as f:
+                charm_ver = f.read().strip()
+            return charm_ver
     try:
         from apt.cache import Cache
         charm_vers = Cache()['charm'].versions
