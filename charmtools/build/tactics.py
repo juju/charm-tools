@@ -535,7 +535,7 @@ class LayerYAML(YAMLTactic):
         # XXX: there will be strange interactions with cs: vs local:
         if 'is' not in data:
             data['is'] = str(self.layer.url)
-        inc = data.get('includes', [])
+        inc = data.get('includes', []) or []
         norm = []
         for i in inc:
             if ":" in i:
