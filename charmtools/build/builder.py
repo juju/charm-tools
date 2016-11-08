@@ -463,7 +463,7 @@ class Builder(object):
         self.manifest.write_text(json.dumps(dict(
             signatures=signatures,
             layers=layers,
-        ), indent=2))
+        ), indent=2, sort_keys=True))
 
     def generate(self):
         layers = self.fetch()
