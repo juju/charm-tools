@@ -13,7 +13,6 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
         'launchpadlib<1.11',
-        'argparse',
         'cheetah<=2.4.4',
         'pyyaml==3.11',
         'paramiko<2.0.0',
