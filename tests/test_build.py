@@ -309,10 +309,10 @@ class TestBuild(unittest.TestCase):
             with mock.patch("path.Path.files"):
                 bu()
                 Process.assert_called_with((
-                    '/tmp/bin/pip3', 'install',
-                    '--no-binary', ':all:',
-                    '-d', '/tmp',
-                    '-r', self.dirname / 'trusty/whlayer/wheelhouse.txt'))
+                    'bash', '-c', '. /tmp/bin/activate ;'
+                    ' pip3 download --no-binary :all: '
+                    '-d /tmp -r ' +
+                    self.dirname / 'trusty/whlayer/wheelhouse.txt'))
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read', lambda s: setattr(s, '_read', True))

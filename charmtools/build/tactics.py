@@ -623,6 +623,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
         self.tracked = []
         self.previous = []
+        self._venv = None
 
     def __str__(self):
         return "Building wheelhouse in {}".format(self.target.directory / 'wheelhouse')
@@ -631,33 +632,45 @@ class WheelhouseTactic(ExactMatch, Tactic):
         self.previous = existing.previous + [existing]
         return self
 
-    def _add(self, pip, wheelhouse, *reqs):
+    def _add(self, wheelhouse, *reqs):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
-            utils.Process((pip, 'install',
-                           '--no-binary', ':all:',
-                           '-d', temp_dir) +
-                          reqs).exit_on_error()()
+            self._pip('download', '--no-binary', ':all:', '-d', temp_dir,
+                      *reqs)
             for wheel in temp_dir.files():
                 dest = wheelhouse / wheel.basename()
                 dest.remove_p()
                 wheel.move(wheelhouse)
                 self.tracked.append(dest)
 
-    def __call__(self, venv=None):
-        create_venv = venv is None
-        venv = venv or path(tempfile.mkdtemp())
-        pip = venv / 'bin' / 'pip3'
+    def _pip(self, *args):
+        assert self._venv is not None
+        # have to use bash to call pip to activate the venv properly first
+        utils.Process(('bash', '-c', ' '.join(
+            ('.', self._venv / 'bin' / 'activate', ';', 'pip3') + args
+        ))).exit_on_error()()
+
+    def __call__(self):
+        create_venv = self._venv is None
+        self._venv = self._venv or path(tempfile.mkdtemp())
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
-            utils.Process(('virtualenv', '--python', 'python3', venv)).exit_on_error()()
-            utils.Process((pip, 'install', '-U', 'pip', 'wheel')).exit_on_error()()
+            utils.Process(
+                ('virtualenv', '--python', 'python3', self._venv)
+            ).exit_on_error()()
+            self._pip('install', '-U',
+                      '"pip>=9.0.0,<10.0.0"',
+                      '"wheel>=0.29.0,<1.0.0"')
+        # we are the top layer; process all lower layers first
         for tactic in self.previous:
-            tactic(venv)
-        self._add(pip, wheelhouse, '-r', self.entity)
+            tactic()
+        # process this layer
+        self._add(wheelhouse, '-r', self.entity)
+        # clean up
         if create_venv:
-            venv.rmtree_p()
+            self._venv.rmtree_p()
+            self._venv = None
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
