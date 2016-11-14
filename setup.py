@@ -23,7 +23,7 @@ setup(
         'pathspec<=0.3.4',
         'otherstuf<=1.1.0',
         'path.py<=8.1.2',
-        'pip>=7.1.2',
+        'pip>=1.5.4',
         'jujubundlelib',
         'virtualenv>=1.11.4',
         'colander<=1.0b1',
