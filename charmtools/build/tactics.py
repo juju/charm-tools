@@ -113,7 +113,8 @@ class ExactMatch(object):
 class CopyTactic(Tactic):
     def __call__(self):
         if self.entity.isdir():
-            return
+            log.debug('Creating %s', self.target_file)
+            return self.target_file.makedirs_p()
         should_ignore = utils.ignore_matcher(self.target.config.ignores)
         if not should_ignore(self.relpath):
             return
