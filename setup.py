@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='charm-tools',
-    version="2.1.7",
+    version="2.1.8",
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
