@@ -8,13 +8,13 @@ from path import path
 from otherstuf import chainstuf
 
 DEFAULT_IGNORES = [
-    ".bzr/",
-    ".git/",
-    "**/.ropeproject/",
+    ".bzr",
+    ".git",
+    "**/.ropeproject",
     "*.pyc",
     "*~",
-    ".tox/",
-    "build/",
+    ".tox",
+    "build",
 ]
 
 
