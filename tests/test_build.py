@@ -124,6 +124,9 @@ class TestBuild(unittest.TestCase):
         self.assertTrue((base / "README.md").exists())
         self.assertEqual("dynamic tactics", (base / "README.md").text())
 
+        self.assertTrue((base / "old_tactic").exists())
+        self.assertEqual("processed", (base / "old_tactic").text())
+
         sigs = base / ".build.manifest"
         self.assertTrue(sigs.exists())
         data = json.load(sigs.open())

@@ -3,6 +3,7 @@ import jsonschema
 import logging
 import os
 import tempfile
+from inspect import getargspec
 
 from path import path
 from ruamel import yaml
@@ -25,6 +26,7 @@ class Tactic(object):
     actions are needed.
     """
     kind = "static"  # used in signatures
+    _warnings = {}  # deprecation warnings we've shown
 
     @classmethod
     def get(cls, entity, target, layer, next_config, existing_tactic):
@@ -33,7 +35,19 @@ class Tactic(object):
         given entity.
         """
         for candidate in next_config.tactics + DEFAULT_TACTICS:
-            if candidate.trigger(entity, target, layer, next_config):
+            argspec = getargspec(candidate.trigger)
+            if len(argspec.args) == 2:
+                # old calling convention
+                name = candidate.__name__
+                if name not in Tactic._warnings:
+                    Tactic._warnings[name] = True
+                    log.warn(
+                        'Deprecated method signature for trigger in %s', name)
+                args = [entity.relpath(layer.directory)]
+            else:
+                # new calling convention
+                args = [entity, target, layer, next_config]
+            if candidate.trigger(*args):
                 tactic = candidate(entity, target, layer, next_config)
                 if existing_tactic is not None:
                     tactic = tactic.combine(existing_tactic)
@@ -59,6 +73,11 @@ class Tactic(object):
     def layer(self):
         """The file in the current layer under consideration"""
         return self._layer
+
+    @property
+    def current(self):
+        """Alias for `Tactic.layer`"""
+        return self.layer
 
     @property
     def target(self):
