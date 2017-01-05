@@ -89,6 +89,7 @@ class TestBuild(unittest.TestCase):
         self.assertNotIn("maintainers", metadata_data)
         # The tags list must be de-duplicated.
         self.assertEqual(metadata_data['tags'], ["databases"])
+        self.assertEqual(metadata_data['series'], ['xenial', 'trusty'])
 
         # Config should have keys but not the ones in deletes
         config = base / "config.yaml"
@@ -139,7 +140,7 @@ class TestBuild(unittest.TestCase):
         self.assertEquals(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
-            u'5691b0c0aaf43d0f27d8eca6afbd1145aa3f4307456757e592827f002cf603f2'
+            u'03fc06a5e698e624231b826f4c47a60d3251cbc968fc1183ada444ca09b29ea6'
             ])
 
         storage_attached = base / "hooks/data-storage-attached"

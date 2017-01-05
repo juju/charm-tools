@@ -11,6 +11,8 @@ description: |
   ease of use.
 tags:
     - databases
+series:
+  - trusty
 provides:
   db:
     interface: mysql

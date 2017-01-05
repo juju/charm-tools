@@ -312,7 +312,6 @@ def which(program):
     return None
 
 
-
 def load_class(full_class_string, workingdir=None):
     """
     dynamically load a class from a string
@@ -429,7 +428,7 @@ class TermWriter(object):
     def __getattr__(self, key):
         return getattr(self.term, key)
 
-    def write(self, msg,  *args, **kwargs):
+    def write(self, msg, *args, **kwargs):
         if 't' in kwargs:
             raise ValueError("Using reserved token 't' in TermWriter.write")
         kwargs['t'] = self.term
@@ -528,7 +527,7 @@ def delta_python_dump(orig, dest, patterns=REACTIVE_PATTERNS,
 
 
 class Description(argparse._StoreTrueAction):
-    """A argparse action that prints its parent parser's description and exits."""
+    """A argparse action that prints parent parser's description & exits."""
     def __call__(self, parser, namespace, values, option_string=None):
         print(parser.description.split('\n')[0].strip('. '))
         raise SystemExit()
@@ -536,3 +535,61 @@ class Description(argparse._StoreTrueAction):
 
 def add_plugin_description(parser):
     parser.add_argument('--description', action=Description)
+
+
+class OrderedSet(collections.MutableSet):
+    def __init__(self, iterable=None):
+        self.end = end = []
+        end += [None, end, end]
+        self.map = {}
+        if iterable is not None:
+            self |= iterable
+
+    def __len__(self):
+        return len(self.map)
+
+    def __contains__(self, key):
+        return key in self.map
+
+    def add(self, key):
+        if key not in self.map:
+            end = self.end
+            curr = end[1]
+            curr[2] = end[1] = self.map[key] = [key, curr, end]
+
+    def discard(self, key):
+        if key in self.map:
+            key, prev, next = self.map.pop(key)
+            prev[2] = next
+            next[1] = prev
+
+    def __iter__(self):
+        end = self.end
+        curr = end[2]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[2]
+
+    def __reversed__(self):
+        end = self.end
+        curr = end[1]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[1]
+
+    def pop(self, last=True):
+        if not self:
+            raise KeyError('set is empty')
+        key = self.end[1][0] if last else self.end[2][0]
+        self.discard(key)
+        return key
+
+    def __repr__(self):
+        if not self:
+            return '%s()' % (self.__class__.__name__,)
+        return '%s(%r)' % (self.__class__.__name__, list(self))
+
+    def __eq__(self, other):
+        if isinstance(other, OrderedSet):
+            return len(self) == len(other) and list(self) == list(other)
+        return set(self) == set(other)
