@@ -593,6 +593,7 @@ class MetadataYAML(YAMLTactic):
         "maintainers",
         "description",
         "tags",
+        "series",
         "requires",
         "provides",
         "peers",
@@ -613,7 +614,11 @@ class MetadataYAML(YAMLTactic):
             self.maintainers = self.data.get('maintainers')
 
     def combine(self, existing):
+        self.read()
+        series = self.data.get('series', [])
         super(MetadataYAML, self).combine(existing)
+        if series:
+            self.data['series'] = series + existing.data.get('series', [])
         self.storage.update(existing.storage)
         return self
 
@@ -627,6 +632,8 @@ class MetadataYAML(YAMLTactic):
             self.data['maintainer'] = self.maintainer
         if self.maintainers:
             self.data['maintainers'] = self.maintainers
+        if 'series' in self.data:
+            self.data['series'] = list(utils.OrderedSet(self.data['series']))
         if not self.config or not self.config.get(self.section):
             return
         for key in self.config[self.section].get('deletes', []):
