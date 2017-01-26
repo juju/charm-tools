@@ -8,6 +8,8 @@ description: |
   ease of use.
 categories:
     - databases
+series:
+  - trusty
 provides:
   db:
     interface: mysql

@@ -471,9 +471,18 @@ class MetadataYAML(YAMLTactic):
     """Rule Driven metadata.yaml generation"""
     section = "metadata"
     FILENAME = "metadata.yaml"
-    KEY_ORDER = ["name", "summary", "maintainer",
-                 "description", "tags",
-                 "requires", "provides", "peers"]
+    KEY_ORDER = [
+        "name",
+        "summary",
+        "maintainer",
+        "maintainers",
+        "description",
+        "tags",
+        "series",
+        "requires",
+        "provides",
+        "peers",
+    ]
 
     def __init__(self, *args, **kwargs):
         super(MetadataYAML, self).__init__(*args, **kwargs)
@@ -486,12 +495,26 @@ class MetadataYAML(YAMLTactic):
                             for name in self.data.get('storage', {}).keys()}
 
     def combine(self, existing):
+        self.read()
+        series = self.data.get('series', [])
         super(MetadataYAML, self).combine(existing)
+        if series:
+            self.data['series'] = series + existing.data.get('series', [])
         self.storage.update(existing.storage)
         return self
 
     def apply_edits(self):
         super(MetadataYAML, self).apply_edits()
+        # Remove the merged maintainers from the self.data
+        self.data.pop('maintainer', None)
+        self.data.pop('maintainers', [])
+        # Set the maintainer and maintainers only from this layer.
+        if self.maintainer:
+            self.data['maintainer'] = self.maintainer
+        if self.maintainers:
+            self.data['maintainers'] = self.maintainers
+        if 'series' in self.data:
+            self.data['series'] = list(utils.OrderedSet(self.data['series']))
         if not self.config or not self.config.get(self.section):
             return
         for key in self.config[self.section].get('deletes', []):

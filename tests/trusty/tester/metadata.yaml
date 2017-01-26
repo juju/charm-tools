@@ -8,6 +8,10 @@ description: |
   ease of use.
 categories:
     - databases
+series:
+  - xenial
+  - trusty
+  - xenial
 provides:
   storage:
     interface: storage
