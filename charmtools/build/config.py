@@ -3,7 +3,7 @@ from .tactics import load_tactic
 
 from ruamel import yaml
 import logging
-from path import path
+from path import Path as path
 from otherstuf import chainstuf
 
 DEFAULT_IGNORES = [
