@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from .diff_match_patch import diff_match_patch
 import blessings
 import pathspec
-from path import path
+from path import Path as path
 
 log = logging.getLogger('utils')
 
