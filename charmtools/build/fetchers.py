@@ -7,7 +7,7 @@ from charmtools.fetchers import (git,  # noqa
                                  get_fetcher,
                                  FetchError)
 
-from path import path
+from path import Path as path
 
 
 class RepoFetcher(fetchers.LocalFetcher):

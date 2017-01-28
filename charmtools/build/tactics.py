@@ -5,7 +5,7 @@ import os
 import tempfile
 from inspect import getargspec
 
-from path import path
+from path import Path as path
 from ruamel import yaml
 from charmtools import utils
 from charmtools.build.errors import BuildError

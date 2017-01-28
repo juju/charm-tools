@@ -11,7 +11,7 @@ import yaml
 
 import charmtools.build.tactics
 
-from path import path
+from path import Path as path
 from collections import OrderedDict
 from charmtools import (utils, repofinder, proof)
 from charmtools.build import inspector

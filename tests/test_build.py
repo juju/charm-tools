@@ -1,7 +1,7 @@
 from charmtools import build
 from charmtools.build.errors import BuildError
 from charmtools import utils
-from path import path
+from path import Path as path
 from ruamel import yaml
 import json
 import logging
