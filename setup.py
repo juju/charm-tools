@@ -28,7 +28,7 @@ setup(
         'virtualenv>=1.11.4',
         'colander<=1.0b1',
         'jsonschema<=2.5.1',
-        'secretstorage<2.3.0',
+        'secretstorage<2.4',
     ],
     include_package_data=True,
     maintainer='Marco Ceppi',
