@@ -79,7 +79,7 @@ class ReactivePythonCharmTemplate(CharmTemplate):
             raise Exception(
                 "The below error has occurred whilst attempting to clone"
                 "the charm template. Please make sure you have git"
-                "installed on your system.\n" + e
+                "installed on your system.\n" + str(e)
             )
 
         # iterate and remove all the unwanted files from the git repo:
