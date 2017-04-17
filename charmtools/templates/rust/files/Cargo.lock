@@ -1,0 +1,12 @@
+[root]
+name = "hello_world"
+version = "0.1.0"
+dependencies = [
+ "juju 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "juju"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+

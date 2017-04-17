@@ -1,6 +1,7 @@
 tests_functional/proof/results/*
 .coverage
 .noseids
+.idea
 charm_tools.egg-info
 dependencies
 tags
