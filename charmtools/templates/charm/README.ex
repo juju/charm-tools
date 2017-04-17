@@ -6,6 +6,8 @@ This README will be displayed in the Charm Store, it should be either Markdown o
 
 Use this as a Markdown reference if you need help with the formatting of this README: http://askubuntu.com/editing-help
 
+You can also use an online Markdown editor to live edit Markdown with preview: https://stackedit.io/
+
 This charm provides [service](http://example.com). Add a description here of what the service itself actually does.
 
 Also remember to check the [icon guidelines](https://jujucharms.com/docs/stable/authors-charm-icon) so that your charm looks good in the Juju GUI.
@@ -31,6 +33,14 @@ This not only helps users but gives people a place to start if they want to help
 # Configuration
 
 The configuration options will be listed on the charm store, however If you're making assumptions or opinionated decisions in the charm (like setting a default administrator password), you should detail that here so the user knows how to change it immediately, etc.
+
+# Interfaces
+
+This section should document the charm's interfaces. Describe what the charm provides and requires.
+
+# External Dependencies
+
+Describe if the charm needs something from an external source, for example if it needs a URL config flag set to fetch something. Things like needing pip, github, an http resource or any other remote service that the charm needs in order to work.
 
 # Contact Information
 
