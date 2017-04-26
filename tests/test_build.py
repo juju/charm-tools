@@ -1,15 +1,18 @@
+#!usr/bin/env python2
+import os
+import json
+import unittest
+import logging
+import pkg_resources
+
+
 from charmtools import build
 from charmtools.build.errors import BuildError
 from charmtools import utils
 from path import Path as path
 from ruamel import yaml
-import json
-import logging
 import mock
-import os
-import pkg_resources
 import responses
-import unittest
 
 
 class TestBuild(unittest.TestCase):
@@ -214,7 +217,7 @@ class TestBuild(unittest.TestCase):
             # and that we generated the hooks themselves
             for kind in ["joined", "changed", "broken", "departed"]:
                 self.assertTrue((base / "hooks" /
-                                "mysql-relation-{}".format(kind)).exists())
+                                 "mysql-relation-{}".format(kind)).exists())
 
             # and ensure we have an init file (the interface doesn't its added)
             init = base / "hooks/relations/mysql/__init__.py"
@@ -223,19 +226,20 @@ class TestBuild(unittest.TestCase):
     @responses.activate
     def test_remote_interface(self):
         # XXX: this test does pull the git repo in the response
-        responses.add(responses.GET,
-                      "http://interfaces.juju.solutions/api/v1/interface/pgsql/",
-                      body='''{
-                      "id": "pgsql",
-                      "name": "pgsql4",
-                      "repo":
-                      "https://github.com/bcsaller/juju-relation-pgsql.git",
-                      "_id": {
-                          "$oid": "55a471959c1d246feae487e5"
-                      },
-                      "version": 1
-                      }''',
-                      content_type="application/json")
+        responses.add(
+            responses.GET,
+            "http://interfaces.juju.solutions/api/v1/interface/pgsql/",
+            body='''{
+            "id": "pgsql",
+            "name": "pgsql4",
+            "repo":
+            "https://github.com/bcsaller/juju-relation-pgsql.git",
+            "_id": {
+              "$oid": "55a471959c1d246feae487e5"
+            },
+            "version": 1
+            }''',
+            content_type="application/json")
         bu = build.Builder()
         bu.log_level = "WARNING"
         bu.output_dir = "out"
