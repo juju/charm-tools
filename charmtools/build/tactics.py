@@ -831,6 +831,31 @@ class WheelhouseTactic(ExactMatch, Tactic):
         return sigs
 
 
+class CopyrightTactic(Tactic):
+    @classmethod
+    def trigger(cls, entity, target, layer, next_config):
+        """
+        Match if the given entity will be ignored by the next layer.
+        """
+        if layer.name == target.name:
+            return False
+        relpath = entity.basename()
+        return relpath == "copyright"
+
+    def __call__(self):
+
+        target = self.target_file + ".{}-{}".format(self.layer.NAMESPACE, self.layer.name)
+        target.dirname().makedirs_p()
+        if (self.entity != target) and not target.exists() \
+                or not self.entity.samefile(target):
+            data = self.read()
+            if data:
+                target.write_bytes(data)
+                self.entity.copymode(target)
+            else:
+                self.entity.copy2(target)
+
+
 def load_tactic(dpath, basedir):
     """Load a tactic from the current layer using a dotted path. The last
     element in the path should be a Tactic subclass
@@ -868,6 +893,7 @@ DEFAULT_TACTICS = [
     ManifestTactic,
     WheelhouseTactic,
     InstallerTactic,
+    CopyrightTactic,
     DistYAML,
     ResourcesYAML,
     MetadataYAML,
