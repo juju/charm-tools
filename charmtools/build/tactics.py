@@ -834,8 +834,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
 class CopyrightTactic(Tactic):
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
-        # if layer.name == target.name:
-        #     return False
+        if layer.name == target.name:
+            return False
         relpath = entity.relpath(layer.directory)
         return relpath == "copyright"
 
