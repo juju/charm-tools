@@ -834,26 +834,34 @@ class WheelhouseTactic(ExactMatch, Tactic):
 class CopyrightTactic(Tactic):
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
-        """
-        Match if the given entity will be ignored by the next layer.
-        """
-        if layer.name == target.name:
-            return False
-        relpath = entity.basename()
+        # if layer.name == target.name:
+        #     return False
+        relpath = entity.relpath(layer.directory)
         return relpath == "copyright"
 
     def __call__(self):
-
-        target = self.target_file + ".{}-{}".format(self.layer.NAMESPACE, self.layer.name)
-        target.dirname().makedirs_p()
-        if (self.entity != target) and not target.exists() \
-                or not self.entity.samefile(target):
+        realtarget = self.target_file + ".{}-{}".format(self.layer.NAMESPACE, self.layer.name)
+        realtarget.dirname().makedirs_p()
+        if (self.entity != realtarget) and not realtarget.exists() \
+                or not self.entity.samefile(realtarget):
             data = self.read()
             if data:
-                target.write_bytes(data)
-                self.entity.copymode(target)
+                realtarget.write_bytes(data)
+                self.entity.copymode(realtarget)
             else:
-                self.entity.copy2(target)
+                self.entity.copy2(realtarget)
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        realtarget = self.target_file + ".{}-{}".format(self.layer.NAMESPACE, self.layer.name)
+        relpath = realtarget.relpath(self.target.directory)
+        sig = {}
+        if realtarget.exists() and realtarget.isfile():
+            sig[relpath] = (self.layer.url,
+                            self.kind,
+                            utils.sign(realtarget))
+        return sig
 
 
 def load_tactic(dpath, basedir):
