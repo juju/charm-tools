@@ -28,9 +28,26 @@ Tests can be run my make or as a script (which allows for command-line options
 to be passed).
 
 ```bash
+# Run tests using make
 make test
+# Run tests as a script
 bin/test
 ```
+
+You can out the code on your machine by building the project and going into the
+virtualenv that tox made.
+
+```bash
+# Build the project
+make build
+# Activate the virtualenv tox made
+source .tox/py27/bin/activate
+```
+
+Now you're inside the virtualenv. You should see `(py27)` in front of your bash
+prompt. If you run `charm-build` inside the virtualenv, you'll be running the
+charmtools from your development directory instead of the one installed on your
+system.
 
 # Filing Bugs
 
