@@ -832,36 +832,58 @@ class WheelhouseTactic(ExactMatch, Tactic):
 
 
 class CopyrightTactic(Tactic):
+    def __init__(self, *args, **kwargs):
+        super(CopyrightTactic, self).__init__(*args, **kwargs)
+        self.previous = []
+        self.toplevel = True
+        self.relpath_target = self.relpath
+
+    def combine(self, existing):
+        self.previous = existing.previous + [existing]
+        existing.previous = []
+        existing.toplevel = False
+        existing.relpath_target += ".{}-{}".format(
+            existing.layer.NAMESPACE,
+            existing.layer.name)
+        return self
+
+    @property
+    def target_file(self):
+        target = self.target.directory / self.relpath_target
+        return target
+
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
-        if layer.name == target.name:
-            return False
         relpath = entity.relpath(layer.directory)
         return relpath == "copyright"
 
     def __call__(self):
-        realtarget = self.target_file + ".{}-{}".format(self.layer.NAMESPACE, self.layer.name)
-        realtarget.dirname().makedirs_p()
-        if (self.entity != realtarget) and not realtarget.exists() \
-                or not self.entity.samefile(realtarget):
+        # Process the `copyright` file for all levels below us.
+        for tactic in self.previous:
+            tactic()
+        self.target_file.dirname().makedirs_p()
+        # Only copy file if it changed
+        if not self.target_file.exists()\
+                or not self.entity.samefile(self.target_file):
             data = self.read()
             if data:
-                realtarget.write_bytes(data)
-                self.entity.copymode(realtarget)
+                self.target_file.write_bytes(data)
+                self.entity.copymode(self.target_file)
             else:
-                self.entity.copy2(realtarget)
+                self.entity.copy2(self.target_file)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
         """
-        realtarget = self.target_file + ".{}-{}".format(self.layer.NAMESPACE, self.layer.name)
-        relpath = realtarget.relpath(self.target.directory)
-        sig = {}
-        if realtarget.exists() and realtarget.isfile():
-            sig[relpath] = (self.layer.url,
-                            self.kind,
-                            utils.sign(realtarget))
-        return sig
+        sigs = {}
+        # sign the `copyright` file for all levels below us.
+        for tactic in self.previous:
+            sigs.update(tactic.sign())
+        relpath = self.target_file.relpath(self.target.directory)
+        sigs[relpath] = (self.layer.url,
+                         self.kind,
+                         utils.sign(self.target_file))
+        return sigs
 
 
 def load_tactic(dpath, basedir):
