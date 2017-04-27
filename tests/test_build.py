@@ -62,6 +62,13 @@ class TestBuild(unittest.TestCase):
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
 
+        # Confirm that copyright file of lower layers gets renamed
+        # and copyright file of top layer doesn't get renamed
+        tester_copyright = (base / "copyright").text()
+        mysql_copyright_path = base / "copyright.layer-mysql"
+        self.assertIn("Copyright of tester", tester_copyright)
+        self.assertTrue(mysql_copyright_path.isfile())
+
         # Verify ignore rules applied
         self.assertFalse((base / ".bzr").exists())
         self.assertEqual((base / "ignore").text(), "mysql\n")
