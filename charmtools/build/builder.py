@@ -131,6 +131,7 @@ class Builder(object):
         self._name = None
         self._charm = None
         self._top_layer = None
+        self._deps = None
         self.hide_metrics = False
 
     @property
@@ -149,9 +150,19 @@ class Builder(object):
         self._charm = path(value)
 
     @property
+    def deps(self):
+        if not self._deps:
+            self._deps = (path(self.output_dir) / "deps")
+        return self._deps
+
+    @deps.setter
+    def deps(self, value):
+        self._deps = value
+
+    @property
     def charm_metadata(self):
         if not hasattr(self, '_charm_metadata'):
-            md = path(self.charm) / "metadata.yaml"
+            md = self.top_layer / "metadata.yaml"
             try:
                 setattr(
                     self, '_charm_metadata',
@@ -209,9 +220,6 @@ class Builder(object):
         # Generated output will go into this directory
         base = path(self.output_dir)
         self.repo = (base / (self.series if self.series else 'builds'))
-        # And anything it includes from will be placed here
-        # outside the series
-        self.deps = (base / "deps")
         self.target_dir = (self.repo / self.name)
 
     def find_or_create_repo(self, allow_create=True):
