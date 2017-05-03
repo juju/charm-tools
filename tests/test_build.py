@@ -221,6 +221,9 @@ class TestBuild(unittest.TestCase):
             self.assertTrue(init.exists())
 
     def test_multiseries_output_dir(self):
+        """ Check if the output dir of a multiseries charm is
+        `$JUJU_REPOSTIORY/builds/...` even when you specify the top level layer
+        by its name instead of by a path to the layer."""
         os.environ["JUJU_REPOSITORY"] = "out"
         try:
             os.mkdir("out")
