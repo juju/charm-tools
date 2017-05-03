@@ -220,6 +220,25 @@ class TestBuild(unittest.TestCase):
             init = base / "hooks/relations/mysql/__init__.py"
             self.assertTrue(init.exists())
 
+    def test_multiseries_output_dir(self):
+        os.environ["JUJU_REPOSITORY"] = "out"
+        try:
+            os.mkdir("out")
+        except OSError:
+            pass
+        bu = build.Builder()
+        bu.charm = "multiseries-layer"
+        bu.hide_metrics = True
+        bu.report = False
+        # Simulate commandline call without specified output dir and series
+        bu.output_dir = None
+        bu.series = None
+        bu.normalize_outputdir()
+        bu.check_series()
+        bu()
+        base = path("out") / "builds" / 'multiseries-layer'
+        self.assertTrue(base.exists())
+
     @responses.activate
     def test_remote_interface(self):
         # XXX: this test does pull the git repo in the response
