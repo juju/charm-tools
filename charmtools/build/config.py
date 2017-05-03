@@ -51,7 +51,7 @@ class BuildConfig(chainstuf):
             raise OSError("Missing Config File {}".format(config_file))
         try:
             if config_file.exists() and config_file.text().strip() != "":
-                data = yaml.load(config_file.open())
+                data = yaml.safe_load(config_file.open())
                 self.configured = True
         except yaml.parser.ParserError:
             logging.critical("Malformed Config file: {}".format(config_file))
