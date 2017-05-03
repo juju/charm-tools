@@ -155,7 +155,7 @@ class Builder(object):
             try:
                 setattr(
                     self, '_charm_metadata',
-                    yaml.load(md.open()) if md.exists() else None)
+                    yaml.safe_load(md.open()) if md.exists() else None)
             except yaml.YAMLError as e:
                 log.debug(e)
                 raise BuildError("Failed to process {0}. "

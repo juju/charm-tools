@@ -44,7 +44,7 @@ def inspect(charm, force_styling=False):
     if not manp.exists() or not comp.exists():
         return
     manifest = json.loads(manp.text())
-    composer = yaml.load(comp.open())
+    composer = yaml.safe_load(comp.open())
     a, c, d = utils.delta_signatures(manp)
 
     # ordered list of layers used for legend
