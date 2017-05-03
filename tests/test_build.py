@@ -1,15 +1,17 @@
-from charmtools import build
-from charmtools.build.errors import BuildError
-from charmtools import utils
-from path import Path as path
-from ruamel import yaml
+#!/usr/bin/env python2
+import os
 import json
 import logging
+import unittest
+
+from charmtools import build
+from charmtools import utils
+from charmtools.build.errors import BuildError
+from path import Path as path
+from ruamel import yaml
 import mock
-import os
 import pkg_resources
 import responses
-import unittest
 
 
 class TestBuild(unittest.TestCase):
@@ -110,10 +112,10 @@ class TestBuild(unittest.TestCase):
         cyaml = base / "layer.yaml"
         self.assertTrue(cyaml.exists())
         cyaml_data = yaml.load(cyaml.open())
-        self.assertEquals(cyaml_data['includes'], ['trusty/test-base',
-                                                   'trusty/mysql'])
-        self.assertEquals(cyaml_data['is'], 'foo')
-        self.assertEquals(cyaml_data['options']['mysql']['qux'], 'one')
+        self.assertEqual(
+            cyaml_data['includes'], ['trusty/test-base', 'trusty/mysql'])
+        self.assertEqual(cyaml_data['is'], 'foo')
+        self.assertEqual(cyaml_data['options']['mysql']['qux'], 'one')
 
         self.assertTrue((base / "hooks/config-changed").exists())
 
@@ -131,13 +133,13 @@ class TestBuild(unittest.TestCase):
         sigs = base / ".build.manifest"
         self.assertTrue(sigs.exists())
         data = json.load(sigs.open())
-        self.assertEquals(data['signatures']["README.md"], [
+        self.assertEqual(data['signatures']["README.md"], [
             u'foo',
             "static",
             u'cfac20374288c097975e9f25a0d7c81783acdbc81'
             '24302ff4a731a4aea10de99'])
 
-        self.assertEquals(data["signatures"]['metadata.yaml'], [
+        self.assertEqual(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
             u'03fc06a5e698e624231b826f4c47a60d3251cbc968fc1183ada444ca09b29ea6'
@@ -194,15 +196,15 @@ class TestBuild(unittest.TestCase):
             # Check that the generated layer.yaml makes sense
             cy = base / "layer.yaml"
             config = yaml.load(cy.open())
-            self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-            self.assertEquals(config["is"], "foo")
+            self.assertEqual(config["includes"], ["trusty/a", "interface:mysql"])
+            self.assertEqual(config["is"], "foo")
 
             # We can even run it more than once
             bu()
             cy = base / "layer.yaml"
             config = yaml.load(cy.open())
-            self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-            self.assertEquals(config["is"], "foo")
+            self.assertEqual(config["includes"], ["trusty/a", "interface:mysql"])
+            self.assertEqual(config["is"], "foo")
 
             # We included an interface, we should be able to assert things about it
             # in its final form as well
@@ -213,8 +215,9 @@ class TestBuild(unittest.TestCase):
 
             # and that we generated the hooks themselves
             for kind in ["joined", "changed", "broken", "departed"]:
-                self.assertTrue((base / "hooks" /
-                                "mysql-relation-{}".format(kind)).exists())
+                self.assertTrue(
+                    (base / "hooks" /
+                     "mysql-relation-{}".format(kind)).exists())
 
             # and ensure we have an init file (the interface doesn't its added)
             init = base / "hooks/relations/mysql/__init__.py"
