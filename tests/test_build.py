@@ -239,8 +239,6 @@ class TestBuild(unittest.TestCase):
         # Simulate commandline call without specified output dir and series
         bu.output_dir = None
         bu.series = None
-        bu.normalize_outputdir()
-        bu.check_series()
         bu()
         base = path("out") / "builds" / 'multiseries-layer'
         self.assertTrue(base.exists())
