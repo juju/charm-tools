@@ -648,8 +648,15 @@ def main(args=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
-    parser.add_argument('-o', '--output-dir', type=path)
-    parser.add_argument('-s', '--series', default=None)
+    parser.add_argument(
+        '-o', '--output-dir', type=path,
+        help='Output directory for build. Defaults to $JUJU_REPOSITORY. The '
+        'resulting charm will be put in <output_dir>/builds/<charmname> or '
+        '<output_dir/<series>/<charmname> when series is specified.')
+    parser.add_argument(
+        '-s', '--series', default=None,
+        help='Build for specific series. Resulting charm will be put in '
+        '<output-dir>/<series>/<name>.')
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
