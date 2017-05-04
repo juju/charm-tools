@@ -160,15 +160,13 @@ class Builder(object):
         in <output_dir>/builds/<charmname> when no series is specified or
         <output_dir/<series>/<charmname> when series is specified."""
         if not self._output_dir:
-            self._output_dir = path(os.environ.get('JUJU_REPOSITORY'))
+            self._output_dir = path(os.environ.get('JUJU_REPOSITORY', self.charm)).abspath()
         return self._output_dir
 
     @output_dir.setter
     def output_dir(self, value):
         if value:
             self._output_dir = path(value)
-        else:
-            self._output_dir = path(os.environ.get('JUJU_REPOSITORY'))
 
     @property
     def deps(self):
