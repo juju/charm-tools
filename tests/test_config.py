@@ -1,4 +1,5 @@
 import logging
+import os
 import unittest
 
 from charmtools.build.config import BuildConfig
@@ -22,6 +23,12 @@ class TestConfig(unittest.TestCase):
         c = c.new_child()
         c._tactics = ['d', 'c']
         self.assertEqual(c.tactics[:5], ['d', 'c', 'a', 'b', 'c'])
+
+    def test_utf8(self):
+        """ Test that utf8 characters in the layer config work."""
+        del os.environ['LANG']
+        c = BuildConfig()
+        c.configure("tests/trusty/utf8-layer/interface.yaml")
 
 
 if __name__ == '__main__':
