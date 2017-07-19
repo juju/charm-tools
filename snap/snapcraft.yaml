@@ -6,7 +6,7 @@ confinement: classic
 grade: stable
 apps:
   charm:
-    command: env PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates UNIXCONFDIR=$SNAP/etc PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
+    command: env VIRTUAL_ENV="" PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates UNIXCONFDIR=$SNAP/etc PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
 parts:
   charm:
     source: https://github.com/juju/charmstore-client.git
