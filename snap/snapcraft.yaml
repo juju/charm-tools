@@ -7,7 +7,6 @@ grade: stable
 apps:
   charm:
     command: env PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates UNIXCONFDIR=$SNAP/etc PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
-#   plugs: [network, network-bind, home]
 parts:
   charm:
     source: https://github.com/juju/charmstore-client.git
@@ -15,8 +14,6 @@ parts:
     source-type: git
     plugin: godeps
     go-importpath: github.com/juju/charmstore-client
-    build-packages:
-      - bzr
   charm-terms:
     source: https://github.com/juju/terms-client.git
     source-tag: v1.0.1
@@ -24,53 +21,18 @@ parts:
     plugin: godeps
     go-importpath: github.com/juju/terms-client
   charm-tools:
-    source: https://github.com/juju/charm-tools.git
-    source-tag: v2.2.1
+    source: . 
     plugin: python
     python-version: python2
+    requirements: requirements.txt
     build-packages:
-      - build-essential
-    python-packages:
-      - simplejson
-      - launchpadlib
-      - bz2file
-      - bzr
-      - Mercurial
+      - python-pip
     stage-packages:
       - dpkg
       - libapt-inst2.0
       - libapt-pkg5.0
-  python-apt:
-    source: lp:python-apt
-    source-commit: "981"
-    plugin: python
-    python-version: python2
-    build-packages:
-      - libapt-pkg-dev
-    stage-packages:
-      - libapt-inst2.0
-      - libapt-pkg5.0
-    stage:
-      - -lib/python2.7/site-packages/pip-9.0.1.dist-info/RECORD
-      - -lib/python2.7/site-packages/setuptools-34.1.0.dist-info/RECORD
-      - -lib/python2.7/site-packages/wheel-0.29.0.dist-info/RECORD
-  git:
-    source: https://github.com/git/git
-    source-type: git
-    source-depth: 1
-    plugin: autotools
-    configflags:
-      - --with-curl
-      - --with-expat
-    build-packages:
-      - gettext
-      - libssl-dev
-      - libcurl4-openssl-dev
-      - libexpat1-dev
-    stage-packages:
-      - libcurl3
-    after:
-      - charm
+      - git-core
+      - python-apt
   charm-version:
     source: snap/workarounds/
     plugin: dump
