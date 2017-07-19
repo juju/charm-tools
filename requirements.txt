@@ -1,6 +1,6 @@
 PyYAML==3.11
 blessings==1.6
-bzr>=2.6.0
+bzr==2.7.0
 libcharmstore>=0.0.3
 cheetah==2.4.4
 colander==1.0b1

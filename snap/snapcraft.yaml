@@ -1,0 +1,40 @@
+name: charm
+version: 2.2
+summary: charm and charm-tools
+description: charmstore-client and charm-tools
+confinement: classic
+grade: stable
+apps:
+  charm:
+    command: env PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates UNIXCONFDIR=$SNAP/etc PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
+parts:
+  charm:
+    source: https://github.com/juju/charmstore-client.git
+    source-tag: 2.2.2
+    source-type: git
+    plugin: godeps
+    go-importpath: github.com/juju/charmstore-client
+  charm-terms:
+    source: https://github.com/juju/terms-client.git
+    source-tag: v1.0.1
+    source-type: git
+    plugin: godeps
+    go-importpath: github.com/juju/terms-client
+  charm-tools:
+    source: . 
+    plugin: python
+    python-version: python2
+    requirements: requirements.txt
+    build-packages:
+      - python-pip
+    stage-packages:
+      - dpkg
+      - libapt-inst2.0
+      - libapt-pkg5.0
+      - git-core
+      - python-apt
+  charm-version:
+    source: snap/workarounds/
+    plugin: dump
+    stage:
+      - charmstore-client-version
