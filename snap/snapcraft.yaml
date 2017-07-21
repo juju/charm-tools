@@ -30,6 +30,8 @@ parts:
     plugin: python
     python-version: python2
     requirements: requirements.txt
+    build-packages:
+      - bzr
     stage-packages:
       - git-core
       - python3
