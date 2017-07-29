@@ -11,18 +11,15 @@ https://jujucharms.com/
 
 ### Get Juju
 
-First, you'll need Juju. If its not available in your version of Ubuntu
-you can use the PPA:
+First, you'll need Juju:
 
-    sudo add-apt-repository ppa:juju/stable
-    sudo apt-get update
-    sudo apt-get install juju-core
+    sudo snap install juju --classic
 
 ### Get Charm Tools
 
-Most people will want to install charm-tools from the Juju PPA.
+Most people will want to install charm-tools from the snap store.
 
-    sudo apt-get install charm-tools
+    sudo snap install charm
 
 Alternatively you can download the project and run the tip of the code.
 
