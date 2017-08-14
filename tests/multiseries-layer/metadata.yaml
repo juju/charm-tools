@@ -1,0 +1,8 @@
+name: multiseries-layer
+summary: a multiseries layer
+maintainer: Tester <test@er.com>
+description: |
+  multiseries layer
+series:
+  - xenial
+  - trusty

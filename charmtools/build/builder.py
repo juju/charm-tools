@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import argparse
-import blessings
+import os
+import sys
 import json
 import logging
-import os
-import requests
-import sys
+import argparse
+from collections import OrderedDict
+
 import yaml
+import requests
+import blessings
+from path import Path as path
 
 import charmtools.build.tactics
-
-from path import Path as path
-from collections import OrderedDict
 from charmtools import (utils, repofinder, proof)
 from charmtools.build import inspector
 from charmtools.build.errors import BuildError
@@ -130,8 +130,14 @@ class Builder(object):
         self.force = False
         self._name = None
         self._charm = None
+        self._charm_metadata = None
+
         self._top_layer = None
+        self._deps = None
+        self._output_dir = None
+
         self.hide_metrics = False
+        self.series = None
 
     @property
     def top_layer(self):
@@ -149,9 +155,35 @@ class Builder(object):
         self._charm = path(value)
 
     @property
+    def output_dir(self):
+        """ The directory to use for the build. The resulting charm will be put
+        in <output_dir>/builds/<charmname> when no series is specified or
+        <output_dir/<series>/<charmname> when series is specified."""
+        if not self._output_dir:
+            self._output_dir = path(os.environ.get('JUJU_REPOSITORY', self.charm)).abspath()
+        return self._output_dir
+
+    @output_dir.setter
+    def output_dir(self, value):
+        if value:
+            self._output_dir = path(value)
+
+    @property
+    def deps(self):
+        """ The directory where the dependencies of the build will be installed
+        """
+        if not self._deps:
+            self._deps = (path(self.output_dir) / "deps")
+        return self._deps
+
+    @deps.setter
+    def deps(self, value):
+        self._deps = value
+
+    @property
     def charm_metadata(self):
         if not hasattr(self, '_charm_metadata'):
-            md = path(self.charm) / "metadata.yaml"
+            md = self.top_layer / "metadata.yaml"
             try:
                 setattr(
                     self, '_charm_metadata',
@@ -187,17 +219,6 @@ class Builder(object):
     def manifest(self):
         return self.target_dir / '.build.manifest'
 
-    def check_series(self):
-        """Make sure this is a either a multi-series charm, or we have a
-        build series defined. If not, fall back to a default series.
-
-        """
-        if self.series:
-            return
-        if self.charm_metadata and self.charm_metadata.get('series'):
-            return
-        self.series = self.DEFAULT_SERIES
-
     def status(self):
         result = {}
         result.update(vars(self))
@@ -209,9 +230,6 @@ class Builder(object):
         # Generated output will go into this directory
         base = path(self.output_dir)
         self.repo = (base / (self.series if self.series else 'builds'))
-        # And anything it includes from will be placed here
-        # outside the series
-        self.deps = (base / "deps")
         self.target_dir = (self.repo / self.name)
 
     def find_or_create_repo(self, allow_create=True):
@@ -337,7 +355,7 @@ class Builder(object):
         if not layers.get('interfaces'):
             return
         metadata_tactic = [tactic for tactic in plan if isinstance(
-                           tactic, charmtools.build.tactics.MetadataYAML)]
+            tactic, charmtools.build.tactics.MetadataYAML)]
         if not metadata_tactic:
             raise BuildError('At least one layer must provide '
                              'metadata.yaml')
@@ -389,7 +407,7 @@ class Builder(object):
         # Storage hooks don't directly map to output files
         # as they are computed in combination with the metadata.yaml
         metadata_tactic = [tactic for tactic in plan if isinstance(
-                           tactic, charmtools.build.tactics.MetadataYAML)]
+            tactic, charmtools.build.tactics.MetadataYAML)]
         if not metadata_tactic:
             raise BuildError('At least one layer must provide metadata.yaml')
         meta_tac = metadata_tactic[0]
@@ -525,18 +543,6 @@ class Builder(object):
         self.charm = path(self.charm).abspath()
         inspector.inspect(self.charm, force_styling=self.force_raw)
 
-    def normalize_outputdir(self):
-        od = path(self.charm).abspath()
-        repo = os.environ.get('JUJU_REPOSITORY')
-        if repo:
-            repo = path(repo)
-            if repo.exists():
-                od = repo
-        elif ":" in od:
-            od = od.basename
-        log.info("Composing into {}".format(od))
-        self.output_dir = od
-
     def clean_removed(self, signatures):
         """
         Clean up any files that were accounted for in the previous build
@@ -640,8 +646,15 @@ def main(args=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
-    parser.add_argument('-o', '--output-dir', type=path)
-    parser.add_argument('-s', '--series', default=None)
+    parser.add_argument(
+        '-o', '--output-dir', type=path,
+        help='Output directory for build. Defaults to $JUJU_REPOSITORY. The '
+        'resulting charm will be put in <output_dir>/builds/<charmname> or '
+        '<output_dir/<series>/<charmname> when series is specified.')
+    parser.add_argument(
+        '-s', '--series', default=None,
+        help='Build for specific series. Resulting charm will be put in '
+        '<output-dir>/<series>/<name>.')
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
@@ -671,11 +684,7 @@ def main(args=None):
     configLogging(build)
 
     try:
-        if not build.output_dir:
-            build.normalize_outputdir()
-        if not build.series:
-            build.check_series()
-
+        log.info("Composing into {}".format(build.output_dir))
         build()
 
         lint, exit_code = proof.proof(build.target_dir, False, False)
