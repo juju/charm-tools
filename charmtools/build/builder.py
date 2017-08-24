@@ -17,7 +17,7 @@ from charmtools import (utils, repofinder, proof)
 from charmtools.build import inspector
 from charmtools.build.errors import BuildError
 from charmtools.build.config import BuildConfig
-from charmtools.build.tactics import Tactic
+from charmtools.build.tactics import Tactic, WheelhouseTactic
 from charmtools.build.fetchers import (
     InterfaceFetcher,
     LayerFetcher,
@@ -132,6 +132,7 @@ class Builder(object):
         self._charm = None
         self._top_layer = None
         self.hide_metrics = False
+        self.wheelhouse_overrides = None
 
     @property
     def top_layer(self):
@@ -328,6 +329,16 @@ class Builder(object):
                                        layer=layer,
                                        next_config=next_config,
                                        output_files=output_files))
+        if self.wheelhouse_overrides:
+            existing_tactic = output_files.get('wheelhouse.txt')
+            output_files['wheelhouse.txt'] = WheelhouseTactic(
+                self.wheelhouse_overrides,
+                self.target,
+                layers["layers"][-1],
+                next_config,
+            )
+            if existing_tactic is not None:
+                output_files['wheelhouse.txt'].combine(existing_tactic)
         plan = [t for t in output_files.values() if t]
         return plan
 
@@ -654,6 +665,11 @@ def main(args=None):
                         help="Build a charm of 'name' from 'charm'")
     parser.add_argument('-r', '--report', action="store_true",
                         help="Show post-build report of changes")
+    parser.add_argument('-w', '--wheelhouse-overrides', type=path,
+                        help="Provide a wheelhouse.txt file with overrides "
+                             "for the built wheelhouse")
+    parser.add_argument('-v', '--verbose', action='store_true', default=False,
+                        help="Increase output (same as -l DEBUG)")
     parser.add_argument('charm', nargs="?", default=".", type=path)
     utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
@@ -661,6 +677,9 @@ def main(args=None):
     if build.charm == "help":
         parser.print_help()
         raise SystemExit(0)
+
+    if build.verbose:
+        build.log_level = logging.DEBUG
 
     # Monkey patch in the domain for the interface webservice
     InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
