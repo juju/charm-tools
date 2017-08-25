@@ -332,7 +332,7 @@ class Builder(object):
         if self.wheelhouse_overrides:
             existing_tactic = output_files.get('wheelhouse.txt')
             output_files['wheelhouse.txt'] = WheelhouseTactic(
-                self.wheelhouse_overrides,
+                str(self.wheelhouse_overrides),
                 self.target,
                 layers["layers"][-1],
                 next_config,

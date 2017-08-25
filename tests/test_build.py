@@ -328,17 +328,23 @@ class TestBuild(unittest.TestCase):
         bu.charm = "trusty/whlayer"
         bu.hide_metrics = True
         bu.report = False
+        bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
         with mock.patch("path.Path.mkdir_p"):
             with mock.patch("path.Path.files"):
                 bu()
-                Process.assert_called_with((
+                Process.assert_any_call((
                     'bash', '-c', '. /tmp/bin/activate ;'
                     ' pip3 download --no-binary :all: '
                     '-d /tmp -r ' +
                     self.dirname / 'trusty/whlayer/wheelhouse.txt'))
+                Process.assert_any_call((
+                    'bash', '-c', '. /tmp/bin/activate ;'
+                    ' pip3 download --no-binary :all: '
+                    '-d /tmp -r ' +
+                    self.dirname / 'wh-over.txt'))
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',
