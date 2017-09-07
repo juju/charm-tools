@@ -224,16 +224,14 @@ class TestBuild(unittest.TestCase):
     def test_remote_interface(self):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "http://interfaces.juju.solutions/api/v1/interface/pgsql/",
+                      "https://raw.githubusercontent.com/juju/layer-index/"
+                      "master/interfaces/pgsql.json",
                       body='''{
                       "id": "pgsql",
                       "name": "pgsql4",
                       "repo":
                       "https://github.com/bcsaller/juju-relation-pgsql.git",
-                      "_id": {
-                          "$oid": "55a471959c1d246feae487e5"
-                      },
-                      "version": 1
+                      "summary": "Postgres interface"
                       }''',
                       content_type="application/json")
         bu = build.Builder()
@@ -262,16 +260,14 @@ class TestBuild(unittest.TestCase):
     def test_remote_layer(self, mcall):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "http://interfaces.juju.solutions/api/v1/layer/basic/",
+                      "https://raw.githubusercontent.com/juju/layer-index/"
+                      "master/layers/basic.json",
                       body='''{
                       "id": "basic",
                       "name": "basic",
                       "repo":
                       "https://git.launchpad.net/~bcsaller/charms/+source/basic",
-                      "_id": {
-                          "$oid": "55a471959c1d246feae487e5"
-                      },
-                      "version": 1
+                      "summary": "Base layer for all charms"
                       }''',
                       content_type="application/json")
         bu = build.Builder()

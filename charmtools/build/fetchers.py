@@ -27,12 +27,12 @@ fetchers.FETCHERS.insert(0, RepoFetcher)
 
 
 class InterfaceFetcher(fetchers.LocalFetcher):
-    # XXX: When hosted somewhere, fix this
-    INTERFACE_DOMAIN = "http://interfaces.juju.solutions"
+    INTERFACE_DOMAIN = "https://raw.githubusercontent.com/" \
+            "juju/layer-index/master/"
     NAMESPACE = "interface"
     ENVIRON = "INTERFACE_PATH"
     OPTIONAL_PREFIX = "juju-relation-"
-    ENDPOINT = "/api/v1/interface"
+    ENDPOINT = "interfaces"
     NO_LOCAL_LAYERS = False
 
     @classmethod
@@ -58,8 +58,9 @@ class InterfaceFetcher(fetchers.LocalFetcher):
             if name.startswith(cls.OPTIONAL_PREFIX):
                 choices.append(name[len(cls.OPTIONAL_PREFIX):])
             for choice in choices:
-                uri = "%s%s/%s/" % (
+                uri = "%s%s/%s.json" % (
                     cls.INTERFACE_DOMAIN, cls.ENDPOINT, choice)
+                print(uri)
                 try:
                     result = requests.get(uri)
                 except:
@@ -112,10 +113,11 @@ fetchers.FETCHERS.insert(0, InterfaceFetcher)
 
 
 class LayerFetcher(InterfaceFetcher):
-    INTERFACE_DOMAIN = "http://interfaces.juju.solutions"
+    INTERFACE_DOMAIN = "https://raw.githubusercontent.com/" \
+            "juju/layer-index/master/"
     NAMESPACE = "layer"
     ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"
-    ENDPOINT = "/api/v1/layer"
+    ENDPOINT = "layers"
 
 fetchers.FETCHERS.insert(0, LayerFetcher)

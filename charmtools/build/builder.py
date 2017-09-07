@@ -656,7 +656,8 @@ def main(args=None):
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
-                        default="http://interfaces.juju.solutions")
+                        default="https://raw.githubusercontent.com/"
+                                "juju/layer-index/master/")
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
