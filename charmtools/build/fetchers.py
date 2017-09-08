@@ -27,8 +27,7 @@ fetchers.FETCHERS.insert(0, RepoFetcher)
 
 
 class InterfaceFetcher(fetchers.LocalFetcher):
-    INTERFACE_DOMAIN = "https://raw.githubusercontent.com/" \
-            "juju/layer-index/master/"
+    INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
     NAMESPACE = "interface"
     ENVIRON = "INTERFACE_PATH"
     OPTIONAL_PREFIX = "juju-relation-"
@@ -113,8 +112,7 @@ fetchers.FETCHERS.insert(0, InterfaceFetcher)
 
 
 class LayerFetcher(InterfaceFetcher):
-    INTERFACE_DOMAIN = "https://raw.githubusercontent.com/" \
-            "juju/layer-index/master/"
+    INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
     NAMESPACE = "layer"
     ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"

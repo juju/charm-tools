@@ -224,8 +224,8 @@ class TestBuild(unittest.TestCase):
     def test_remote_interface(self):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "https://raw.githubusercontent.com/juju/layer-index/"
-                      "master/interfaces/pgsql.json",
+                      "https://juju.github.io/layer-index/"
+                      "interfaces/pgsql.json",
                       body='''{
                       "id": "pgsql",
                       "name": "pgsql4",
@@ -260,8 +260,8 @@ class TestBuild(unittest.TestCase):
     def test_remote_layer(self, mcall):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "https://raw.githubusercontent.com/juju/layer-index/"
-                      "master/layers/basic.json",
+                      "https://juju.github.io/layer-index/"
+                      "layers/basic.json",
                       body='''{
                       "id": "basic",
                       "name": "basic",
