@@ -383,7 +383,9 @@ class Builder(object):
                 if interface_name != iface.name:
                     continue
 
-                log.info("Processing interface: %s", interface_name)
+                log.info("Processing interface: %s%s", interface_name,
+                         "" if 'deps' in iface.directory.splitall()
+                         else " (from %s)" % iface.directory.relpath())
                 # COPY phase
                 plan.append(
                     charmtools.build.tactics.InterfaceCopy(
