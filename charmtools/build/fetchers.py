@@ -1,4 +1,5 @@
 import os
+import logging
 
 import requests
 from charmtools import fetchers
@@ -8,6 +9,9 @@ from charmtools.fetchers import (git,  # noqa
                                  FetchError)
 
 from path import Path as path
+
+
+log = logging.getLogger(__name__)
 
 
 class RepoFetcher(fetchers.LocalFetcher):
@@ -59,7 +63,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
             for choice in choices:
                 uri = "%s%s/%s.json" % (
                     cls.INTERFACE_DOMAIN, cls.ENDPOINT, choice)
-                print(uri)
+                log.debug('Checking layer index: {}'.format(uri))
                 try:
                     result = requests.get(uri)
                 except:
@@ -67,6 +71,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                 if result and result.ok:
                     result = result.json()
                     if result.get("repo"):
+                        log.debug('Found repo: {}'.format(result['repo']))
                         return result
             return {}
 
