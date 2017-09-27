@@ -547,8 +547,29 @@ class Builder(object):
                 od = repo
         elif ":" in od:
             od = od.basename
-        log.info("Composing into {}".format(od))
         self.output_dir = od
+
+    def _check_path(self, path_to_check):
+        home_dir = os.path.expanduser('~')
+        if home_dir == '~':
+            raise BuildError('Could not determine home directory')
+        return os.path.abspath(path_to_check).startswith(home_dir)
+
+    def check_paths(self):
+        paths_to_check = [
+            self.output_dir,
+            self.wheelhouse_overrides,
+            os.environ.get('JUJU_REPOSITORY'),
+            os.environ.get('LAYER_PATH'),
+            os.environ.get('INTERACE_PATH'),
+        ]
+        for path_to_check in paths_to_check:
+            if path_to_check and not self._check_path(path_to_check):
+                raise BuildError('Due to snap confinement, all paths must be '
+                                 'under your home directory, including the '
+                                 'build output dir, JUJU_REPOSITORY, '
+                                 'LAYER_PATH, INTERFACE_PATH, and any '
+                                 'wheelhouse overrides')
 
     def clean_removed(self, signatures):
         """
@@ -694,6 +715,7 @@ def main(args=None):
     try:
         if not build.output_dir:
             build.normalize_outputdir()
+        build.check_paths()
         if not build.series:
             build.check_series()
 
