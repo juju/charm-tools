@@ -57,13 +57,15 @@ class BashCreateTest(TestCase):
 
         setup_parser.return_value.parse_args.return_value = args
 
-        self.assertEqual(main(), 1)
+        with patch.dict('os.environ', {'USER': 'test'}):
+            self.assertEqual(main(), 1)
         assert mlog.error.called
         self.assertIn('home directory', str(mlog.error.call_args[0]))
 
-        with patch('os.path.expanduser') as eu:
-            eu.return_value = self.tempdir
-            self.assertEqual(main(), 0)
+        with patch.dict('os.environ', {'USER': 'test'}):
+            with patch('os.path.expanduser') as eu:
+                eu.return_value = self.tempdir
+                self.assertEqual(main(), 0)
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
@@ -84,7 +86,8 @@ class BashCreateTest(TestCase):
 
         setup_parser.return_value.parse_args.return_value = args
 
-        with patch.dict('os.environ', {'CHARM_HOME': self.tempdir}):
+        with patch.dict('os.environ', {'CHARM_HOME': self.tempdir,
+                                       'USER': 'test'}):
             with patch('os.path.expanduser') as eu:
                 eu.return_value = self.tempdir
                 self.assertEqual(main(), 0)
@@ -109,7 +112,10 @@ class BashCreateTest(TestCase):
         setup_parser.return_value.parse_args.return_value = args
         os.mkdir(join(self.tempdir, args.charmname))
 
-        self.assertEqual(1, main())
+        with patch.dict('os.environ', {'USER': 'test'}):
+            with patch('os.path.expanduser') as eu:
+                eu.return_value = self.tempdir
+                self.assertEqual(1, main())
 
 
 class ParserTest(TestCase):

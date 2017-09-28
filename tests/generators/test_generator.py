@@ -16,6 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 import tempfile
 from mock import patch, Mock
 from unittest import TestCase
@@ -39,12 +40,18 @@ class CharmGeneratorTest(TestCase):
 
         self.c = CharmGenerator(opts)
 
+    def tearDown(self):
+        shutil.rmtree(self.c.opts.charmhome, ignore_errors=True)
+
     def test_load_plugin(self):
         plugin = self.c._load_plugin()
 
         self.assertIsInstance(plugin, BashCharmTemplate)
 
-    def test_create_charm_output_path_exists(self):
+    @patch.dict(os.environ, {'USER': 'test'})
+    @patch('os.path.expanduser')
+    def test_create_charm_output_path_exists(self, eu):
+        eu.return_value = self.c.opts.charmhome
         os.mkdir(self.c._get_output_path())
         with self.assertRaises(CharmGeneratorException) as e:
             self.c.create_charm()
