@@ -57,9 +57,10 @@ class CharmGenerator(object):
         create the files and directories for the new charm.
 
         """
-        home_path = os.path.expanduser('~')
+        # have to expand ~user instead of ~ because $HOME is set to snap dir
+        home_path = os.path.expanduser('~{}'.format(os.environ['USER']))
         output_path = self._get_output_path()
-        if home_path == '~':  # expansion failed
+        if home_path.startswith('~'):  # expansion failed
             raise CharmGeneratorException('Could not determine home directory')
         if not os.path.abspath(output_path).startswith(home_path):
             raise CharmGeneratorException('Charms can only be created under '

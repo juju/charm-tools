@@ -550,8 +550,9 @@ class Builder(object):
         self.output_dir = od
 
     def _check_path(self, path_to_check):
-        home_dir = os.path.expanduser('~')
-        if home_dir == '~':
+        # have to expand ~user instead of ~ because $HOME is set to snap dir
+        home_dir = os.path.expanduser('~{}'.format(os.environ['USER']))
+        if home_dir.startswith('~'):  # expansion failed
             raise BuildError('Could not determine home directory')
         return os.path.abspath(path_to_check).startswith(home_dir)
 
