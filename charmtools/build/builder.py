@@ -610,8 +610,11 @@ class Builder(object):
 def configLogging(build):
     global log
     logging.captureWarnings(True)
+    term = os.environ.get('TERM')
+    if term and term.startswith('screen.'):
+        term = term[7:]
     clifmt = utils.ColoredFormatter(
-        blessings.Terminal(),
+        blessings.Terminal(term),
         '%(name)s: %(message)s')
     root_logger = logging.getLogger()
     clihandler = logging.StreamHandler(sys.stdout)
