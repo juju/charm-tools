@@ -1,15 +1,18 @@
+#!usr/bin/env python2
+import os
+import json
+import unittest
+import logging
+import pkg_resources
+
+
 from charmtools import build
 from charmtools.build.errors import BuildError
 from charmtools import utils
 from path import Path as path
 from ruamel import yaml
-import json
-import logging
 import mock
-import os
-import pkg_resources
 import responses
-import unittest
 
 
 class TestBuild(unittest.TestCase):
@@ -58,6 +61,13 @@ class TestBuild(unittest.TestCase):
                 'with a url from which your layer can be cloned.')
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
+
+        # Confirm that copyright file of lower layers gets renamed
+        # and copyright file of top layer doesn't get renamed
+        tester_copyright = (base / "copyright").text()
+        mysql_copyright_path = base / "copyright.layer-mysql"
+        self.assertIn("Copyright of tester", tester_copyright)
+        self.assertTrue(mysql_copyright_path.isfile())
 
         # Verify ignore rules applied
         self.assertFalse((base / ".bzr").exists())
@@ -214,7 +224,7 @@ class TestBuild(unittest.TestCase):
             # and that we generated the hooks themselves
             for kind in ["joined", "changed", "broken", "departed"]:
                 self.assertTrue((base / "hooks" /
-                                "mysql-relation-{}".format(kind)).exists())
+                                 "mysql-relation-{}".format(kind)).exists())
 
             # and ensure we have an init file (the interface doesn't its added)
             init = base / "hooks/relations/mysql/__init__.py"
