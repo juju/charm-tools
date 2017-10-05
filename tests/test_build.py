@@ -233,20 +233,17 @@ class TestBuild(unittest.TestCase):
     @responses.activate
     def test_remote_interface(self):
         # XXX: this test does pull the git repo in the response
-        responses.add(
-            responses.GET,
-            "http://interfaces.juju.solutions/api/v1/interface/pgsql/",
-            body='''{
-            "id": "pgsql",
-            "name": "pgsql4",
-            "repo":
-            "https://github.com/bcsaller/juju-relation-pgsql.git",
-            "_id": {
-              "$oid": "55a471959c1d246feae487e5"
-            },
-            "version": 1
-            }''',
-            content_type="application/json")
+        responses.add(responses.GET,
+                      "https://juju.github.io/layer-index/"
+                      "interfaces/pgsql.json",
+                      body='''{
+                      "id": "pgsql",
+                      "name": "pgsql4",
+                      "repo":
+                      "https://github.com/bcsaller/juju-relation-pgsql.git",
+                      "summary": "Postgres interface"
+                      }''',
+                      content_type="application/json")
         bu = build.Builder()
         bu.log_level = "WARNING"
         bu.output_dir = "out"
@@ -273,16 +270,14 @@ class TestBuild(unittest.TestCase):
     def test_remote_layer(self, mcall):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "http://interfaces.juju.solutions/api/v1/layer/basic/",
+                      "https://juju.github.io/layer-index/"
+                      "layers/basic.json",
                       body='''{
                       "id": "basic",
                       "name": "basic",
                       "repo":
                       "https://git.launchpad.net/~bcsaller/charms/+source/basic",
-                      "_id": {
-                          "$oid": "55a471959c1d246feae487e5"
-                      },
-                      "version": 1
+                      "summary": "Base layer for all charms"
                       }''',
                       content_type="application/json")
         bu = build.Builder()
@@ -339,17 +334,23 @@ class TestBuild(unittest.TestCase):
         bu.charm = "trusty/whlayer"
         bu.hide_metrics = True
         bu.report = False
+        bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
         with mock.patch("path.Path.mkdir_p"):
             with mock.patch("path.Path.files"):
                 bu()
-                Process.assert_called_with((
+                Process.assert_any_call((
                     'bash', '-c', '. /tmp/bin/activate ;'
                     ' pip3 download --no-binary :all: '
                     '-d /tmp -r ' +
                     self.dirname / 'trusty/whlayer/wheelhouse.txt'))
+                Process.assert_any_call((
+                    'bash', '-c', '. /tmp/bin/activate ;'
+                    ' pip3 download --no-binary :all: '
+                    '-d /tmp -r ' +
+                    self.dirname / 'wh-over.txt'))
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',

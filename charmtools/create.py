@@ -96,6 +96,7 @@ def main():
     generator = CharmGenerator(args)
     try:
         generator.create_charm()
+        return 0
     except CharmGeneratorException as e:
         log.error(e)
         return 1

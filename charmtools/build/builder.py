@@ -17,7 +17,7 @@ from charmtools import (utils, repofinder, proof)
 from charmtools.build import inspector
 from charmtools.build.errors import BuildError
 from charmtools.build.config import BuildConfig
-from charmtools.build.tactics import Tactic
+from charmtools.build.tactics import Tactic, WheelhouseTactic
 from charmtools.build.fetchers import (
     InterfaceFetcher,
     LayerFetcher,
@@ -132,6 +132,7 @@ class Builder(object):
         self._charm = None
         self._top_layer = None
         self.hide_metrics = False
+        self.wheelhouse_overrides = None
 
     @property
     def top_layer(self):
@@ -155,7 +156,7 @@ class Builder(object):
             try:
                 setattr(
                     self, '_charm_metadata',
-                    yaml.load(md.open()) if md.exists() else None)
+                    yaml.safe_load(md.open()) if md.exists() else None)
             except yaml.YAMLError as e:
                 log.debug(e)
                 raise BuildError("Failed to process {0}. "
@@ -328,6 +329,16 @@ class Builder(object):
                                        layer=layer,
                                        next_config=next_config,
                                        output_files=output_files))
+        if self.wheelhouse_overrides:
+            existing_tactic = output_files.get('wheelhouse.txt')
+            output_files['wheelhouse.txt'] = WheelhouseTactic(
+                str(self.wheelhouse_overrides),
+                self.target,
+                layers["layers"][-1],
+                next_config,
+            )
+            if existing_tactic is not None:
+                output_files['wheelhouse.txt'].combine(existing_tactic)
         plan = [t for t in output_files.values() if t]
         return plan
 
@@ -372,7 +383,9 @@ class Builder(object):
                 if interface_name != iface.name:
                     continue
 
-                log.info("Processing interface: %s", interface_name)
+                log.info("Processing interface: %s%s", interface_name,
+                         "" if 'deps' in iface.directory.splitall()
+                         else " (from %s)" % iface.directory.relpath())
                 # COPY phase
                 plan.append(
                     charmtools.build.tactics.InterfaceCopy(
@@ -534,8 +547,30 @@ class Builder(object):
                 od = repo
         elif ":" in od:
             od = od.basename
-        log.info("Composing into {}".format(od))
         self.output_dir = od
+
+    def _check_path(self, path_to_check):
+        # have to expand ~user instead of ~ because $HOME is set to snap dir
+        home_dir = os.path.expanduser('~{}'.format(os.environ['USER']))
+        if home_dir.startswith('~'):  # expansion failed
+            raise BuildError('Could not determine home directory')
+        return os.path.abspath(path_to_check).startswith(home_dir)
+
+    def check_paths(self):
+        paths_to_check = [
+            self.output_dir,
+            self.wheelhouse_overrides,
+            os.environ.get('JUJU_REPOSITORY'),
+            os.environ.get('LAYER_PATH'),
+            os.environ.get('INTERACE_PATH'),
+        ]
+        for path_to_check in paths_to_check:
+            if path_to_check and not self._check_path(path_to_check):
+                raise BuildError('Due to snap confinement, all paths must be '
+                                 'under your home directory, including the '
+                                 'build output dir, JUJU_REPOSITORY, '
+                                 'LAYER_PATH, INTERFACE_PATH, and any '
+                                 'wheelhouse overrides')
 
     def clean_removed(self, signatures):
         """
@@ -575,8 +610,11 @@ class Builder(object):
 def configLogging(build):
     global log
     logging.captureWarnings(True)
+    term = os.environ.get('TERM')
+    if term and term.startswith('screen.'):
+        term = term[7:]
     clifmt = utils.ColoredFormatter(
-        blessings.Terminal(),
+        blessings.Terminal(term),
         '%(name)s: %(message)s')
     root_logger = logging.getLogger()
     clihandler = logging.StreamHandler(sys.stdout)
@@ -645,7 +683,7 @@ def main(args=None):
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
-                        default="http://interfaces.juju.solutions")
+                        default="https://juju.github.io/layer-index/")
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
@@ -654,6 +692,11 @@ def main(args=None):
                         help="Build a charm of 'name' from 'charm'")
     parser.add_argument('-r', '--report', action="store_true",
                         help="Show post-build report of changes")
+    parser.add_argument('-w', '--wheelhouse-overrides', type=path,
+                        help="Provide a wheelhouse.txt file with overrides "
+                             "for the built wheelhouse")
+    parser.add_argument('-v', '--verbose', action='store_true', default=False,
+                        help="Increase output (same as -l DEBUG)")
     parser.add_argument('charm', nargs="?", default=".", type=path)
     utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
@@ -661,6 +704,9 @@ def main(args=None):
     if build.charm == "help":
         parser.print_help()
         raise SystemExit(0)
+
+    if build.verbose:
+        build.log_level = logging.DEBUG
 
     # Monkey patch in the domain for the interface webservice
     InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
@@ -673,6 +719,7 @@ def main(args=None):
     try:
         if not build.output_dir:
             build.normalize_outputdir()
+        build.check_paths()
         if not build.series:
             build.check_series()
 

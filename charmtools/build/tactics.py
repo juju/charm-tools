@@ -789,12 +789,15 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 wheel.move(wheelhouse)
                 self.tracked.append(dest)
 
-    def _pip(self, *args):
+    def _run_in_venv(self, *args):
         assert self._venv is not None
-        # have to use bash to call pip to activate the venv properly first
-        utils.Process(('bash', '-c', ' '.join(
-            ('.', self._venv / 'bin' / 'activate', ';', 'pip3') + args
+        # have to use bash to activate the venv properly first
+        return utils.Process(('bash', '-c', ' '.join(
+            ('.', self._venv / 'bin' / 'activate', ';') + args
         ))).exit_on_error()()
+
+    def _pip(self, *args):
+        return self._run_in_venv('pip3', *args)
 
     def __call__(self):
         create_venv = self._venv is None
@@ -802,12 +805,16 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
+            # create venv without pip and use easy_install to install newer
+            # version; use patched version if running in snap to include:
+            # https://github.com/pypa/pip/blob/master/news/4320.bugfix
             utils.Process(
-                ('virtualenv', '--python', 'python3', self._venv)
+                ('virtualenv', '--python', 'python3', '--no-pip', self._venv)
             ).exit_on_error()()
-            self._pip('install', '-U',
-                      '"pip>=9.0.0,<10.0.0"',
-                      '"wheel>=0.29.0,<1.0.0"')
+            self._run_in_venv('easy_install',
+                              'pip' if 'SNAP' not in os.environ else
+                              os.path.join(os.environ['SNAP'],
+                                           'pip-10.0.0.dev0.zip'))
         # we are the top layer; process all lower layers first
         for tactic in self.previous:
             tactic()
