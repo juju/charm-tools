@@ -1,0 +1,59 @@
+name: charm
+version: 2.2
+summary: charm and charm-tools
+description: charmstore-client and charm-tools
+confinement: strict
+grade: stable
+apps:
+  charm:
+    command: env PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates UNIXCONFDIR=$SNAP/etc PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
+    plugs:
+      - network
+      - browser-support
+      - home
+      - removable-media
+parts:
+  charm:
+    source: https://github.com/juju/charmstore-client.git
+    source-tag: 2.2.2
+    source-type: git
+    plugin: godeps
+    go-importpath: github.com/juju/charmstore-client
+    build-packages:
+      - bzr
+  charm-terms:
+    source: https://github.com/juju/terms-client.git
+    source-tag: v1.0.1
+    source-type: git
+    plugin: godeps
+    go-importpath: github.com/juju/terms-client
+    build-packages:
+      - bzr
+  charm-tools:
+    source: .
+    plugin: python
+    python-version: python2
+    requirements: requirements.txt
+    stage-packages:
+      - git-core
+      - python3
+    stage:
+      - -lib/python2.7/site-packages/virtualenv_support/pip-9.0.1-py2.py3-none-any.whl
+      - -usr/share/doc*
+      - -usr/share/lintian
+      - -usr/share/git-web
+      - -usr/share/man
+      - -usr/share/perl*
+      - -usr/share/pixmaps
+  charm-version:
+    source: snap/workarounds/
+    plugin: dump
+    stage:
+      - charmstore-client-version
+      # we have to include both .whl and .zip copies of pip because creating the
+      # venv requires a .whl but installing into a created venv requires the zip
+      - pip-10.0.0.dev0.zip
+      - lib/python2.7/site-packages/virtualenv_support/pip-10.0.0.dev0-py2.py3-none-any.whl
+    organize:
+      "pip-10.0.0.dev0-py2.py3-none-any.whl": lib/python2.7/site-packages/virtualenv_support/pip-10.0.0.dev0-py2.py3-none-any.whl
+    after: [charm-tools]

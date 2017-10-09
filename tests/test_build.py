@@ -1,15 +1,18 @@
+#!usr/bin/env python2
+import os
+import json
+import unittest
+import logging
+import pkg_resources
+
+
 from charmtools import build
 from charmtools.build.errors import BuildError
 from charmtools import utils
 from path import Path as path
 from ruamel import yaml
-import json
-import logging
 import mock
-import os
-import pkg_resources
 import responses
-import unittest
 
 
 class TestBuild(unittest.TestCase):
@@ -58,6 +61,13 @@ class TestBuild(unittest.TestCase):
                 'with a url from which your layer can be cloned.')
         base = path('out/trusty/foo')
         self.assertTrue(base.exists())
+
+        # Confirm that copyright file of lower layers gets renamed
+        # and copyright file of top layer doesn't get renamed
+        tester_copyright = (base / "copyright").text()
+        mysql_copyright_path = base / "copyright.layer-mysql"
+        self.assertIn("Copyright of tester", tester_copyright)
+        self.assertTrue(mysql_copyright_path.isfile())
 
         # Verify ignore rules applied
         self.assertFalse((base / ".bzr").exists())
@@ -214,7 +224,7 @@ class TestBuild(unittest.TestCase):
             # and that we generated the hooks themselves
             for kind in ["joined", "changed", "broken", "departed"]:
                 self.assertTrue((base / "hooks" /
-                                "mysql-relation-{}".format(kind)).exists())
+                                 "mysql-relation-{}".format(kind)).exists())
 
             # and ensure we have an init file (the interface doesn't its added)
             init = base / "hooks/relations/mysql/__init__.py"
@@ -224,16 +234,14 @@ class TestBuild(unittest.TestCase):
     def test_remote_interface(self):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "http://interfaces.juju.solutions/api/v1/interface/pgsql/",
+                      "https://juju.github.io/layer-index/"
+                      "interfaces/pgsql.json",
                       body='''{
                       "id": "pgsql",
                       "name": "pgsql4",
                       "repo":
                       "https://github.com/bcsaller/juju-relation-pgsql.git",
-                      "_id": {
-                          "$oid": "55a471959c1d246feae487e5"
-                      },
-                      "version": 1
+                      "summary": "Postgres interface"
                       }''',
                       content_type="application/json")
         bu = build.Builder()
@@ -262,16 +270,14 @@ class TestBuild(unittest.TestCase):
     def test_remote_layer(self, mcall):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
-                      "http://interfaces.juju.solutions/api/v1/layer/basic/",
+                      "https://juju.github.io/layer-index/"
+                      "layers/basic.json",
                       body='''{
                       "id": "basic",
                       "name": "basic",
                       "repo":
                       "https://git.launchpad.net/~bcsaller/charms/+source/basic",
-                      "_id": {
-                          "$oid": "55a471959c1d246feae487e5"
-                      },
-                      "version": 1
+                      "summary": "Base layer for all charms"
                       }''',
                       content_type="application/json")
         bu = build.Builder()
@@ -328,17 +334,23 @@ class TestBuild(unittest.TestCase):
         bu.charm = "trusty/whlayer"
         bu.hide_metrics = True
         bu.report = False
+        bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
         with mock.patch("path.Path.mkdir_p"):
             with mock.patch("path.Path.files"):
                 bu()
-                Process.assert_called_with((
+                Process.assert_any_call((
                     'bash', '-c', '. /tmp/bin/activate ;'
                     ' pip3 download --no-binary :all: '
                     '-d /tmp -r ' +
                     self.dirname / 'trusty/whlayer/wheelhouse.txt'))
+                Process.assert_any_call((
+                    'bash', '-c', '. /tmp/bin/activate ;'
+                    ' pip3 download --no-binary :all: '
+                    '-d /tmp -r ' +
+                    self.dirname / 'wh-over.txt'))
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',

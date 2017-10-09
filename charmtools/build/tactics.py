@@ -789,12 +789,15 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 wheel.move(wheelhouse)
                 self.tracked.append(dest)
 
-    def _pip(self, *args):
+    def _run_in_venv(self, *args):
         assert self._venv is not None
-        # have to use bash to call pip to activate the venv properly first
-        utils.Process(('bash', '-c', ' '.join(
-            ('.', self._venv / 'bin' / 'activate', ';', 'pip3') + args
+        # have to use bash to activate the venv properly first
+        return utils.Process(('bash', '-c', ' '.join(
+            ('.', self._venv / 'bin' / 'activate', ';') + args
         ))).exit_on_error()()
+
+    def _pip(self, *args):
+        return self._run_in_venv('pip3', *args)
 
     def __call__(self):
         create_venv = self._venv is None
@@ -802,12 +805,16 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
+            # create venv without pip and use easy_install to install newer
+            # version; use patched version if running in snap to include:
+            # https://github.com/pypa/pip/blob/master/news/4320.bugfix
             utils.Process(
-                ('virtualenv', '--python', 'python3', self._venv)
+                ('virtualenv', '--python', 'python3', '--no-pip', self._venv)
             ).exit_on_error()()
-            self._pip('install', '-U',
-                      '"pip>=9.0.0,<10.0.0"',
-                      '"wheel>=0.29.0,<1.0.0"')
+            self._run_in_venv('easy_install',
+                              'pip' if 'SNAP' not in os.environ else
+                              os.path.join(os.environ['SNAP'],
+                                           'pip-10.0.0.dev0.zip'))
         # we are the top layer; process all lower layers first
         for tactic in self.previous:
             tactic()
@@ -828,6 +835,61 @@ class WheelhouseTactic(ExactMatch, Tactic):
             relpath = d.relpath(self.target.directory)
             sigs[relpath] = (
                 self.layer.url, "dynamic", utils.sign(d))
+        return sigs
+
+
+class CopyrightTactic(Tactic):
+    def __init__(self, *args, **kwargs):
+        super(CopyrightTactic, self).__init__(*args, **kwargs)
+        self.previous = []
+        self.toplevel = True
+        self.relpath_target = self.relpath
+
+    def combine(self, existing):
+        self.previous = existing.previous + [existing]
+        existing.previous = []
+        existing.toplevel = False
+        existing.relpath_target += ".{}-{}".format(
+            existing.layer.NAMESPACE,
+            existing.layer.name)
+        return self
+
+    @property
+    def target_file(self):
+        target = self.target.directory / self.relpath_target
+        return target
+
+    @classmethod
+    def trigger(cls, entity, target, layer, next_config):
+        relpath = entity.relpath(layer.directory)
+        return relpath == "copyright"
+
+    def __call__(self):
+        # Process the `copyright` file for all levels below us.
+        for tactic in self.previous:
+            tactic()
+        self.target_file.dirname().makedirs_p()
+        # Only copy file if it changed
+        if not self.target_file.exists()\
+                or not self.entity.samefile(self.target_file):
+            data = self.read()
+            if data:
+                self.target_file.write_bytes(data)
+                self.entity.copymode(self.target_file)
+            else:
+                self.entity.copy2(self.target_file)
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        sigs = {}
+        # sign the `copyright` file for all levels below us.
+        for tactic in self.previous:
+            sigs.update(tactic.sign())
+        relpath = self.target_file.relpath(self.target.directory)
+        sigs[relpath] = (self.layer.url,
+                         self.kind,
+                         utils.sign(self.target_file))
         return sigs
 
 
@@ -868,6 +930,7 @@ DEFAULT_TACTICS = [
     ManifestTactic,
     WheelhouseTactic,
     InstallerTactic,
+    CopyrightTactic,
     DistYAML,
     ResourcesYAML,
     MetadataYAML,
