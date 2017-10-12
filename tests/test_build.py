@@ -21,9 +21,12 @@ class TestBuild(unittest.TestCase):
         os.environ["LAYER_PATH"] = self.dirname
         os.environ["INTERFACE_PATH"] = self.dirname / "interfaces"
         path("out").rmtree_p()
+        self.p_post = mock.patch('requests.post')
+        self.p_post.start()
 
     def tearDown(self):
         path("out").rmtree_p()
+        self.p_post.stop()
 
     def test_invalid_layer(self):
         """Test that invalid metadata.yaml files get a BuildError exception."""
