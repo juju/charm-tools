@@ -7,6 +7,7 @@ import logging
 import os
 import requests
 import sys
+import uuid
 import yaml
 
 import charmtools.build.tactics
@@ -24,6 +25,7 @@ from charmtools.build.fetchers import (
     get_fetcher,
     FetchError,
 )
+from charmtools.version import charm_tools_version
 
 log = logging.getLogger("build")
 
@@ -59,6 +61,7 @@ class Fetched(Configable):
         self.target_repo = target_repo / self.NAMESPACE
         self.directory = None
         self._name = name
+        self.fetched = False
 
     @property
     def name(self):
@@ -89,6 +92,7 @@ class Fetched(Configable):
                 if not self.target_repo.exists():
                     self.target_repo.makedirs_p()
                 self.directory = path(fetcher.fetch(self.target_repo))
+                self.fetched = True
 
         if not self.directory.exists():
             raise BuildError(
@@ -124,6 +128,8 @@ class Builder(object):
     PHASES = ['lint', 'read', 'call', 'sign', 'build']
     HOOK_TEMPLATE_FILE = path('hooks/hook.template')
     DEFAULT_SERIES = 'trusty'
+    METRICS_URL = 'http://www.google-analytics.com/collect'
+    METRICS_ID = 'UA-96529618-2'
 
     def __init__(self):
         self.config = BuildConfig()
@@ -251,6 +257,7 @@ class Builder(object):
         # Manually create a layer object for the output
         self.target = Layer(self.name, self.repo)
         self.target.directory = self.target_dir
+        self.post_metrics('charm', self.name, False)
         return self.fetch_deps(self.top_layer)
 
     def fetch_deps(self, layer):
@@ -285,6 +292,7 @@ class Builder(object):
                 if iface.name in [i.name for i in results['interfaces']]:
                     continue
                 results["interfaces"].append(iface.fetch())
+                self.post_metrics('interface', iface.name, iface.fetched)
             else:
                 base_layer = Layer(base, self.deps)
                 if base_layer.name in [i.name for i in results['layers']]:
@@ -292,6 +300,7 @@ class Builder(object):
                 base_layer.fetch()
                 self.fetch_dep(base_layer, results)
                 results["layers"].append(base_layer)
+                self.post_metrics('layer', base_layer.name, base_layer.fetched)
 
     def build_tactics(self, entry, layer, next_config, output_files):
         relname = entry.relpath(layer.directory)
@@ -428,20 +437,36 @@ class Builder(object):
         self.plan = self.plan_layers(layers, output_files)
         self.plan_interfaces(layers, output_files, self.plan)
         self.plan_storage(layers, output_files, self.plan)
-        if self.hide_metrics is not True:
-            self.post_metrics(layers)
         return self.plan
 
-    def post_metrics(self, layers):
-        url = "/".join((self.interface_service,
-                        "api/v1/metrics/"))
-        data = {"kind": "build",
-                "layers": [l.url for l in layers["layers"]],
-                "interfaces": [i.url for i in layers["interfaces"]]}
+    def post_metrics(self, kind, layer_name, fetched):
+        if self.hide_metrics:
+            return
+        conf_file = path('~/.config/charm-build.conf').expanduser()
+        if conf_file.exists():
+            conf = yaml.safe_load(conf_file.text())
+            cid = conf['cid']
+        else:
+            cid = str(uuid.uuid4())
+            conf_file.write_text(yaml.dump({'cid': cid}))
         try:
-            requests.post(url, json.dumps(data).encode('utf-8'), timeout=10)
+            requests.post(self.METRICS_URL, timeout=10, data={
+                'tid': self.METRICS_ID,
+                'v': 1,
+                'aip': 1,
+                't': 'event',
+                'ds': 'app',
+                'cid': cid,
+                'av': charm_tools_version(),
+                'an': "charm-build",
+                'ec': kind,
+                'ea': 'fetch' if fetched else 'local',
+                'el': 'name',
+                'ev': layer_name,
+                'cd1': self.series,
+            })
         except requests.exceptions.RequestException:
-            log.warning("Unable to post usage metrics")
+            pass
 
     def exec_plan(self, plan=None, layers=None):
         signatures = {}
