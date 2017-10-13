@@ -50,9 +50,7 @@ setup(
             'charm-layers = charmtools.build.builder:inspect',
             'charm-proof = charmtools.proof:main',
             'charm-pull-source = charmtools.pullsource:main',
-            'charm-test = charmtools.test:main',
             'charm-version = charmtools.version:main',
-            'juju-test = charmtools.test:main',
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',

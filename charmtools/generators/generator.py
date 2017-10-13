@@ -57,7 +57,14 @@ class CharmGenerator(object):
         create the files and directories for the new charm.
 
         """
+        # have to expand ~user instead of ~ because $HOME is set to snap dir
+        home_path = os.path.expanduser('~{}'.format(os.environ['USER']))
         output_path = self._get_output_path()
+        if home_path.startswith('~'):  # expansion failed
+            raise CharmGeneratorException('Could not determine home directory')
+        if not os.path.abspath(output_path).startswith(home_path):
+            raise CharmGeneratorException('Charms can only be created under '
+                                          'your home directory.')
         if os.path.exists(output_path):
             raise CharmGeneratorException(
                 '{} exists. Please move it out of the way.'.format(
@@ -124,4 +131,7 @@ class CharmGenerator(object):
         return tempfile.mkdtemp()
 
     def _cleanup(self, tempdir):
-        shutil.rmtree(tempdir)
+        if os.path.exists(tempdir):
+            # not sure how it could actually get to this point without the
+            # tempdir existing, but we had some reports, so we should check
+            shutil.rmtree(tempdir)

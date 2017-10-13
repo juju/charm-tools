@@ -45,8 +45,9 @@ class BashCreateTest(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
+    @patch('charmtools.create.log')
     @patch('charmtools.create.setup_parser')
-    def test_main(self, setup_parser):
+    def test_main(self, setup_parser, mlog):
         """Functional test of a full 'charm create' run."""
         class args(object):
             charmname = 'testcharm'
@@ -56,7 +57,15 @@ class BashCreateTest(TestCase):
 
         setup_parser.return_value.parse_args.return_value = args
 
-        main()
+        with patch.dict('os.environ', {'USER': 'test'}):
+            self.assertEqual(main(), 1)
+        assert mlog.error.called
+        self.assertIn('home directory', str(mlog.error.call_args[0]))
+
+        with patch.dict('os.environ', {'USER': 'test'}):
+            with patch('os.path.expanduser') as eu:
+                eu.return_value = self.tempdir
+                self.assertEqual(main(), 0)
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
@@ -77,8 +86,11 @@ class BashCreateTest(TestCase):
 
         setup_parser.return_value.parse_args.return_value = args
 
-        with patch.dict('os.environ', {'CHARM_HOME': self.tempdir}):
-            main()
+        with patch.dict('os.environ', {'CHARM_HOME': self.tempdir,
+                                       'USER': 'test'}):
+            with patch('os.path.expanduser') as eu:
+                eu.return_value = self.tempdir
+                self.assertEqual(main(), 0)
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
@@ -100,7 +112,10 @@ class BashCreateTest(TestCase):
         setup_parser.return_value.parse_args.return_value = args
         os.mkdir(join(self.tempdir, args.charmname))
 
-        self.assertEqual(1, main())
+        with patch.dict('os.environ', {'USER': 'test'}):
+            with patch('os.path.expanduser') as eu:
+                eu.return_value = self.tempdir
+                self.assertEqual(1, main())
 
 
 class ParserTest(TestCase):

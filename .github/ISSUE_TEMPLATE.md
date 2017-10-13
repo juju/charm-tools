@@ -21,7 +21,7 @@ Otherwise, if you have a feature request or issue with any other charm command p
 
 ## What version am I running?
 
-I ran the following command: `charm version` and got the following ouput:
+I ran the following command: `snap info charm` and got the following ouput:
 
 ```
 PUT YOUR OUTPUT HERE
