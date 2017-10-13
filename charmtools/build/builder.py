@@ -128,7 +128,7 @@ class Builder(object):
     PHASES = ['lint', 'read', 'call', 'sign', 'build']
     HOOK_TEMPLATE_FILE = path('hooks/hook.template')
     DEFAULT_SERIES = 'trusty'
-    METRICS_URL = 'http://www.google-analytics.com/collect'
+    METRICS_URL = 'https://www.google-analytics.com/collect'
     METRICS_ID = 'UA-96529618-2'
 
     def __init__(self):
@@ -462,8 +462,7 @@ class Builder(object):
                 'an': "charm-build",
                 'ec': kind,
                 'ea': 'fetch' if fetched else 'local',
-                'el': 'name',
-                'ev': layer_name,
+                'el': layer_name,
                 'cd1': self.series,
             })
         except requests.exceptions.RequestException:
