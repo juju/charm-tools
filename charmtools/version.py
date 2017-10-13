@@ -39,13 +39,15 @@ def charm_version():
     return charm_ver
 
 
+def charm_tools_version():
+    return pkg_resources.get_distribution("charm-tools").version
+
+
 def main():
     get_args()
 
-    version = pkg_resources.get_distribution("charm-tools").version
-
     print "charm %s" % charm_version()
-    print "charm-tools %s" % version
+    print "charm-tools %s" % charm_tools_version()
 
 
 if __name__ == '__main__':

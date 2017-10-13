@@ -7,6 +7,7 @@ import logging
 import os
 import requests
 import sys
+import uuid
 import yaml
 
 import charmtools.build.tactics
@@ -17,13 +18,14 @@ from charmtools import (utils, repofinder, proof)
 from charmtools.build import inspector
 from charmtools.build.errors import BuildError
 from charmtools.build.config import BuildConfig
-from charmtools.build.tactics import Tactic
+from charmtools.build.tactics import Tactic, WheelhouseTactic
 from charmtools.build.fetchers import (
     InterfaceFetcher,
     LayerFetcher,
     get_fetcher,
     FetchError,
 )
+from charmtools.version import charm_tools_version
 
 log = logging.getLogger("build")
 
@@ -59,6 +61,7 @@ class Fetched(Configable):
         self.target_repo = target_repo / self.NAMESPACE
         self.directory = None
         self._name = name
+        self.fetched = False
 
     @property
     def name(self):
@@ -89,6 +92,7 @@ class Fetched(Configable):
                 if not self.target_repo.exists():
                     self.target_repo.makedirs_p()
                 self.directory = path(fetcher.fetch(self.target_repo))
+                self.fetched = True
 
         if not self.directory.exists():
             raise BuildError(
@@ -124,6 +128,8 @@ class Builder(object):
     PHASES = ['lint', 'read', 'call', 'sign', 'build']
     HOOK_TEMPLATE_FILE = path('hooks/hook.template')
     DEFAULT_SERIES = 'trusty'
+    METRICS_URL = 'http://www.google-analytics.com/collect'
+    METRICS_ID = 'UA-96529618-2'
 
     def __init__(self):
         self.config = BuildConfig()
@@ -132,6 +138,7 @@ class Builder(object):
         self._charm = None
         self._top_layer = None
         self.hide_metrics = False
+        self.wheelhouse_overrides = None
 
     @property
     def top_layer(self):
@@ -155,7 +162,7 @@ class Builder(object):
             try:
                 setattr(
                     self, '_charm_metadata',
-                    yaml.load(md.open()) if md.exists() else None)
+                    yaml.safe_load(md.open()) if md.exists() else None)
             except yaml.YAMLError as e:
                 log.debug(e)
                 raise BuildError("Failed to process {0}. "
@@ -250,6 +257,7 @@ class Builder(object):
         # Manually create a layer object for the output
         self.target = Layer(self.name, self.repo)
         self.target.directory = self.target_dir
+        self.post_metrics('charm', self.name, False)
         return self.fetch_deps(self.top_layer)
 
     def fetch_deps(self, layer):
@@ -284,6 +292,7 @@ class Builder(object):
                 if iface.name in [i.name for i in results['interfaces']]:
                     continue
                 results["interfaces"].append(iface.fetch())
+                self.post_metrics('interface', iface.name, iface.fetched)
             else:
                 base_layer = Layer(base, self.deps)
                 if base_layer.name in [i.name for i in results['layers']]:
@@ -291,6 +300,7 @@ class Builder(object):
                 base_layer.fetch()
                 self.fetch_dep(base_layer, results)
                 results["layers"].append(base_layer)
+                self.post_metrics('layer', base_layer.name, base_layer.fetched)
 
     def build_tactics(self, entry, layer, next_config, output_files):
         relname = entry.relpath(layer.directory)
@@ -328,6 +338,16 @@ class Builder(object):
                                        layer=layer,
                                        next_config=next_config,
                                        output_files=output_files))
+        if self.wheelhouse_overrides:
+            existing_tactic = output_files.get('wheelhouse.txt')
+            output_files['wheelhouse.txt'] = WheelhouseTactic(
+                str(self.wheelhouse_overrides),
+                self.target,
+                layers["layers"][-1],
+                next_config,
+            )
+            if existing_tactic is not None:
+                output_files['wheelhouse.txt'].combine(existing_tactic)
         plan = [t for t in output_files.values() if t]
         return plan
 
@@ -372,7 +392,9 @@ class Builder(object):
                 if interface_name != iface.name:
                     continue
 
-                log.info("Processing interface: %s", interface_name)
+                log.info("Processing interface: %s%s", interface_name,
+                         "" if 'deps' in iface.directory.splitall()
+                         else " (from %s)" % iface.directory.relpath())
                 # COPY phase
                 plan.append(
                     charmtools.build.tactics.InterfaceCopy(
@@ -415,20 +437,37 @@ class Builder(object):
         self.plan = self.plan_layers(layers, output_files)
         self.plan_interfaces(layers, output_files, self.plan)
         self.plan_storage(layers, output_files, self.plan)
-        if self.hide_metrics is not True:
-            self.post_metrics(layers)
         return self.plan
 
-    def post_metrics(self, layers):
-        url = "/".join((self.interface_service,
-                        "api/v1/metrics/"))
-        data = {"kind": "build",
-                "layers": [l.url for l in layers["layers"]],
-                "interfaces": [i.url for i in layers["interfaces"]]}
+    def post_metrics(self, kind, layer_name, fetched):
+        if self.hide_metrics:
+            return
+        conf_file = path('~/.config/charm-build.conf').expanduser()
+        if conf_file.exists():
+            conf = yaml.safe_load(conf_file.text())
+            cid = conf['cid']
+        else:
+            conf_file.parent.makedirs_p()
+            cid = str(uuid.uuid4())
+            conf_file.write_text(yaml.dump({'cid': cid}))
         try:
-            requests.post(url, json.dumps(data).encode('utf-8'), timeout=10)
+            requests.post(self.METRICS_URL, timeout=10, data={
+                'tid': self.METRICS_ID,
+                'v': 1,
+                'aip': 1,
+                't': 'event',
+                'ds': 'app',
+                'cid': cid,
+                'av': charm_tools_version(),
+                'an': "charm-build",
+                'ec': kind,
+                'ea': 'fetch' if fetched else 'local',
+                'el': 'name',
+                'ev': layer_name,
+                'cd1': self.series,
+            })
         except requests.exceptions.RequestException:
-            log.warning("Unable to post usage metrics")
+            pass
 
     def exec_plan(self, plan=None, layers=None):
         signatures = {}
@@ -534,8 +573,30 @@ class Builder(object):
                 od = repo
         elif ":" in od:
             od = od.basename
-        log.info("Composing into {}".format(od))
         self.output_dir = od
+
+    def _check_path(self, path_to_check):
+        # have to expand ~user instead of ~ because $HOME is set to snap dir
+        home_dir = os.path.expanduser('~{}'.format(os.environ['USER']))
+        if home_dir.startswith('~'):  # expansion failed
+            raise BuildError('Could not determine home directory')
+        return os.path.abspath(path_to_check).startswith(home_dir)
+
+    def check_paths(self):
+        paths_to_check = [
+            self.output_dir,
+            self.wheelhouse_overrides,
+            os.environ.get('JUJU_REPOSITORY'),
+            os.environ.get('LAYER_PATH'),
+            os.environ.get('INTERACE_PATH'),
+        ]
+        for path_to_check in paths_to_check:
+            if path_to_check and not self._check_path(path_to_check):
+                raise BuildError('Due to snap confinement, all paths must be '
+                                 'under your home directory, including the '
+                                 'build output dir, JUJU_REPOSITORY, '
+                                 'LAYER_PATH, INTERFACE_PATH, and any '
+                                 'wheelhouse overrides')
 
     def clean_removed(self, signatures):
         """
@@ -575,8 +636,11 @@ class Builder(object):
 def configLogging(build):
     global log
     logging.captureWarnings(True)
+    term = os.environ.get('TERM')
+    if term and term.startswith('screen.'):
+        term = term[7:]
     clifmt = utils.ColoredFormatter(
-        blessings.Terminal(),
+        blessings.Terminal(term),
         '%(name)s: %(message)s')
     root_logger = logging.getLogger()
     clihandler = logging.StreamHandler(sys.stdout)
@@ -645,7 +709,7 @@ def main(args=None):
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
-                        default="http://interfaces.juju.solutions")
+                        default="https://juju.github.io/layer-index/")
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
@@ -654,6 +718,11 @@ def main(args=None):
                         help="Build a charm of 'name' from 'charm'")
     parser.add_argument('-r', '--report', action="store_true",
                         help="Show post-build report of changes")
+    parser.add_argument('-w', '--wheelhouse-overrides', type=path,
+                        help="Provide a wheelhouse.txt file with overrides "
+                             "for the built wheelhouse")
+    parser.add_argument('-v', '--verbose', action='store_true', default=False,
+                        help="Increase output (same as -l DEBUG)")
     parser.add_argument('charm', nargs="?", default=".", type=path)
     utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
@@ -661,6 +730,9 @@ def main(args=None):
     if build.charm == "help":
         parser.print_help()
         raise SystemExit(0)
+
+    if build.verbose:
+        build.log_level = logging.DEBUG
 
     # Monkey patch in the domain for the interface webservice
     InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
@@ -673,6 +745,7 @@ def main(args=None):
     try:
         if not build.output_dir:
             build.normalize_outputdir()
+        build.check_paths()
         if not build.series:
             build.check_series()
 

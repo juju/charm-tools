@@ -16,3 +16,8 @@ man
 *.pyc
 *.sw[nop]
 .venv/
+*.snap
+parts/
+prime/
+stage/
+snap/*.snapcraft

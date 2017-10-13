@@ -1,4 +1,5 @@
 import os
+import logging
 
 import requests
 from charmtools import fetchers
@@ -8,6 +9,9 @@ from charmtools.fetchers import (git,  # noqa
                                  FetchError)
 
 from path import Path as path
+
+
+log = logging.getLogger(__name__)
 
 
 class RepoFetcher(fetchers.LocalFetcher):
@@ -27,12 +31,11 @@ fetchers.FETCHERS.insert(0, RepoFetcher)
 
 
 class InterfaceFetcher(fetchers.LocalFetcher):
-    # XXX: When hosted somewhere, fix this
-    INTERFACE_DOMAIN = "http://interfaces.juju.solutions"
+    INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
     NAMESPACE = "interface"
     ENVIRON = "INTERFACE_PATH"
     OPTIONAL_PREFIX = "juju-relation-"
-    ENDPOINT = "/api/v1/interface"
+    ENDPOINT = "interfaces"
     NO_LOCAL_LAYERS = False
 
     @classmethod
@@ -58,8 +61,9 @@ class InterfaceFetcher(fetchers.LocalFetcher):
             if name.startswith(cls.OPTIONAL_PREFIX):
                 choices.append(name[len(cls.OPTIONAL_PREFIX):])
             for choice in choices:
-                uri = "%s%s/%s/" % (
+                uri = "%s%s/%s.json" % (
                     cls.INTERFACE_DOMAIN, cls.ENDPOINT, choice)
+                log.debug('Checking layer index: {}'.format(uri))
                 try:
                     result = requests.get(uri)
                 except:
@@ -67,6 +71,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                 if result and result.ok:
                     result = result.json()
                     if result.get("repo"):
+                        log.debug('Found repo: {}'.format(result['repo']))
                         return result
             return {}
 
@@ -112,10 +117,10 @@ fetchers.FETCHERS.insert(0, InterfaceFetcher)
 
 
 class LayerFetcher(InterfaceFetcher):
-    INTERFACE_DOMAIN = "http://interfaces.juju.solutions"
+    INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
     NAMESPACE = "layer"
     ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"
-    ENDPOINT = "/api/v1/layer"
+    ENDPOINT = "layers"
 
 fetchers.FETCHERS.insert(0, LayerFetcher)
