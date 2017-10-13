@@ -447,6 +447,7 @@ class Builder(object):
             conf = yaml.safe_load(conf_file.text())
             cid = conf['cid']
         else:
+            conf_file.parent.makedirs_p()
             cid = str(uuid.uuid4())
             conf_file.write_text(yaml.dump({'cid': cid}))
         try:
