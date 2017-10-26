@@ -1,5 +1,6 @@
-include *.py README*
+include *.py README* VERSION
 include doc/source/build.md
+include scripts/*
 recursive-include charmtools *
 recursive-exclude charmtools *.pyc
 exclude Makefile

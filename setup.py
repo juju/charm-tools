@@ -1,14 +1,21 @@
 #!/usr/bin/env python
+# flake8: ignore=E501
 #
 # Copyright 2012 Canonical Ltd.  This software is licensed under the
 # GNU General Public License version 3 (see the file LICENSE).
 
+import os
+import subprocess
 from setuptools import setup, find_packages
+
+
+version_script = os.path.join(os.path.dirname(__file__), 'scripts', 'git-version')
+version = subprocess.check_output([version_script]).strip()
 
 
 setup(
     name='charm-tools',
-    version="2.1.2",
+    version=version,
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
@@ -61,8 +68,7 @@ setup(
             ':PythonServicesCharmTemplate',
             'ansible = charmtools.templates.ansible:AnsibleCharmTemplate',
             'chef = charmtools.templates.chef:ChefCharmTemplate',
-            'powershell = '
-                'charmtools.templates.powershell:PowerShellCharmTemplate',
+            'powershell = charmtools.templates.powershell:PowerShellCharmTemplate',
         ]
     },
 )

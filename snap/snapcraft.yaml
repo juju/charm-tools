@@ -1,5 +1,6 @@
 name: charm
-version: 2.2
+version: git
+version-script: scripts/git-version
 summary: charm and charm-tools
 description: charmstore-client and charm-tools
 confinement: strict
@@ -37,6 +38,7 @@ parts:
     stage-packages:
       - git-core
       - python3
+      - python-setuptools
     stage:
       - -lib/python2.7/site-packages/virtualenv_support/pip-9.0.1-py2.py3-none-any.whl
       - -usr/share/doc*
