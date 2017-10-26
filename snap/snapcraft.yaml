@@ -1,6 +1,6 @@
 name: charm
 version: git
-version-script: scripts/git-version
+version-script: charmtools/git_version.py
 summary: charm and charm-tools
 description: charmstore-client and charm-tools
 confinement: strict

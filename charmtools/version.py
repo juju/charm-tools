@@ -5,11 +5,16 @@ import argparse
 
 from cli import parser_defaults
 from charmtools import utils
+from charmtools.git_version import get_version_info
 
 
 def get_args(args=None):
     parser = argparse.ArgumentParser(
         description='display tooling version information')
+    parser.add_argument('--format', choices=['long', 'short', 'default'],
+                        default='default',
+                        help="Version format. Long includes git revision "
+                             "info. Default uses long if it's a pre-release.")
     utils.add_plugin_description(parser)
     parser = parser_defaults(parser)
     args = parser.parse_args(args)
@@ -39,15 +44,20 @@ def charm_version():
     return charm_ver
 
 
-def charm_tools_version():
-    return pkg_resources.get_distribution("charm-tools").version
+def charm_tools_version(ver_format):
+    version_info = get_version_info()
+    pre_release = version_info['pre_release']
+    if ver_format == 'long' or (ver_format == 'default' and pre_release):
+        return '{version}{snap}{git}'.format(**version_info)
+    else:
+        return version_info['version']
 
 
 def main():
-    get_args()
+    args = get_args()
 
     print "charm %s" % charm_version()
-    print "charm-tools %s" % charm_tools_version()
+    print "charm-tools %s" % charm_tools_version(args.format)
 
 
 if __name__ == '__main__':

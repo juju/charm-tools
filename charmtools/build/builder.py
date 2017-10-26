@@ -458,7 +458,7 @@ class Builder(object):
                 't': 'event',
                 'ds': 'app',
                 'cid': cid,
-                'av': charm_tools_version(),
+                'av': charm_tools_version('long'),
                 'an': "charm-build",
                 'ec': kind,
                 'ea': 'fetch' if fetched else 'local',
