@@ -9,8 +9,8 @@ import subprocess
 from setuptools import setup, find_packages
 
 
-version_script = os.path.join(os.path.dirname(__file__), 'scripts', 'git-version')
-version = subprocess.check_output([version_script]).strip()
+version_script = os.path.join(os.path.dirname(__file__), 'charmtools', 'git_version.py')
+version = subprocess.check_output([version_script, '--format=short']).strip()
 
 
 setup(
