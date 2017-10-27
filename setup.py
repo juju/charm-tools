@@ -12,6 +12,9 @@ from setuptools import setup, find_packages
 version_script = os.path.join(os.path.dirname(__file__), 'charmtools', 'git_version.py')
 version = subprocess.check_output([version_script, '--format=short']).strip()
 
+with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fh:
+    readme = fh.read()
+
 
 setup(
     name='charm-tools',
@@ -41,6 +44,7 @@ setup(
     maintainer='Marco Ceppi',
     maintainer_email='marco@ceppi.net',
     description=('Tools for maintaining Juju charms'),
+    long_description=readme,
     license='GPL v3',
     url='https://github.com/juju/charm-tools',
     classifiers=[
