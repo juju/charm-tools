@@ -23,7 +23,7 @@ def get_version_info():
         version_info = {
             'version': version,
             'snap': '+snap_{}'.format(snaprev) if snaprev else '',
-            'git': '+git_{}@{}'.format(gitn, gitsha),
+            'git': '+git_{}_{}'.format(gitn, gitsha),
             'gitn': int(gitn),
         }
     except CalledProcessError:
