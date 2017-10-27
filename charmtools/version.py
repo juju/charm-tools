@@ -46,7 +46,7 @@ def charm_version():
 
 def charm_tools_version(ver_format):
     version_info = get_version_info()
-    pre_release = version_info['pre_release']
+    pre_release = version_info['pre_release'] or version_info['gitn']
     if ver_format == 'long' or (ver_format == 'default' and pre_release):
         return '{version}{snap}{git}'.format(**version_info)
     else:

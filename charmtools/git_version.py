@@ -22,8 +22,9 @@ def get_version_info():
         snaprev = os.environ.get('SNAP_REVISION', None)
         version_info = {
             'version': version,
-            'snap': '+snap-{}'.format(snaprev) if snaprev else '',
-            'git': '+git-{}@{}'.format(gitn, gitsha),
+            'snap': '+snap_{}'.format(snaprev) if snaprev else '',
+            'git': '+git_{}@{}'.format(gitn, gitsha),
+            'gitn': int(gitn),
         }
     except CalledProcessError:
         # git info not available; try to find cached version
@@ -36,6 +37,7 @@ def get_version_info():
                 'version': '0.0.0',
                 'snap': '',
                 'git': '',
+                'gitn': 0,
             }
 
     pv = parse_version(version_info['version'])
@@ -63,7 +65,7 @@ if __name__ == '__main__':
         # cache version info in case git info is unavailable
         json.dump(version_info, fh)
 
-    pre_release = version_info['pre_release']
+    pre_release = version_info['pre_release'] or version_info['gitn']
     if args.format == 'long' or (args.format == 'default' and pre_release):
         print('{version}{git}'.format(**version_info))
     else:

@@ -22,9 +22,15 @@ You'll also almost certainly want to install Juju as well::
     sudo snap install juju --classic
 
 If you want to run the latest pre-release versions, you can use the
-other snap channels: candidate, beta, and edge.  For example::
+other snap channels.  For example::
 
     sudo snap install charm --channel=edge
+
+The available channels are: stable, candidate, beta, and edge.
+
+  Note: While charm-tools is also available on PyPI (for use as a Python
+  dependency) and is generally kept up to date there with stable releases,
+  the snap should always be used instead, if at all possible.
 
 
 Usage
