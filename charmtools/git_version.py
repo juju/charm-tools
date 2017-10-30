@@ -6,33 +6,44 @@ import os
 import sys
 import json
 import argparse
-from subprocess import check_output, CalledProcessError
-from pkg_resources import parse_version
+from subprocess import check_output, CalledProcessError, PIPE
+from pkg_resources import parse_version, resource_string, resource_exists
 
 
 git_cmd = ['git', 'describe', '--tags', '--long']
-version_filename = os.path.join(os.path.dirname(__file__), '..', 'VERSION')
 
 
 def get_version_info():
-    try:
-        version, gitn, gitsha = check_output(git_cmd).strip().rsplit('-', 2)
-        if version.startswith('v'):
-            version = version[1:]
-        snaprev = os.environ.get('SNAP_REVISION', None)
+    if resource_exists(__name__, 'VERSION'):
+        version_info = json.loads(resource_string(__name__, 'VERSION'))
+    elif os.environ.get('SNAP_VERSION', 'git') != 'git':
+        version_parts = os.environ['SNAP_VERSION'].split('+')
+        git = ''
+        gitn = 0
+        if len(version_parts) > 1:
+            git = version_parts[1]
+            gitn = int(git.split('_')[1])
         version_info = {
-            'version': version,
-            'snap': '+snap_{}'.format(snaprev) if snaprev else '',
-            'git': '+git_{}_{}'.format(gitn, gitsha),
-            'gitn': int(gitn),
+            'version': version_parts[0],
+            'snap': '+snap_{}'.format(os.environ['SNAP_REVISION']),
+            'git': '+{}'.format(git),
+            'gitn': gitn,
         }
-    except CalledProcessError:
-        # git info not available; try to find cached version
+    else:
         try:
-            with open(version_filename, 'r') as fh:
-                version_info = json.load(fh)
-        except (OSError, IOError):
-            print("Unable to determine version", file=sys.stderr)
+            output = check_output(git_cmd, stderr=PIPE)
+            version, gitn, gitsha = output.strip().rsplit('-', 2)
+            if version.startswith('v'):
+                version = version[1:]
+            snaprev = os.environ.get('SNAP_REVISION', None)
+            version_info = {
+                'version': version,
+                'snap': '+snap_{}'.format(snaprev) if snaprev else '',
+                'git': '+git_{}_{}'.format(gitn, gitsha),
+                'gitn': int(gitn),
+            }
+        except CalledProcessError:
+            print("Unable to determine charm-tools version", file=sys.stderr)
             version_info = {
                 'version': '0.0.0',
                 'snap': '',
@@ -61,6 +72,7 @@ if __name__ == '__main__':
     args = get_args()
     version_info = get_version_info()
 
+    version_filename = os.path.join(os.path.dirname(__file__), 'VERSION')
     with open(version_filename, 'w') as fh:
         # cache version info in case git info is unavailable
         json.dump(version_info, fh)
