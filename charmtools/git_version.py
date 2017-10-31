@@ -16,8 +16,8 @@ git_cmd = ['git', 'describe', '--tags', '--long']
 def get_version_info():
     if resource_exists(__name__, 'VERSION'):
         version_info = json.loads(resource_string(__name__, 'VERSION'))
-    elif os.environ.get('SNAP_VERSION', 'git') != 'git':
-        version_parts = os.environ['SNAP_VERSION'].split('+')
+    elif os.environ.get('SNAPCRAFT_PROJECT_VERSION', 'git') != 'git':
+        version_parts = os.environ['SNAPCRAFT_PROJECT_VERSION'].split('+')
         git = ''
         gitn = 0
         if len(version_parts) > 1:
@@ -25,7 +25,6 @@ def get_version_info():
             gitn = int(git.split('-')[1])
         version_info = {
             'version': version_parts[0],
-            'snap': '+snap-{}'.format(os.environ['SNAP_REVISION']),
             'git': '+{}'.format(git),
             'gitn': gitn,
         }
@@ -35,10 +34,8 @@ def get_version_info():
             version, gitn, gitsha = output.strip().rsplit('-', 2)
             if version.startswith('v'):
                 version = version[1:]
-            snaprev = os.environ.get('SNAP_REVISION', None)
             version_info = {
                 'version': version,
-                'snap': '+snap-{}'.format(snaprev) if snaprev else '',
                 'git': '+git-{}-{}'.format(gitn, gitsha),
                 'gitn': int(gitn),
             }
@@ -53,6 +50,10 @@ def get_version_info():
 
     pv = parse_version(version_info['version'])
     version_info['pre_release'] = pv.is_prerelease
+
+    # snap rev is not available at build time, so we can never cache it
+    snaprev = os.environ.get('SNAP_REVISION', None)
+    version_info['snap'] = '+snap-{}'.format(snaprev) if snaprev else ''
 
     return version_info
 
