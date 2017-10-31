@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import pwd
 from contextlib import contextmanager
 
 from .diff_match_patch import diff_match_patch
@@ -593,3 +594,17 @@ class OrderedSet(collections.MutableSet):
         if isinstance(other, OrderedSet):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
+
+
+def get_home():
+    """
+    Get the current user's home directory in a portable way
+    that doesn't depend on env vars.
+
+    If the home directory can't be determined, it will return None.
+    """
+    username = pwd.getpwuid(os.getuid()).pw_name
+    home = os.path.expanduser('~{}'.format(username))
+    if home.startswith('~'):
+        return None
+    return home
