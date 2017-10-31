@@ -521,13 +521,13 @@ class Builder(object):
 
         for f in a:
             log.warn(
-                "Added unexpected file, should be in a base layer: %s", f)
+                "Conflict: File in destination directory was added after charm build: %s", f)
         for f in c:
             log.warn(
-                "Changed file owned by another layer: %s", f)
+                "Conflict: File in destination directory was modified after charm build: %s", f)
         for f in d:
             log.warn(
-                "Deleted a file owned by another layer: %s", f)
+                "Conflict: File in destination directory was deleted after charm build: %s", f)
         if a or c or d:
             if self.force is True:
                 log.info(
