@@ -1,3 +1,5 @@
+import os
+import mock
 from unittest import TestCase
 from charmtools import utils
 from StringIO import StringIO
@@ -41,3 +43,9 @@ class TestUtils(TestCase):
         self.assertIn("Beta", output)
         self.assertIn("@when('db.ready'", output)
         self.assertIn("bar", output)
+
+    def test_get_home(self):
+        # expanduser('~') works in test env, but not in snap
+        assert utils.get_home() == os.path.expanduser('~')
+        with mock.patch('os.path.expanduser', lambda u: u):
+            assert utils.get_home() is None
