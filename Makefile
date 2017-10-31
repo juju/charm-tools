@@ -7,7 +7,7 @@
 #SHELL = $(warning [$@ [32m($^) [34m($?)[m ])$(OLD_SHELL)
 
 WD := $(shell pwd)
-DESTDIR = 
+DESTDIR =
 prefix = /usr
 DDIR = $(DESTDIR)$(prefix)
 bindir = $(DDIR)/bin
@@ -17,7 +17,7 @@ helperdir = $(DDIR)/share/charm-helper
 confdir = $(DESTDIR)/etc
 INSTALL = install
 
-develop: 
+develop:
 	tox --develop --notest
 
 build: deps develop
@@ -40,7 +40,8 @@ clean:
 	find . -name '*.py[co]' -delete
 	find . -type f -name '*~' -delete
 	find . -name '*.bak' -delete
-	rm -rf bin include lib local man dependencies
+	rm -rf bin include lib local man dependencies dist
+	rm -f charmtools/VERSION
 
 install:
 	$(INSTALL) -d $(mandir)
@@ -56,6 +57,9 @@ install:
 	cp -rf scripts templates $(datadir)
 	cp -rf helpers/* $(helperdir)
 
+pypi: clean
+	python setup.py sdist upload
+
 integration: build
 	tests_functional/helpers/helpers.sh || sh -x tests_functional/helpers/helpers.sh timeout
 	@echo Test shell helpers with bash
@@ -70,7 +74,7 @@ integration: build
 	tests_functional/create/test.sh
 	tests_functional/add/test.sh
 
-coverage: build 
+coverage: build
 	tox
 
 check: build integration test
@@ -81,6 +85,7 @@ define phony
   clean
   deps
   install
+  pypi
   tags
   test
 endef

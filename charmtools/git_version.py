@@ -22,10 +22,10 @@ def get_version_info():
         gitn = 0
         if len(version_parts) > 1:
             git = version_parts[1]
-            gitn = int(git.split('_')[1])
+            gitn = int(git.split('-')[1])
         version_info = {
             'version': version_parts[0],
-            'snap': '+snap_{}'.format(os.environ['SNAP_REVISION']),
+            'snap': '+snap-{}'.format(os.environ['SNAP_REVISION']),
             'git': '+{}'.format(git),
             'gitn': gitn,
         }
@@ -38,8 +38,8 @@ def get_version_info():
             snaprev = os.environ.get('SNAP_REVISION', None)
             version_info = {
                 'version': version,
-                'snap': '+snap_{}'.format(snaprev) if snaprev else '',
-                'git': '+git_{}_{}'.format(gitn, gitsha),
+                'snap': '+snap-{}'.format(snaprev) if snaprev else '',
+                'git': '+git-{}-{}'.format(gitn, gitsha),
                 'gitn': int(gitn),
             }
         except CalledProcessError:
