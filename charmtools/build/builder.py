@@ -561,6 +561,9 @@ class Builder(object):
 
     def inspect(self):
         self.charm = path(self.charm).abspath()
+        if not self._check_path(self.charm):
+            raise BuildError('For security reasons, only paths under '
+                             'your home directory can be accessed')
         inspector.inspect(self.charm, force_styling=self.force_raw)
 
     def normalize_outputdir(self):
@@ -590,9 +593,9 @@ class Builder(object):
         ]
         for path_to_check in paths_to_check:
             if path_to_check and not self._check_path(path_to_check):
-                raise BuildError('Due to snap confinement, all paths must be '
-                                 'under your home directory, including the '
-                                 'build output dir, JUJU_REPOSITORY, '
+                raise BuildError('For security reasons, only paths under your '
+                                 'home directory can be accessed, including '
+                                 'the build output dir, JUJU_REPOSITORY, '
                                  'LAYER_PATH, INTERFACE_PATH, and any '
                                  'wheelhouse overrides')
 
@@ -666,7 +669,12 @@ def inspect(args=None):
     # Namespace will set the options as attrs of build
     parser.parse_args(args, namespace=build)
     configLogging(build)
-    build.inspect()
+    try:
+        build.inspect()
+    except BuildError as e:
+        if e.args:
+            log.error(*e.args)
+        raise SystemExit(1)
 
 
 def deprecated_main():

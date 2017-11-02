@@ -161,6 +161,15 @@ def download_item(item, dir_):
     dir_ = dir_ or os.getcwd()
     dir_ = os.path.abspath(os.path.expanduser(dir_))
 
+    home_path = utils.get_home()
+    if not home_path:  # expansion failed
+        print('Could not determine home directory')
+        return 200
+    if not dir_.startswith(home_path):
+        print('For security reasons, only paths under '
+              'your home directory can be accessed')
+        return 200
+
     # Create series dir if we need to
     if series_dir:
         series_path = os.path.join(dir_, series_dir)
@@ -171,7 +180,8 @@ def download_item(item, dir_):
     # Abort if destination dir already exists
     final_dest_dir = os.path.join(dir_, name)
     if os.path.exists(final_dest_dir):
-        return "{}: {}".format(ERR_DIR_EXISTS, final_dest_dir)
+        print("{}: {}".format(ERR_DIR_EXISTS, final_dest_dir))
+        return 1
 
     # Create tempdir for initial download
     tempdir = tempfile.mkdtemp()
@@ -181,7 +191,8 @@ def download_item(item, dir_):
         fetcher = fetchers.get_fetcher(item)
         download_dir = fetcher.fetch(tempdir)
     except fetchers.FetchError:
-        return "Can't find source for {}".format(item)
+        print("Can't find source for {}".format(item))
+        return 1
 
     # Copy download dir to final destination dir
     shutil.copytree(download_dir, final_dest_dir, symlinks=True)
