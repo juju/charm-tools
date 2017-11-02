@@ -63,8 +63,9 @@ class CharmGenerator(object):
         if not home_path:  # expansion failed
             raise CharmGeneratorException('Could not determine home directory')
         if not os.path.abspath(output_path).startswith(home_path):
-            raise CharmGeneratorException('Charms can only be created under '
-                                          'your home directory.')
+            raise CharmGeneratorException('For security reasons, only paths '
+                                          'under your home directory can be '
+                                          'accessed')
         if os.path.exists(output_path):
             raise CharmGeneratorException(
                 '{} exists. Please move it out of the way.'.format(

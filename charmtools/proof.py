@@ -39,6 +39,12 @@ def get_args(args=None):
 
 def proof(path, is_bundle, debug):
     path = os.path.abspath(path)
+    home_path = utils.get_home()
+    if not home_path:  # expansion failed
+        return ['Could not determine home directory'], 200
+    if not path.startswith(home_path):
+        return ['For security reasons, only paths under '
+                'your home directory can be accessed'], 200
     if not is_bundle:
         try:
             c = Charm(path)
