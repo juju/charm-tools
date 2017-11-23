@@ -53,3 +53,4 @@ The most commonly used commands are the charm life-cycle commands::
     charm push      # push a charm to the store
     charm release   # release a pushed charm to the public
     charm show      # show information about a charm in the store
+    charm test      # perform unit tests on a charm ala 'juju test'
