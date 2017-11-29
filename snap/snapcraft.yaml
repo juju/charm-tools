@@ -28,8 +28,12 @@ parts:
     source-type: git
     plugin: godeps
     go-importpath: github.com/juju/terms-client
-    build-packages:
-      - bzr
+  charm-plans:
+    source: https://github.com/juju/plans-client.git
+    source-tag: v1.0.0
+    source-type: git
+    plugin: godeps
+    go-importpath: github.com/juju/plans-client
   charm-tools:
     source: .
     plugin: python
