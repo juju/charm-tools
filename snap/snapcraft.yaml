@@ -16,24 +16,12 @@ apps:
 parts:
   charm:
     source: https://github.com/juju/charmstore-client.git
-    source-tag: 2.2.2
+    source-tag: 2.2.3
     source-type: git
     plugin: godeps
     go-importpath: github.com/juju/charmstore-client
     build-packages:
       - bzr
-  charm-terms:
-    source: https://github.com/juju/terms-client.git
-    source-tag: v1.0.1
-    source-type: git
-    plugin: godeps
-    go-importpath: github.com/juju/terms-client
-  charm-plans:
-    source: https://github.com/juju/plans-client.git
-    source-tag: v1.0.0
-    source-type: git
-    plugin: godeps
-    go-importpath: github.com/juju/plans-client
   charm-tools:
     source: .
     plugin: python
