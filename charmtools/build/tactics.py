@@ -769,6 +769,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         self.tracked = []
         self.previous = []
         self._venv = None
+        self.purge_wheels = False
 
     def __str__(self):
         directory = self.target.directory / 'wheelhouse'
@@ -785,7 +786,12 @@ class WheelhouseTactic(ExactMatch, Tactic):
                       *reqs)
             for wheel in temp_dir.files():
                 dest = wheelhouse / wheel.basename()
-                dest.remove_p()
+                if self.purge_wheels:
+                    unversioned_wheel = wheel.basename().split('-')[0]
+                    for old_wheel in wheelhouse.glob(unversioned_wheel + '-*'):
+                        old_wheel.remove()
+                else:
+                    dest.remove_p()
                 wheel.move(wheelhouse)
                 self.tracked.append(dest)
 
