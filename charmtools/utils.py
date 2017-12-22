@@ -603,7 +603,12 @@ def get_home():
 
     If the home directory can't be determined, it will return None.
     """
-    username = pwd.getpwuid(os.getuid()).pw_name
+
+    try:
+        username = pwd.getpwuid(os.getuid()).pw_name
+    except KeyError:
+        return None
+
     home = os.path.expanduser('~{}'.format(username))
     if home.startswith('~'):
         return None
