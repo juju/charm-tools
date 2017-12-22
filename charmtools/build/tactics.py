@@ -292,19 +292,7 @@ class InterfaceCopy(Tactic):
             log.error('Missing implementation for interface role: %s.py',
                       self.role)
             return False
-        valid = True
-        for entry in self.interface.directory.walkfiles():
-            if entry.splitext()[1] != ".py":
-                continue
-            relpath = entry.relpath(self._target.directory)
-            target = self._target.directory / relpath
-            if not target.exists():
-                continue
-            unchanged = utils.delta_python_dump(entry, target,
-                                                from_name=relpath)
-            if not unchanged:
-                valid = False
-        return valid
+        return True
 
 
 class DynamicHookBind(Tactic):
