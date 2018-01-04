@@ -49,3 +49,8 @@ class TestUtils(TestCase):
         assert utils.get_home() == os.path.expanduser('~')
         with mock.patch('os.path.expanduser', lambda u: u):
             assert utils.get_home() is None
+
+    def test_get_no_home(self):
+        # some uids don't have pw_names
+        with mock.patch('os.getuid', lambda: 12):
+            self.assertIs(utils.get_home(), None)
