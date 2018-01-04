@@ -30,6 +30,11 @@ try:
 except ImportError:
     from .utils import portable_get_maintainer as get_maintainer  # noqa
 
+try:
+    rinput = raw_input  # py2
+except NameError:
+    rinput = input  # py3
+
 log = logging.getLogger(__name__)
 
 
@@ -60,16 +65,22 @@ class CharmGenerator(object):
         """
         home_path = get_home()
         output_path = self._get_output_path()
+        home_msg = ('For security reasons, only paths under '
+                    'your home directory can be accessed')
         if not home_path:  # expansion failed
-            raise CharmGeneratorException('Could not determine home directory')
-        if not os.path.abspath(output_path).startswith(home_path):
-            raise CharmGeneratorException('For security reasons, only paths '
-                                          'under your home directory can be '
-                                          'accessed')
+            log.warn('Could not determine home directory')
+            log.warn(home_msg)
+        elif not os.path.abspath(output_path).startswith(home_path):
+            log.warn('The path {} is not under '
+                     'your home directory'.format(home_path))
+            log.warn(home_msg)
         if os.path.exists(output_path):
             raise CharmGeneratorException(
                 '{} exists. Please move it out of the way.'.format(
                     output_path))
+        if not os.access(os.path.dirname(output_path), os.W_OK):
+            raise CharmGeneratorException('Unable to write to {}'.format(
+                output_path))
 
         log.info('Generating charm for %s in %s',
                  self.opts.charmname, output_path)
@@ -116,7 +127,7 @@ class CharmGenerator(object):
             return None
         if self.opts.accept_defaults:
             return prompt.validate(prompt.default)
-        user_input = raw_input(prompt.prompt).strip()
+        user_input = rinput(prompt.prompt).strip()
         if not user_input:
             return prompt.validate(prompt.default)
         try:

@@ -283,7 +283,7 @@ def retry(attempts, *callbacks, **kwargs):
     """
     Repeatedly try callbacks a fixed number of times or until all return True
     """
-    for attempt in xrange(attempts):
+    for attempt in range(attempts):
         if 'bar' in kwargs:
             kwargs['bar'].next(attempt == 0, message=kwargs.get('message'))
         for callback in callbacks:
@@ -606,7 +606,7 @@ def get_home():
 
     try:
         username = pwd.getpwuid(os.getuid()).pw_name
-    except KeyError:
+    except Exception:
         return None
 
     home = os.path.expanduser('~{}'.format(username))
