@@ -45,9 +45,11 @@ class BashCreateTest(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
+    @patch('charmtools.generators.generator.get_home')
+    @patch('charmtools.generators.generator.log')
     @patch('charmtools.create.log')
     @patch('charmtools.create.setup_parser')
-    def test_main(self, setup_parser, mlog):
+    def test_main(self, setup_parser, mlog, mglog, mget_home):
         """Functional test of a full 'charm create' run."""
         class args(object):
             charmname = 'testcharm'
@@ -57,15 +59,25 @@ class BashCreateTest(TestCase):
 
         setup_parser.return_value.parse_args.return_value = args
 
-        with patch.dict('os.environ', {'USER': 'test'}):
-            self.assertEqual(main(), 1)
+        unwriteable = join(self.tempdir, '_unwriteable')
+        os.mkdir(unwriteable, 0o555)
+        args.charmhome = unwriteable
+        mget_home.return_value = '/dev/null'
+        self.assertEqual(main(), 1)
+        assert mglog.warn.called
+        self.assertIn('is not under your home directory',
+                      mglog.warn.call_args_list[0][0][0])
         assert mlog.error.called
-        self.assertIn('home directory', str(mlog.error.call_args[0]))
+        self.assertIn('Unable to write to', mlog.error.call_args[0][0])
 
-        with patch.dict('os.environ', {'USER': 'test'}):
-            with patch('os.path.expanduser') as eu:
-                eu.return_value = self.tempdir
-                self.assertEqual(main(), 0)
+        mget_home.return_value = None
+        mglog.warn.reset_mock()
+        self.assertEqual(main(), 1)
+        self.assertIn('Could not determine home directory',
+                      mglog.warn.call_args_list[0][0][0])
+
+        args.charmhome = self.tempdir
+        self.assertEqual(main(), 0)
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))

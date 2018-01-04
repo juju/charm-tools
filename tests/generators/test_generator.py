@@ -83,7 +83,7 @@ class CharmGeneratorTest(TestCase):
                 'summary': 'Charm summary',
                 'description': 'Charm description'})
 
-    @patch('__builtin__.raw_input')
+    @patch('charmtools.generators.generator.rinput')
     def test_get_user_config_from_prompts(self, raw_input_):
         raw_input_.return_value = 'Yes'
         with patch.object(self.c.plugin, 'prompts') as prompts:
@@ -114,14 +114,14 @@ class CharmGeneratorTest(TestCase):
 
         self.assertTrue(self.c._prompt(prompt, {}))
 
-    @patch('__builtin__.raw_input')
+    @patch('charmtools.generators.generator.rinput')
     def test_prompt_no_input(self, raw_input_):
         raw_input_.return_value = ''
         prompt = Prompt('symlink', 'symlink hooks?', 'y', 'bool')
 
         self.assertTrue(self.c._prompt(prompt, {}))
 
-    @patch('__builtin__.raw_input')
+    @patch('charmtools.generators.generator.rinput')
     def test_prompt_invalid_input(self, raw_input_):
         raw_input_.side_effect = ['foo', '18']
         prompt = Prompt('age', 'your age?', '42', 'int')
@@ -129,7 +129,7 @@ class CharmGeneratorTest(TestCase):
         self.assertEqual(self.c._prompt(prompt, {}), 18)
         self.assertEqual(raw_input_.call_count, 2)
 
-    @patch('__builtin__.raw_input')
+    @patch('charmtools.generators.generator.rinput')
     def test_prompt_valid_input(self, raw_input_):
         raw_input_.return_value = 'Joe'
         prompt = Prompt('name', 'your name?', 'Name')
