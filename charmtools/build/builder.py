@@ -665,7 +665,11 @@ def configLogging(build):
 def inspect(args=None):
     build = Builder()
     parser = argparse.ArgumentParser(
-        description='inspect the layers of a built charm')
+        description='inspect the layers of a built charm. This '
+                    'renders a tree of the files in the color '
+                    'of each layer. Each layers assigned color '
+                    'is presented in a legend at the top of the '
+                    'output.')
     parser.add_argument('-r', '--force-raw', action="store_true",
                         help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
