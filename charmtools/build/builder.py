@@ -346,6 +346,7 @@ class Builder(object):
                 layers["layers"][-1],
                 next_config,
             )
+            output_files['wheelhouse.txt'].purge_wheels = True
             if existing_tactic is not None:
                 output_files['wheelhouse.txt'].combine(existing_tactic)
         plan = [t for t in output_files.values() if t]
