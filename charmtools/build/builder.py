@@ -521,14 +521,14 @@ class Builder(object):
         a, c, d = utils.delta_signatures(self.manifest)
 
         for f in a:
-            log.warn(
-                "Conflict: File in destination directory was added after charm build: %s", f)
+            log.warn("Conflict: File in destination directory "
+                     "was added after charm build: %s", f)
         for f in c:
-            log.warn(
-                "Conflict: File in destination directory was modified after charm build: %s", f)
+            log.warn("Conflict: File in destination directory "
+                     "was modified after charm build: %s", f)
         for f in d:
-            log.warn(
-                "Conflict: File in destination directory was deleted after charm build: %s", f)
+            log.warn("Conflict: File in destination directory "
+                     "was deleted after charm build: %s", f)
         if a or c or d:
             if self.force is True:
                 log.info(
@@ -578,27 +578,31 @@ class Builder(object):
             od = od.basename
         self.output_dir = od
 
-    def _check_path(self, path_to_check):
+    def _check_path(self, path_to_check, need_write=False):
         home_dir = utils.get_home()
+        home_msg = ('For security reasons, only paths under your '
+                    'home directory can be accessed, including '
+                    'the build output dir, JUJU_REPOSITORY, '
+                    'LAYER_PATH, INTERFACE_PATH, and any '
+                    'wheelhouse overrides.')
         if not home_dir:  # expansion failed
-            raise BuildError('Could not determine home directory')
-        return os.path.abspath(path_to_check).startswith(home_dir)
+            log.warn('Could not determine home directory.')
+            log.warn(home_msg)
+        elif os.path.abspath(path_to_check).startswith(home_dir):
+            log.warn('The path {} is not under your '
+                     'home directory.'.format(home_dir))
+            log.warn(home_msg)
+        if not os.access(path_to_check, os.R_OK):
+            raise BuildError('Unable to read from: {}'.format(path_to_check))
+        if need_write and not os.access(path_to_check, os.W_OK):
+            raise BuildError('Unable to write to: {}'.format(path_to_check))
 
     def check_paths(self):
-        paths_to_check = [
-            self.output_dir,
-            self.wheelhouse_overrides,
-            os.environ.get('JUJU_REPOSITORY'),
-            os.environ.get('LAYER_PATH'),
-            os.environ.get('INTERACE_PATH'),
-        ]
-        for path_to_check in paths_to_check:
-            if path_to_check and not self._check_path(path_to_check):
-                raise BuildError('For security reasons, only paths under your '
-                                 'home directory can be accessed, including '
-                                 'the build output dir, JUJU_REPOSITORY, '
-                                 'LAYER_PATH, INTERFACE_PATH, and any '
-                                 'wheelhouse overrides')
+        self._check_path(self.output_dir, need_write=True)
+        self._check_path(self.wheelhouse_overrides)
+        self._check_path(os.environ.get('JUJU_REPOSITORY'))
+        self._check_path(os.environ.get('LAYER_PATH'))
+        self._check_path(os.environ.get('INTERACE_PATH'))
 
     def clean_removed(self, signatures):
         """

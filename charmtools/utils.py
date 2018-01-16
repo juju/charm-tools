@@ -283,7 +283,7 @@ def retry(attempts, *callbacks, **kwargs):
     """
     Repeatedly try callbacks a fixed number of times or until all return True
     """
-    for attempt in xrange(attempts):
+    for attempt in range(attempts):
         if 'bar' in kwargs:
             kwargs['bar'].next(attempt == 0, message=kwargs.get('message'))
         for callback in callbacks:
@@ -603,7 +603,12 @@ def get_home():
 
     If the home directory can't be determined, it will return None.
     """
-    username = pwd.getpwuid(os.getuid()).pw_name
+
+    try:
+        username = pwd.getpwuid(os.getuid()).pw_name
+    except Exception:
+        return None
+
     home = os.path.expanduser('~{}'.format(username))
     if home.startswith('~'):
         return None

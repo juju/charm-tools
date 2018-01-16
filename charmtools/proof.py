@@ -38,13 +38,23 @@ def get_args(args=None):
 
 
 def proof(path, is_bundle, debug):
+    messages = []
+    exit_code = 0
     path = os.path.abspath(path)
     home_path = utils.get_home()
+    home_msg = ('For security reasons, only paths under '
+                'your home directory can be accessed')
     if not home_path:  # expansion failed
-        return ['Could not determine home directory'], 200
-    if not path.startswith(home_path):
-        return ['For security reasons, only paths under '
-                'your home directory can be accessed'], 200
+        messages.append('Could not determine home directory')
+        messages.append(home_msg)
+    elif not path.startswith(home_path):
+        messages.append('The path {} is not under your '
+                        'home directory'.format(path))
+        messages.append(home_msg)
+    if not os.access(path, os.R_OK):
+        messages.append('Unable to read from {}'.format(path))
+        exit_code = 200
+        return messages, exit_code
     if not is_bundle:
         try:
             c = Charm(path)
