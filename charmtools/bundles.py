@@ -5,6 +5,7 @@ import yaml
 
 from linter import Linter
 import jujubundlelib.validation
+from charmtools.utils import validate_display_name
 
 
 charm_url_includes_id = re.compile(r'-\d+$').search
@@ -15,6 +16,7 @@ class BundleLinter(Linter):
         """Supplement jujubundlelib validation with some extra checks.
 
         """
+        validate_display_name(data, self)
         if 'series' not in data and 'inherits' not in data:
             self.info("No series defined")
 

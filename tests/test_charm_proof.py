@@ -30,6 +30,7 @@ proof_path = join(proof_path, 'charmtools')
 sys.path.append(proof_path)
 
 from charmtools.charms import CharmLinter as Linter
+from charmtools.charms import validate_display_name
 from charmtools.charms import validate_maintainer
 from charmtools.charms import validate_categories_and_tags
 from charmtools.charms import validate_storage
@@ -396,6 +397,38 @@ class CategoriesTagsValidationTest(TestCase):
         self.assertFalse(linter.info.called)
         self.assertFalse(linter.err.called)
 
+
+class DisplayNameValidationTest(TestCase):
+    def test_educates_display_name(self):
+        """Charm does not have a display_name."""
+        linter = Mock()
+        charm = {
+            'name': 'peanutbutter'
+        }
+        validate_display_name(charm, linter)
+        linter.info.assert_called_once_with(
+            '`display-name` not provided, add for custom naming in the UI')
+
+    def test_allows_display_name(self):
+        """Charm has a display_name."""
+        linter = Mock()
+        charm = {
+            'display-name': 'Peanut Butter'
+        }
+        validate_display_name(charm, linter)
+        linter.info.assert_not_called()
+        linter.err.assert_not_called()
+        linter.warn.assert_not_called()
+
+    def test_display_name_alphanumeric_only(self):
+        """Charm had invalid display_name."""
+        linter = Mock()
+        charm = {
+            'display-name': '<Peanut$!Butter>'
+        }
+        validate_display_name(charm, linter)
+        linter.err.assert_called_once_with(
+            'display-name: not in valid format (\w+\s*)+')
 
 class MaintainerValidationTest(TestCase):
     def test_two_maintainer_fields(self):

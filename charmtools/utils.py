@@ -613,3 +613,19 @@ def get_home():
     if home.startswith('~'):
         return None
     return home
+
+def validate_display_name(entity, linter):
+    """Validate the display name info in entity metadata.
+
+    :param entity: dict of entity metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` or :class: `BundleLinter` object to
+        which info/warning/error messages will be written
+    """
+    if 'display-name' not in entity:
+        linter.info('`display-name` not provided, add for custom naming in the UI')
+        return
+
+    match = re.match(r'(\w+\s*)+', entity['display-name'])
+    if not match:
+        linter.err('display-name: not in valid format (\w+\s*)+')
+        return
