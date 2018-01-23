@@ -81,3 +81,25 @@ class TestCharmProof(unittest.TestCase):
             'W: my-service: memcached: No annotations found, will render '
             'poorly in GUI',
             self.linter.lint)
+
+    def test_hints_about_missing_display_name(self):
+        self.linter.validate({
+            'services': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
+                },
+            }
+        })
+        self.assertIn('I: `display-name` not provided, add for custom naming in the UI',
+            self.linter.lint)
+
+    def test_allows_display_name(self):
+        self.linter.validate({'display-name': 'Peanut Butter'})
+        self.assertNotIn('E: display-name: not in valid format (\w+\s*)+',
+            self.linter.lint)
+
+    def test_validates_display_name(self):
+        self.linter.validate({'display-name': '<Peanut$!Butter>'})
+        self.assertIn('E: display-name: not in valid format (\w+\s*)+',
+            self.linter.lint)

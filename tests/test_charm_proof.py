@@ -407,7 +407,7 @@ class DisplayNameValidationTest(TestCase):
         }
         validate_display_name(charm, linter)
         linter.info.assert_called_once_with(
-            '`display-name` not provided, charm will be displayed as "peanutbutter"')
+            '`display-name` not provided, add for custom naming in the UI')
 
     def test_allows_display_name(self):
         """Charm has a display_name."""
