@@ -14,6 +14,7 @@ from launchpadlib.launchpad import Launchpad
 
 KNOWN_METADATA_KEYS = [
     'name',
+    'display-name',
     'summary',
     'maintainer',
     'maintainers',
@@ -289,6 +290,7 @@ class Charm(object):
             if len(charm['summary']) > 72:
                 lint.warn('summary should be less than 72')
 
+            validate_display_name(charm, lint)
             validate_maintainer(charm, lint)
             validate_categories_and_tags(charm, lint)
             validate_storage(charm, lint)
@@ -734,6 +736,22 @@ def validate_actions(actions, action_hooks, linter):
         elif not os.access(h, os.X_OK):
             linter.err('actions.{0}: actions/{0} is not executable'.format(k))
 
+def validate_display_name(charm, linter):
+    """Validate the display name info in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+    """
+    if 'display-name' not in charm:
+        linter.info(
+            '`display-name` not provided, charm will be displayed as "%s"' % charm['name'])
+        return
+
+    match = re.match(r'(\w+\s*)+', charm['display-name'])
+    if not match:
+        linter.err('display-name: not in valid format (\w+\s*)+')
+        return
 
 def validate_maintainer(charm, linter):
     """Validate maintainer info in charm metadata.
