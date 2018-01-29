@@ -428,7 +428,7 @@ class DisplayNameValidationTest(TestCase):
         }
         validate_display_name(charm, linter)
         linter.err.assert_called_once_with(
-            'display-name: not in valid format (\w+\s*)+')
+            'display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.')
 
 class MaintainerValidationTest(TestCase):
     def test_two_maintainer_fields(self):

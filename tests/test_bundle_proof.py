@@ -96,10 +96,10 @@ class TestCharmProof(unittest.TestCase):
 
     def test_allows_display_name(self):
         self.linter.validate({'display-name': 'Peanut Butter'})
-        self.assertNotIn('E: display-name: not in valid format (\w+\s*)+',
+        self.assertNotIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
             self.linter.lint)
 
     def test_validates_display_name(self):
         self.linter.validate({'display-name': '<Peanut$!Butter>'})
-        self.assertIn('E: display-name: not in valid format (\w+\s*)+',
+        self.assertIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
             self.linter.lint)
