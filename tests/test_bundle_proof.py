@@ -94,12 +94,33 @@ class TestCharmProof(unittest.TestCase):
         self.assertIn('I: `display-name` not provided, add for custom naming in the UI',
             self.linter.lint)
 
-    def test_allows_display_name(self):
-        self.linter.validate({'display-name': 'Peanut Butter'})
-        self.assertNotIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
-            self.linter.lint)
+    def test_allows_valid_display_name(self):
+        # These names are copied from the juju/names package tests.
+        # https://github.com/juju/names/blob/master/charm_test.go#L42
+        valid_names = [
+            'ABC',
+            'My Awesome Charm',
+            'my-charm-name',
+            '1-abc-2',
+            'underscores_allowed',
+        ]
+        for name in valid_names:
+            self.linter.validate({'display-name': name})
+            self.assertNotIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
+                self.linter.lint)
 
     def test_validates_display_name(self):
-        self.linter.validate({'display-name': '<Peanut$!Butter>'})
-        self.assertIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
-            self.linter.lint)
+        # These names are copied from the juju/names package tests.
+        # https://github.com/juju/names/blob/master/charm_test.go#L42
+        invalid_names = [
+            ' bad name',
+            'big  space',
+            'bigger    space',
+            'tabs	not	allowed',
+            'no\nnewlines',
+            'no\r\nnewlines',
+        ]
+        for name in invalid_names:
+            self.linter.validate({'display-name': name})
+            self.assertIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
+                self.linter.lint)
