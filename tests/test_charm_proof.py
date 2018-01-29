@@ -411,24 +411,45 @@ class DisplayNameValidationTest(TestCase):
 
     def test_allows_display_name(self):
         """Charm has a display_name."""
-        linter = Mock()
-        charm = {
-            'display-name': 'Peanut Butter'
-        }
-        validate_display_name(charm, linter)
-        linter.info.assert_not_called()
-        linter.err.assert_not_called()
-        linter.warn.assert_not_called()
+        # These names are copied from the juju/names package tests.
+        # https://github.com/juju/names/blob/master/charm_test.go#L42
+        valid_names = [
+            'ABC',
+            'My Awesome Charm',
+            'my-charm-name',
+            '1-abc-2',
+            'underscores_allowed',
+        ]
+        for name in valid_names:
+            linter = Mock()
+            charm = {
+                'display-name': name
+            }
+            validate_display_name(charm, linter)
+            linter.info.assert_not_called()
+            linter.err.assert_not_called()
+            linter.warn.assert_not_called()
 
     def test_display_name_alphanumeric_only(self):
         """Charm had invalid display_name."""
-        linter = Mock()
-        charm = {
-            'display-name': '<Peanut$!Butter>'
-        }
-        validate_display_name(charm, linter)
-        linter.err.assert_called_once_with(
-            'display-name: not in valid format (\w+\s*)+')
+        # These names are copied from the juju/names package tests.
+        # https://github.com/juju/names/blob/master/charm_test.go#L42
+        invalid_names = [
+            ' bad name',
+            'big  space',
+            'bigger    space',
+            'tabs	not	allowed',
+            'no\nnewlines',
+            'no\r\nnewlines',
+        ]
+        for name in invalid_names:
+            linter = Mock()
+            charm = {
+                'display-name': name
+            }
+            validate_display_name(charm, linter)
+            linter.err.assert_called_once_with(
+                'display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.')
 
 class MaintainerValidationTest(TestCase):
     def test_two_maintainer_fields(self):

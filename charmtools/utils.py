@@ -625,7 +625,11 @@ def validate_display_name(entity, linter):
         linter.info('`display-name` not provided, add for custom naming in the UI')
         return
 
-    match = re.match(r'(\w+\s*)+', entity['display-name'])
+    # Keep display name in sync with the juju/names package.
+    # https://github.com/juju/names/blob/master/charm.go#L33
+    match = re.match(
+        r'^[A-Za-z0-9]+( [-A-Za-z0-9_]|[-A-Za-z0-9_])*$',
+        entity['display-name'])
     if not match:
-        linter.err('display-name: not in valid format (\w+\s*)+')
+        linter.err('display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.')
         return
