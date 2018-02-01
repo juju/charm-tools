@@ -763,6 +763,7 @@ class InstallerTactic(Tactic):
 class WheelhouseTactic(ExactMatch, Tactic):
     kind = "dynamic"
     FILENAME = 'wheelhouse.txt'
+    removed = []  # has to be class level to affect all tactics during signing
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
@@ -786,10 +787,14 @@ class WheelhouseTactic(ExactMatch, Tactic):
                       *reqs)
             for wheel in temp_dir.files():
                 dest = wheelhouse / wheel.basename()
+                if dest in self.tracked:
+                    return
                 if self.purge_wheels:
                     unversioned_wheel = wheel.basename().split('-')[0]
                     for old_wheel in wheelhouse.glob(unversioned_wheel + '-*'):
                         old_wheel.remove()
+                        if old_wheel != dest:
+                            self.removed.append(old_wheel)
                 else:
                     dest.remove_p()
                 wheel.move(wheelhouse)
@@ -838,6 +843,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
         for tactic in self.previous:
             sigs.update(tactic.sign())
         for d in self.tracked:
+            if d in self.removed:
+                continue
             relpath = d.relpath(self.target.directory)
             sigs[relpath] = (
                 self.layer.url, "dynamic", utils.sign(d))
