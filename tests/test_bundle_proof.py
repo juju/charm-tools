@@ -92,7 +92,7 @@ class TestCharmProof(unittest.TestCase):
             }
         })
         self.assertIn('I: `display-name` not provided, add for custom naming in the UI',
-            self.linter.lint)
+                      self.linter.lint)
 
     def test_allows_valid_display_name(self):
         # These names are copied from the juju/names package tests.
@@ -106,8 +106,9 @@ class TestCharmProof(unittest.TestCase):
         ]
         for name in valid_names:
             self.linter.validate({'display-name': name})
-            self.assertNotIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
-                self.linter.lint)
+            self.assertNotIn('E: display-name: not in valid format. '
+                             'Only letters, numbers, dashes, and hyphens are permitted.',
+                             self.linter.lint)
 
     def test_validates_display_name(self):
         # These names are copied from the juju/names package tests.
@@ -122,5 +123,6 @@ class TestCharmProof(unittest.TestCase):
         ]
         for name in invalid_names:
             self.linter.validate({'display-name': name})
-            self.assertIn('E: display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.',
-                self.linter.lint)
+            self.assertIn('E: display-name: not in valid format. '
+                          'Only letters, numbers, dashes, and hyphens are permitted.',
+                          self.linter.lint)

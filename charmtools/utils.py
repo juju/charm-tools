@@ -208,6 +208,7 @@ class Process(object):
             result.exit_on_error()
         return result
 
+
 command = Process
 
 
@@ -440,6 +441,7 @@ class _O(dict):
     def __getattr__(self, k):
         return self[k]
 
+
 REACTIVE_PATTERNS = [
     re.compile("\s*@when"),
     re.compile(".set_state\(")
@@ -613,6 +615,7 @@ def get_home():
     if home.startswith('~'):
         return None
     return home
+
 
 def validate_display_name(entity, linter):
     """Validate the display name info in entity metadata.
