@@ -23,7 +23,33 @@ class TestCharmProof(unittest.TestCase):
     def setUp(self):
         self.linter = charmtools.bundles.BundleLinter()
 
-    def test_warn_on_charm_urls_without_revisions(self):
+    def test_invalid_app_key(self):
+        self.linter.validate({
+            'invalid': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
+                },
+            }
+        })
+        self.assertIn(
+            'E: No applications defined',
+            self.linter.lint)
+
+    def test_applications_warn_on_charm_urls_without_revisions(self):
+        self.linter.validate({
+            'applications': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
+                },
+            }
+        })
+        self.assertIn(
+            'W: memcached: charm URL should include a revision',
+            self.linter.lint)
+
+    def test_services_warn_on_charm_urls_without_revisions(self):
         self.linter.validate({
             'services': {
                 'memcached': {
