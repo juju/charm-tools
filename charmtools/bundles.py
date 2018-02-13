@@ -21,7 +21,12 @@ class BundleLinter(Linter):
             self.info("No series defined")
 
         if 'services' in data:
-            for svc, sdata in data['services'].items():
+            app_key = 'services'
+        else:
+            app_key = 'applications'
+
+        if app_key in data:
+            for svc, sdata in data[app_key].items():
                 if 'annotations' not in sdata:
                     self.warn('%s: No annotations found, will render '
                               'poorly in GUI' % svc)
@@ -31,7 +36,7 @@ class BundleLinter(Linter):
                         '%s: charm URL should include a revision' % svc)
         else:
             if 'inherits' not in data:
-                self.err("No services defined")
+                self.err("No applications defined")
 
     def proof(self, bundle):
         data = bundle.bundle_file()
@@ -77,7 +82,7 @@ class Bundle(object):
     def is_v4(self, data=None):
         if data is None:
             data = self.bundle_file()
-        v4_keys = {'services', 'relations', 'machines', 'series'}
+        v4_keys = {'applications', 'services', 'relations', 'machines', 'series'}
         bundle_keys = set(data.keys())
         return bool(v4_keys & bundle_keys)
 
