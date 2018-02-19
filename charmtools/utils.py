@@ -208,6 +208,7 @@ class Process(object):
             result.exit_on_error()
         return result
 
+
 command = Process
 
 
@@ -440,6 +441,7 @@ class _O(dict):
     def __getattr__(self, k):
         return self[k]
 
+
 REACTIVE_PATTERNS = [
     re.compile("\s*@when"),
     re.compile(".set_state\(")
@@ -613,3 +615,24 @@ def get_home():
     if home.startswith('~'):
         return None
     return home
+
+
+def validate_display_name(entity, linter):
+    """Validate the display name info in entity metadata.
+
+    :param entity: dict of entity metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` or :class: `BundleLinter` object to
+        which info/warning/error messages will be written
+    """
+    if 'display-name' not in entity:
+        linter.info('`display-name` not provided, add for custom naming in the UI')
+        return
+
+    # Keep display name in sync with the juju/names package.
+    # https://github.com/juju/names/blob/master/charm.go#L33
+    match = re.match(
+        r'^[A-Za-z0-9]+( [-A-Za-z0-9_]|[-A-Za-z0-9_])*$',
+        entity['display-name'])
+    if not match:
+        linter.err('display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.')
+        return

@@ -23,7 +23,33 @@ class TestCharmProof(unittest.TestCase):
     def setUp(self):
         self.linter = charmtools.bundles.BundleLinter()
 
-    def test_warn_on_charm_urls_without_revisions(self):
+    def test_invalid_app_key(self):
+        self.linter.validate({
+            'invalid': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
+                },
+            }
+        })
+        self.assertIn(
+            'E: No applications defined',
+            self.linter.lint)
+
+    def test_applications_warn_on_charm_urls_without_revisions(self):
+        self.linter.validate({
+            'applications': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
+                },
+            }
+        })
+        self.assertIn(
+            'W: memcached: charm URL should include a revision',
+            self.linter.lint)
+
+    def test_services_warn_on_charm_urls_without_revisions(self):
         self.linter.validate({
             'services': {
                 'memcached': {
@@ -81,3 +107,48 @@ class TestCharmProof(unittest.TestCase):
             'W: my-service: memcached: No annotations found, will render '
             'poorly in GUI',
             self.linter.lint)
+
+    def test_hints_about_missing_display_name(self):
+        self.linter.validate({
+            'services': {
+                'memcached': {
+                    'charm': 'cs:precise/memcached',
+                    'num_units': 1,
+                },
+            }
+        })
+        self.assertIn('I: `display-name` not provided, add for custom naming in the UI',
+                      self.linter.lint)
+
+    def test_allows_valid_display_name(self):
+        # These names are copied from the juju/names package tests.
+        # https://github.com/juju/names/blob/master/charm_test.go#L42
+        valid_names = [
+            'ABC',
+            'My Awesome Charm',
+            'my-charm-name',
+            '1-abc-2',
+            'underscores_allowed',
+        ]
+        for name in valid_names:
+            self.linter.validate({'display-name': name})
+            self.assertNotIn('E: display-name: not in valid format. '
+                             'Only letters, numbers, dashes, and hyphens are permitted.',
+                             self.linter.lint)
+
+    def test_validates_display_name(self):
+        # These names are copied from the juju/names package tests.
+        # https://github.com/juju/names/blob/master/charm_test.go#L42
+        invalid_names = [
+            ' bad name',
+            'big  space',
+            'bigger    space',
+            'tabs	not	allowed',
+            'no\nnewlines',
+            'no\r\nnewlines',
+        ]
+        for name in invalid_names:
+            self.linter.validate({'display-name': name})
+            self.assertIn('E: display-name: not in valid format. '
+                          'Only letters, numbers, dashes, and hyphens are permitted.',
+                          self.linter.lint)

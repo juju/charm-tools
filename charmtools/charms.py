@@ -11,9 +11,11 @@ from stat import S_IXUSR
 
 from linter import Linter
 from launchpadlib.launchpad import Launchpad
+from charmtools.utils import validate_display_name
 
 KNOWN_METADATA_KEYS = [
     'name',
+    'display-name',
     'summary',
     'maintainer',
     'maintainers',
@@ -289,6 +291,7 @@ class Charm(object):
             if len(charm['summary']) > 72:
                 lint.warn('summary should be less than 72')
 
+            validate_display_name(charm, lint)
             validate_maintainer(charm, lint)
             validate_categories_and_tags(charm, lint)
             validate_storage(charm, lint)
@@ -733,7 +736,6 @@ def validate_actions(actions, action_hooks, linter):
             linter.warn('actions.{0}: actions/{0} does not exist'.format(k))
         elif not os.access(h, os.X_OK):
             linter.err('actions.{0}: actions/{0} is not executable'.format(k))
-
 
 def validate_maintainer(charm, linter):
     """Validate maintainer info in charm metadata.
