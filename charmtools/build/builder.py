@@ -303,7 +303,8 @@ class Builder(object):
                 results["layers"].append(base_layer)
                 self.post_metrics('layer', base_layer.name, base_layer.fetched)
 
-    def build_tactics(self, entry, layer, next_config, output_files):
+    def build_tactics(self, entry, layer, next_config, current_config,
+                      output_files):
         relname = entry.relpath(layer.directory)
         existing_tactic = output_files.get(relname)
         tactic = Tactic.get(
@@ -311,13 +312,15 @@ class Builder(object):
             self.target,
             layer,
             next_config,
+            current_config,
             existing_tactic,
         )
         output_files[relname] = tactic
 
     def plan_layers(self, layers, output_files):
+        current_config = BuildConfig()
         next_config = BuildConfig()
-        next_config.add_config(layers["layers"][0].config)
+        next_config = next_config.add_config(layers["layers"][0].config)
 
         layers["layers"][-1].url = self.name
 
@@ -325,6 +328,7 @@ class Builder(object):
             log.info("Processing layer: %s%s", layer.url,
                      "" if 'deps' in layer.directory.splitall()
                      else " (from %s)" % layer.directory.relpath())
+            current_config = current_config.add_config(layer.config)
             if i + 1 < len(layers["layers"]):
                 next_layer = layers["layers"][i + 1]
                 next_config = next_config.add_config(next_layer.config)
@@ -338,6 +342,7 @@ class Builder(object):
                                        self.build_tactics,
                                        layer=layer,
                                        next_config=next_config,
+                                       current_config=current_config,
                                        output_files=output_files))
         if self.wheelhouse_overrides:
             existing_tactic = output_files.get('wheelhouse.txt')

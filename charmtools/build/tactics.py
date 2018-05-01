@@ -29,12 +29,13 @@ class Tactic(object):
     _warnings = {}  # deprecation warnings we've shown
 
     @classmethod
-    def get(cls, entity, target, layer, next_config, existing_tactic):
+    def get(cls, entity, target, layer, next_config, current_config,
+            existing_tactic):
         """
         Factory method to get an instance of the correct Tactic to handle the
         given entity.
         """
-        for candidate in next_config.tactics + DEFAULT_TACTICS:
+        for candidate in current_config.tactics + DEFAULT_TACTICS:
             argspec = getargspec(candidate.trigger)
             if len(argspec.args) == 2:
                 # old calling convention
