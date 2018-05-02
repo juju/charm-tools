@@ -26,7 +26,7 @@ class BuildConfig(chainstuf):
 
     def __init__(self, *args, **kwargs):
         super(BuildConfig, self).__init__(*args, **kwargs)
-        self['_tactics'] = []
+        self['_tactics'] = self.get('tactics', [])
         self.configured = False
 
     def __getattr__(self, key):

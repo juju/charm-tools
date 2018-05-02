@@ -4,6 +4,7 @@ import json
 import unittest
 import logging
 import pkg_resources
+from path import Path as path
 
 
 from charmtools import build
@@ -422,6 +423,49 @@ class TestBuild(unittest.TestCase):
                 'qux': False,
             },
         })
+
+    @mock.patch('charmtools.build.tactics.getargspec')
+    @mock.patch('charmtools.utils.walk')
+    def test_custom_tactics(self, mwalk, mgetargspec):
+        def _layer(tactics):
+            return mock.Mock(config=build.builder.BuildConfig({'tactics':
+                                                               tactics}),
+                             directory=path('.'),
+                             url=tactics[0])
+
+        builder = build.builder.Builder()
+        builder.charm = 'foo'
+        layers = {'layers': [
+            _layer(['first']),
+            _layer(['second']),
+            _layer(['third']),
+        ]}
+
+        builder.plan_layers(layers, {})
+        calls = [call[1]['current_config'].tactics
+                 for call in mwalk.call_args_list]
+        self.assertEquals(calls, [
+            ['first'],
+            ['second', 'first'],
+            ['third', 'second', 'first'],
+        ])
+
+        mgetargspec.return_value = mock.Mock(args=[1, 2, 3, 4])
+        current_config = mock.Mock(tactics=[
+            mock.Mock(name='1', **{'trigger.return_value': False}),
+            mock.Mock(name='2', **{'trigger.return_value': False}),
+            mock.Mock(name='3', **{'trigger.return_value': True}),
+        ])
+        build.tactics.Tactic.get(mock.Mock(),
+                                 mock.Mock(),
+                                 mock.Mock(),
+                                 mock.Mock(),
+                                 current_config,
+                                 mock.Mock())
+        self.assertEquals([t.trigger.called for t in current_config.tactics],
+                          [True, True, True])
+        self.assertEquals([t.called for t in current_config.tactics],
+                          [False, False, True])
 
 
 class TestFetchers(unittest.TestCase):
