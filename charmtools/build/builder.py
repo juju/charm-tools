@@ -319,8 +319,7 @@ class Builder(object):
 
     def plan_layers(self, layers, output_files):
         current_config = BuildConfig()
-        next_config = BuildConfig()
-        next_config = next_config.add_config(layers["layers"][0].config)
+        next_config = current_config.add_config(layers["layers"][0].config)
 
         layers["layers"][-1].url = self.name
 
