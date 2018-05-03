@@ -357,6 +357,18 @@ class Builder(object):
         plan = [t for t in output_files.values() if t]
         return plan
 
+    def plan_hooks(self, layers, output_files, plan):
+        if self.HOOK_TEMPLATE_FILE not in output_files:
+            raise BuildError('At least one layer must provide %s',
+                             self.HOOK_TEMPLATE_FILE)
+        template_file = self.target / self.HOOK_TEMPLATE_FILE
+        target_config = layers["layers"][-1].config
+        source_layer = output_files[self.HOOK_TEMPLATE_FILE].layer
+        plan.append(
+            charmtools.build.tactics.StandardHooksBind(
+                'hook', source_layer.url, self.target,
+                target_config, output_files, template_file))
+
     def plan_interfaces(self, layers, output_files, plan):
         # Interface includes don't directly map to output files
         # as they are computed in combination with the metadata.yaml
@@ -411,7 +423,7 @@ class Builder(object):
                 plan.append(
                     charmtools.build.tactics.InterfaceBind(
                         relation_name, iface.url, self.target,
-                        target_config, template_file))
+                        target_config, output_files, template_file))
 
     def plan_storage(self, layers, output_files, plan):
         # Storage hooks don't directly map to output files
@@ -434,13 +446,14 @@ class Builder(object):
             plan.append(
                 charmtools.build.tactics.StorageBind(
                     name, owner, self.target,
-                    target_config, template_file))
+                    target_config, output_files, template_file))
 
     def formulate_plan(self, layers):
         """Build out a plan for each file in the various
         layers, taking into account config at each layer"""
         output_files = OrderedDict()
         self.plan = self.plan_layers(layers, output_files)
+        self.plan_hooks(layers, output_files, self.plan)
         self.plan_interfaces(layers, output_files, self.plan)
         self.plan_storage(layers, output_files, self.plan)
         return self.plan

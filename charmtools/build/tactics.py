@@ -311,26 +311,32 @@ class InterfaceCopy(Tactic):
 class DynamicHookBind(Tactic):
     HOOKS = []
 
-    def __init__(self, name, owner, target, config, template_file):
+    def __init__(self, name, owner, target, config, output_files,
+                 template_file):
         self.name = name
         self.owner = owner
         self._target = target
+        self._output_files = output_files
         self._template_file = template_file
         self.targets = [self._target / "hooks" / hook.format(name)
                         for hook in self.HOOKS]
+        self.tracked = []
 
     def __call__(self):
         template = self._template_file.text()
         for target in self.targets:
+            if target.relpath(self._target.directory) in self._output_files:
+                continue
             target.parent.makedirs_p()
             target.write_text(template.format(self.name))
             target.chmod(0o755)
+            self.tracked.append(target)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
         """
         sigs = {}
-        for target in self.targets:
+        for target in self.tracked:
             rel = target.relpath(self._target.directory)
             sigs[rel] = (self.owner,
                          "dynamic",
@@ -339,6 +345,19 @@ class DynamicHookBind(Tactic):
 
     def __str__(self):
         return "{}: {}".format(self.__class__.__name__, self.name)
+
+
+class StandardHooksBind(DynamicHookBind):
+    HOOKS = [
+        'install',
+        'config-changed',
+        'leader-elected',
+        'leader-settings-changed',
+        'start',
+        'stop',
+        'update-status',
+        'upgrade-charm',
+    ]
 
 
 class InterfaceBind(DynamicHookBind):
