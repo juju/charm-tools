@@ -383,7 +383,7 @@ class Charm(object):
                     requires = charm.get('requires')
                     if requires is not None:
                         found_scope_container = False
-                        for rel_name, rel in six.iteritems(requires):
+                        for rel in six.itervalues(requires):
                             if 'scope' in rel:
                                 if rel['scope'] == 'container':
                                     found_scope_container = True
