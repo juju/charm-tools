@@ -2,10 +2,10 @@
 
 from __future__ import print_function
 
+import argparse
+import json
 import os
 import sys
-import json
-import argparse
 from subprocess import check_output, CalledProcessError, PIPE
 from pkg_resources import parse_version, resource_string, resource_exists
 
@@ -15,7 +15,10 @@ git_cmd = ['git', 'describe', '--tags', '--long']
 
 def get_version_info():
     if resource_exists(__name__, 'VERSION'):
-        version_info = json.loads(resource_string(__name__, 'VERSION'))
+        res_string = resource_string(__name__, 'VERSION')
+        if sys.version_info >= (3, 0):
+            res_string = res_string.decode('UTF-8')
+        version_info = json.loads(res_string)
     elif os.environ.get('SNAPCRAFT_PROJECT_VERSION', 'git') != 'git':
         version_parts = os.environ['SNAPCRAFT_PROJECT_VERSION'].split('+')
         git = ''
@@ -31,6 +34,8 @@ def get_version_info():
     else:
         try:
             output = check_output(git_cmd, stderr=PIPE)
+            if sys.version_info >= (3, 0):
+                output = output.decode('UTF-8')
             version, gitn, gitsha = output.strip().rsplit('-', 2)
             if version.startswith('v'):
                 version = version[1:]

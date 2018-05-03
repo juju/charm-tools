@@ -55,7 +55,7 @@ def deepmerge(dest, src):
     This is destructive (`dest` is modified), as values from `src` may be
     passed through `copy.deepcopy`.
     """
-    for k, v in src.iteritems():
+    for k, v in src.items():
         if dest.get(k) and isinstance(v, dict):
             deepmerge(dest[k], v)
         elif dest.get(k) and isinstance(v, list):

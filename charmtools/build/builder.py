@@ -377,7 +377,7 @@ class Builder(object):
         elif not meta:
             log.warn('Empty metadata.yaml')
 
-        template_file = self.target / self.HOOK_TEMPLATE_FILE
+        template_file = path(self.target.directory) / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         specs = []
         used_interfaces = set()
@@ -428,7 +428,7 @@ class Builder(object):
             raise BuildError('At least one layer must provide %s',
                              self.HOOK_TEMPLATE_FILE)
 
-        template_file = self.target / self.HOOK_TEMPLATE_FILE
+        template_file = path(self.target.directory) / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         for name, owner in meta_tac.storage.items():
             plan.append(

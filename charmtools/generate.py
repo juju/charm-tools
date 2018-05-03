@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import absolute_import
+
 # Copyright (C) 2013 Marco Ceppi <marco@ceppi.net>.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,11 +23,11 @@ import argparse
 
 from Cheetah.Template import Template
 
-from cli import parser_defaults
-from charms import Charm
+from charmtools.cli import parser_defaults
+from charmtools.charms import Charm
 from charmstore import CharmStore
 from charmstore.error import CharmNotFound
-from . import utils
+import charmtools.utils as utils
 
 TPL_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
 CHARM_TPL = os.path.join(TPL_DIR, 'charm')
@@ -73,7 +75,7 @@ def tests(charm_dir, is_bundle=False, debug=False, series='trusty'):
     for rel_type in ['provides', 'requires']:
         if rel_type in mdata:
             interfaces[rel_type] = {}
-            for rel, data in mdata[rel_type].iteritems():
+            for rel, data in mdata[rel_type].items():
                 iface = data['interface']
                 if iface and iface not in interfaces[rel_type]:
                     r = graph(iface, rel_type, series=series)
@@ -104,8 +106,8 @@ sudo apt-get update
 sudo apt-get install amulet python3-requests -y
 """)
 
-    os.chmod(os.path.join(charm_dir, 'tests', '99-autogen'), 0755)
-    os.chmod(os.path.join(charm_dir, 'tests', '00-setup'), 0755)
+    os.chmod(os.path.join(charm_dir, 'tests', '99-autogen'), 0o755)
+    os.chmod(os.path.join(charm_dir, 'tests', '00-setup'), 0o755)
 
 
 def parser(args=None):

@@ -1,11 +1,14 @@
+from __future__ import absolute_import
+
 import glob
 import os
 import re
 import yaml
 
-from linter import Linter
 import jujubundlelib.validation
 from charmtools.utils import validate_display_name
+
+from charmtools.linter import Linter
 
 
 charm_url_includes_id = re.compile(r'-\d+$').search

@@ -1,5 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
+
+from __future__ import print_function
 
 import argparse
 import glob
@@ -7,6 +9,7 @@ import logging
 import os
 import re
 import signal
+import six
 import subprocess
 import sys
 import time
@@ -100,7 +103,7 @@ class Conductor(object):
         for test in requested_tests.values():
             try:
                 self.bootstrap(self.juju_env, self.args.setup_timeout)
-            except Exception, e:
+            except Exception as e:
                 self.log.warn('Could not bootstrap %s, got %s. Skipping' %
                               (self.juju_env, e))
                 self.errors += 1
@@ -281,18 +284,18 @@ class Orchestra(object):
             with timeout(self.conductor.args.timeout):
                 output = subprocess.check_output(self.test, env=self.env)
                 self.log.debug(output)
-        except TimeoutError, e:
+        except TimeoutError as e:
             self.log.debug('Killed by timeout after %s seconds',
                            self.conductor.args.timeout)
             self.print_status(124)
             error = e if not self.is_passing_code(124) else e
-        except subprocess.CalledProcessError, e:
+        except subprocess.CalledProcessError as e:
             self.log.debug(e.output)
             self.log.debug('Got exit code: %s', e.returncode)
             self.print_status(e.returncode)
             error = TestingError(e.returncode) if not \
                 self.is_passing_code(e.returncode) else e
-        except Exception, e:
+        except Exception as e:
             self.log.debug('Encountered unexpected error %s', e)
             self.print_status(9001)
             error = e
@@ -302,7 +305,7 @@ class Orchestra(object):
         if self.conductor.args.logdir:
             try:
                 self.archive_logs()
-            except OrchestraError, e:
+            except OrchestraError as e:
                 self.log.error(e)
 
         if error:
@@ -422,18 +425,18 @@ class TestCfg(object):
     def __init__(self, cfg):
         self.log = logging.getLogger('juju-test.testcfg')
 
-        if isinstance(cfg, basestring):
+        if isinstance(cfg, six.string_types):
             cfg = yaml.safe_load(cfg)
 
         if 'options' in cfg:
-            for key, val in cfg['options'].iteritems():
+            for key, val in cfg['options'].items():
                 if key in self._keys:
                     setattr(self, key, val)
         if 'substrates' in cfg:
             self.substrates = cfg['substrates']
 
     def update(self, **kw):
-        for key, val in kw.iteritems():
+        for key, val in kw.items():
             self.log.debug('Overwriting %s to %s from cmd' % (key, val))
             setattr(self, key, val)
 
@@ -547,7 +550,7 @@ def parse_substrates(spec):
         keys.
 
     """
-    if isinstance(spec, basestring):
+    if isinstance(spec, six.string_types):
         spec = yaml.safe_load(spec)
     elif not hasattr(spec, '__getitem__'):
         spec = vars(spec)
@@ -671,7 +674,7 @@ def main():
     args = p.parse_args()
     test_cfg = None
     if args.description:
-        print p.description
+        print(p.description)
         sys.exit()
 
     logger = setup_logging(level=args.v, quiet=args.quiet, logdir=args.logdir)

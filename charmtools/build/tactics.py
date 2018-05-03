@@ -251,7 +251,9 @@ class InterfaceCopy(Tactic):
 
     @property
     def target(self):
-        return self._target / "hooks/relations" / self.interface.name
+        return (path(self._target.directory) /
+                "hooks/relations" /
+                self.interface.name)
 
     def __call__(self):
         # copy the entire tree into the
@@ -316,8 +318,9 @@ class DynamicHookBind(Tactic):
         self.owner = owner
         self._target = target
         self._template_file = template_file
-        self.targets = [self._target / "hooks" / hook.format(name)
-                        for hook in self.HOOKS]
+        self.targets = [
+            path(self._target.directory) / "hooks" / hook.format(name)
+            for hook in self.HOOKS]
 
     def __call__(self):
         template = self._template_file.text()
@@ -925,7 +928,7 @@ def extend_with_default(validator_class):
     validate_properties = validator_class.VALIDATORS["properties"]
 
     def set_defaults(validator, properties, instance, schema):
-        for prop, subschema in properties.iteritems():
+        for prop, subschema in properties.items():
             if "default" in subschema:
                 instance.setdefault(prop, subschema["default"])
 

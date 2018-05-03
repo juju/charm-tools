@@ -500,7 +500,7 @@ class MaintainerValidationTest(TestCase):
         validate_maintainer(charm, linter)
         linter.warn.assert_called_once_with(
             'Maintainer format should be "Name <Email>", not '
-            '"Testertester@example.com"')
+            '"Tester tester@example.com"')
         self.assertFalse(linter.err.called)
 
     def test_maintainers_bad_format(self):
@@ -512,7 +512,7 @@ class MaintainerValidationTest(TestCase):
         validate_maintainer(charm, linter)
         linter.warn.assert_called_once_with(
             'Maintainer format should be "Name <Email>", not '
-            '"Testertester@example.com"')
+            '"Tester tester@example.com"')
         self.assertFalse(linter.err.called)
 
     def test_good_maintainer(self):
@@ -536,7 +536,7 @@ class MaintainerValidationTest(TestCase):
         }
         validate_maintainer(charm, linter)
         self.assertFalse(linter.err.called)
-        self.assertFalse(linter.warn.called)
+        self.assertFalse(linter.warn.called, "linter.warn was called, sadly")
 
 
 class StorageValidationTest(TestCase):

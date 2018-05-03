@@ -2,6 +2,7 @@ import re
 import subprocess
 
 from collections import namedtuple
+import six
 
 from . import utils
 
@@ -42,6 +43,8 @@ def get_recommended_repo(path):
         for cmd in cmds:
             try:
                 output = subprocess.check_output(cmd.args, stderr=DEVNULL)
+                if six.PY3:
+                    output = str(output)
                 if output:
                     repo = cmd.parse(output)
                     if repo:
