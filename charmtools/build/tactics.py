@@ -313,9 +313,31 @@ class DynamicHookBind(Tactic):
 
     def __init__(self, name, owner, target, config, output_files,
                  template_file):
+        """
+        Initialize an instance of this tactic (should be a subclass of
+        `DynamicHookBind`).
+
+        :param name: Name of the category for this type of hook.  E.g.,
+            could be the name of a relation, for relation hooks, the name
+            of a storage endpoint, for storage hooks, 'hook' for standard
+            hooks, etc.
+        :type name: str
+        :param owner: URL of layer that owns the target.
+        :type owner: str
+        :param target: Layer representing the build target.
+        :type target: Layer
+        :param config: Config for layer being built
+        :type config: BuildConfig
+        :param output_files: Mapping of file Paths to Tactics that should
+            should process that file.
+        :type output_files: dict
+        :param template_file: Path to the template to render into hooks.
+        :type template_file: path.Path
+        """
         self.name = name
         self.owner = owner
         self._target = target
+        self._config = config
         self._output_files = output_files
         self._template_file = template_file
         self.targets = [self._target / "hooks" / hook.format(name)

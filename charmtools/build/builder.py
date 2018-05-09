@@ -358,6 +358,19 @@ class Builder(object):
         return plan
 
     def plan_hooks(self, layers, output_files, plan):
+        """
+        Add a Tactic to the plan to handle rendering all standard hooks from
+        the template, if not explicitly overridden.
+
+        :param layers: Data structure containing all of the layers composing
+            this charm, along with some overall metadata.
+        :type layers: dict
+        :param output_files: Mapping of file Paths to Tactics that should
+            process those files.
+        :type output_files: dict
+        :param plan: List of all Tactics that need to be invoked.
+        :type plan: list
+        """
         if self.HOOK_TEMPLATE_FILE not in output_files:
             raise BuildError('At least one layer must provide %s',
                              self.HOOK_TEMPLATE_FILE)
@@ -370,6 +383,20 @@ class Builder(object):
                 target_config, output_files, template_file))
 
     def plan_interfaces(self, layers, output_files, plan):
+        """
+        Add Tactics to the plan for each relation endpoint to render hooks
+        for that relation endpoint from the template, as well as a tactic
+        to pull in the interface layer's code.
+
+        :param layers: Data structure containing all of the layers composing
+            this charm, along with some overall metadata.
+        :type layers: dict
+        :param output_files: Mapping of file Paths to Tactics that should
+            process those files.
+        :type output_files: dict
+        :param plan: List of all Tactics that need to be invoked.
+        :type plan: list
+        """
         # Interface includes don't directly map to output files
         # as they are computed in combination with the metadata.yaml
         if not layers.get('interfaces'):
@@ -426,6 +453,19 @@ class Builder(object):
                         target_config, output_files, template_file))
 
     def plan_storage(self, layers, output_files, plan):
+        """
+        Add Tactics to the plan for each storage endpoint to render hooks
+        for that storage endpoint from the template.
+
+        :param layers: Data structure containing all of the layers composing
+            this charm, along with some overall metadata.
+        :type layers: dict
+        :param output_files: Mapping of file Paths to Tactics that should
+            process those files.
+        :type output_files: dict
+        :param plan: List of all Tactics that need to be invoked.
+        :type plan: list
+        """
         # Storage hooks don't directly map to output files
         # as they are computed in combination with the metadata.yaml
         metadata_tactic = [tactic for tactic in plan if isinstance(
