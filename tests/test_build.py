@@ -136,6 +136,11 @@ class TestBuild(unittest.TestCase):
         self.assertTrue(start.exists())
         self.assertIn("Overridden", start.text())
 
+        # Standard hooks generated from template
+        stop = base / "hooks/stop"
+        self.assertTrue(stop.exists())
+        self.assertIn("Hook: ", stop.text())
+
         self.assertTrue((base / "README.md").exists())
         self.assertEqual("dynamic tactics", (base / "README.md").text())
 
@@ -269,9 +274,10 @@ class TestBuild(unittest.TestCase):
         main = base / "hooks/reactive/main.py"
         self.assertTrue(main.exists())
 
+    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
     @responses.activate
-    def test_remote_layer(self, mcall):
+    def test_remote_layer(self, mcall, ph):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
                       "https://juju.github.io/layer-index/"
@@ -307,8 +313,9 @@ class TestBuild(unittest.TestCase):
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
+    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
-    def test_pypi_installer(self, mcall):
+    def test_pypi_installer(self, mcall, ph):
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.output_dir = "out"
@@ -325,10 +332,11 @@ class TestBuild(unittest.TestCase):
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
+    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("path.Path.rmtree_p")
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
-    def test_wheelhouse(self, Process, mkdtemp, rmtree_p):
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph):
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
         bu.log_level = "WARN"

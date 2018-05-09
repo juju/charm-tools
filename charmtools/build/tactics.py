@@ -313,27 +313,55 @@ class InterfaceCopy(Tactic):
 class DynamicHookBind(Tactic):
     HOOKS = []
 
-    def __init__(self, name, owner, target, config, template_file):
+    def __init__(self, name, owner, target, config, output_files,
+                 template_file):
+        """
+        Initialize an instance of this tactic (should be a subclass of
+        `DynamicHookBind`).
+
+        :param name: Name of the category for this type of hook.  E.g.,
+            could be the name of a relation, for relation hooks, the name
+            of a storage endpoint, for storage hooks, 'hook' for standard
+            hooks, etc.
+        :type name: str
+        :param owner: URL of layer that owns the target.
+        :type owner: str
+        :param target: Layer representing the build target.
+        :type target: Layer
+        :param config: Config for layer being built
+        :type config: BuildConfig
+        :param output_files: Mapping of file Paths to Tactics that should
+            should process that file.
+        :type output_files: dict
+        :param template_file: Path to the template to render into hooks.
+        :type template_file: path.Path
+        """
         self.name = name
         self.owner = owner
         self._target = target
+        self._config = config
+        self._output_files = output_files
         self._template_file = template_file
         self.targets = [
             path(self._target.directory) / "hooks" / hook.format(name)
             for hook in self.HOOKS]
+        self.tracked = []
 
     def __call__(self):
         template = self._template_file.text()
         for target in self.targets:
+            if target.relpath(self._target.directory) in self._output_files:
+                continue
             target.parent.makedirs_p()
             target.write_text(template.format(self.name))
             target.chmod(0o755)
+            self.tracked.append(target)
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
         """
         sigs = {}
-        for target in self.targets:
+        for target in self.tracked:
             rel = target.relpath(self._target.directory)
             sigs[rel] = (self.owner,
                          "dynamic",
@@ -342,6 +370,19 @@ class DynamicHookBind(Tactic):
 
     def __str__(self):
         return "{}: {}".format(self.__class__.__name__, self.name)
+
+
+class StandardHooksBind(DynamicHookBind):
+    HOOKS = [
+        'install',
+        'config-changed',
+        'leader-elected',
+        'leader-settings-changed',
+        'start',
+        'stop',
+        'update-status',
+        'upgrade-charm',
+    ]
 
 
 class InterfaceBind(DynamicHookBind):
