@@ -312,9 +312,10 @@ class Charm(object):
                 template_sha1 = hashlib.sha1()
                 icon_sha1 = hashlib.sha1()
                 try:
-                    with open(TEMPLATE_ICON) as ti:
+                    with open(TEMPLATE_ICON, 'rb') as ti:
                         template_sha1.update(ti.read())
-                        with open(os.path.join(charm_path, 'icon.svg')) as ci:
+                        icon_file = os.path.join(charm_path, 'icon.svg')
+                        with open(icon_file, 'rb') as ci:
                             icon_sha1.update(ci.read())
                     if template_sha1.hexdigest() == icon_sha1.hexdigest():
                         lint.info("Includes template icon.svg file.")
@@ -429,7 +430,8 @@ class Charm(object):
                     try:
                         actions = yaml.safe_load(f.read())
                     except Exception as e:
-                        lint.crit('cannot parse ' + actions_yaml_file + ":" + str(e))
+                        lint.crit('cannot parse {}: {}'.format(
+                            actions_yaml_file, e))
                     validate_actions(actions, actions_path, lint)
 
         except IOError:
@@ -739,6 +741,7 @@ def validate_actions(actions, action_hooks, linter):
             linter.warn('actions.{0}: actions/{0} does not exist'.format(k))
         elif not os.access(h, os.X_OK):
             linter.err('actions.{0}: actions/{0} is not executable'.format(k))
+
 
 def validate_maintainer(charm, linter):
     """Validate maintainer info in charm metadata.

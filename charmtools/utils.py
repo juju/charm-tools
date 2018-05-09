@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import six
 import subprocess
 import sys
 import tempfile
@@ -139,9 +140,15 @@ class ProcessResult(object):
     def output(self):
         result = ''
         if self.stdout:
-            result += self.stdout
+            stdout = self.stdout
+            if six.PY3:
+                stdout = stdout.decode('UTF-8')
+            result += stdout
         if self.stderr:
-            result += self.stderr
+            stderr = self.stderr
+            if six.PY3:
+                stderr = stderr.decode('UTF-8')
+            result += stderr
         return result.strip()
 
     @property

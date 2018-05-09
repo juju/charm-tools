@@ -861,16 +861,9 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
-            # create venv without pip and use easy_install to install newer
-            # version; use patched version if running in snap to include:
-            # https://github.com/pypa/pip/blob/master/news/4320.bugfix
             utils.Process(
-                ('virtualenv', '--python', 'python3', '--no-pip', self._venv)
+                ('virtualenv', '--python', 'python3', self._venv)
             ).exit_on_error()()
-            self._run_in_venv('easy_install',
-                              'pip' if 'SNAP' not in os.environ else
-                              os.path.join(os.environ['SNAP'],
-                                           'pip-10.0.0.dev0.zip'))
         # we are the top layer; process all lower layers first
         for tactic in self.previous:
             tactic()
