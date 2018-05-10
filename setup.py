@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 
 
 version_script = os.path.join(os.path.dirname(__file__), 'charmtools', 'git_version.py')
-version = subprocess.check_output([version_script, '--format=short']).strip()
+version = subprocess.check_output([sys.executable, version_script, '--format=short']).strip()
 if sys.version_info >= (3, 0):
     version = version.decode('UTF-8')
 
