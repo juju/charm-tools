@@ -251,7 +251,9 @@ class InterfaceCopy(Tactic):
 
     @property
     def target(self):
-        return self._target / "hooks/relations" / self.interface.name
+        return (path(self._target.directory) /
+                "hooks/relations" /
+                self.interface.name)
 
     def __call__(self):
         # copy the entire tree into the
@@ -340,8 +342,9 @@ class DynamicHookBind(Tactic):
         self._config = config
         self._output_files = output_files
         self._template_file = template_file
-        self.targets = [self._target / "hooks" / hook.format(name)
-                        for hook in self.HOOKS]
+        self.targets = [
+            path(self._target.directory) / "hooks" / hook.format(name)
+            for hook in self.HOOKS]
         self.tracked = []
 
     def __call__(self):
@@ -858,16 +861,9 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse = self.target.directory / 'wheelhouse'
         wheelhouse.mkdir_p()
         if create_venv:
-            # create venv without pip and use easy_install to install newer
-            # version; use patched version if running in snap to include:
-            # https://github.com/pypa/pip/blob/master/news/4320.bugfix
             utils.Process(
-                ('virtualenv', '--python', 'python3', '--no-pip', self._venv)
+                ('virtualenv', '--python', 'python3', self._venv)
             ).exit_on_error()()
-            self._run_in_venv('easy_install',
-                              'pip' if 'SNAP' not in os.environ else
-                              os.path.join(os.environ['SNAP'],
-                                           'pip-10.0.0.dev0.zip'))
         # we are the top layer; process all lower layers first
         for tactic in self.previous:
             tactic()
@@ -966,7 +962,7 @@ def extend_with_default(validator_class):
     validate_properties = validator_class.VALIDATORS["properties"]
 
     def set_defaults(validator, properties, instance, schema):
-        for prop, subschema in properties.iteritems():
+        for prop, subschema in properties.items():
             if "default" in subschema:
                 instance.setdefault(prop, subschema["default"])
 

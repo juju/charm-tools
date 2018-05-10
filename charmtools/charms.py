@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+
 import os
 import re
 import hashlib
 import email.utils
+import six
 
 import colander
 import yaml
@@ -9,8 +12,7 @@ import yaml
 from stat import ST_MODE
 from stat import S_IXUSR
 
-from linter import Linter
-from launchpadlib.launchpad import Launchpad
+from charmtools.linter import Linter
 from charmtools.utils import validate_display_name
 
 KNOWN_METADATA_KEYS = [
@@ -51,13 +53,13 @@ TEMPLATE_ICON = os.path.join(
 KNOWN_OPTION_KEYS = set(('description', 'type', 'default'))
 
 KNOWN_OPTION_TYPES = {
-    'string': basestring,
+    'string': six.string_types[0],
     'int': int,
     'float': float,
     'boolean': bool,
 }
 
-ALLOW_NONE_DEFAULT = (basestring, int, float)
+ALLOW_NONE_DEFAULT = (six.string_types[0], int, float)
 
 
 class RelationError(Exception):
@@ -203,13 +205,14 @@ class CharmLinter(Linter):
                         option_name, ', '.join(sorted(missing_keys))))
             invalid_keys = existing_keys - KNOWN_OPTION_KEYS
             if invalid_keys:
-                invalid_keys = [str(key) for key in sorted(invalid_keys)]
+                invalid_keys = sorted([str(key) for key in invalid_keys])
                 self.warn(
                     'config.yaml: option %s has unknown keys: %s' % (
                         option_name, ', '.join(invalid_keys)))
 
             if 'description' in existing_keys:
-                if not isinstance(option_value['description'], basestring) or \
+                if not isinstance(option_value['description'],
+                                  six.string_types) or \
                         option_value['description'].strip() == '':
                     self.warn(
                         'config.yaml: description of option %s should be a '
@@ -309,9 +312,10 @@ class Charm(object):
                 template_sha1 = hashlib.sha1()
                 icon_sha1 = hashlib.sha1()
                 try:
-                    with open(TEMPLATE_ICON) as ti:
+                    with open(TEMPLATE_ICON, 'rb') as ti:
                         template_sha1.update(ti.read())
-                        with open(os.path.join(charm_path, 'icon.svg')) as ci:
+                        icon_file = os.path.join(charm_path, 'icon.svg')
+                        with open(icon_file, 'rb') as ci:
                             icon_sha1.update(ci.read())
                     if template_sha1.hexdigest() == icon_sha1.hexdigest():
                         lint.info("Includes template icon.svg file.")
@@ -380,7 +384,7 @@ class Charm(object):
                     requires = charm.get('requires')
                     if requires is not None:
                         found_scope_container = False
-                        for rel_name, rel in requires.iteritems():
+                        for rel in six.itervalues(requires):
                             if 'scope' in rel:
                                 if rel['scope'] == 'container':
                                     found_scope_container = True
@@ -426,7 +430,8 @@ class Charm(object):
                     try:
                         actions = yaml.safe_load(f.read())
                     except Exception as e:
-                        lint.crit('cannot parse ' + actions_yaml_file + ":" + str(e))
+                        lint.crit('cannot parse {}: {}'.format(
+                            actions_yaml_file, e))
                     validate_actions(actions, actions_path, lint)
 
         except IOError:
@@ -737,6 +742,7 @@ def validate_actions(actions, action_hooks, linter):
         elif not os.access(h, os.X_OK):
             linter.err('actions.{0}: actions/{0} is not executable'.format(k))
 
+
 def validate_maintainer(charm, linter):
     """Validate maintainer info in charm metadata.
 
@@ -770,10 +776,13 @@ def validate_maintainer(charm, linter):
     for maintainer in maintainers:
         (name, address) = email.utils.parseaddr(maintainer)
         formatted = email.utils.formataddr((name, address))
-        if formatted.replace('"', '') != maintainer:
+        lt = formatted.find('<')
+        gt = formatted.find('>')
+        if (formatted.replace('"', '') != maintainer or
+                lt < 0 or gt < 0 or gt < lt):
             linter.warn(
                 'Maintainer format should be "Name <Email>", '
-                'not "%s"' % formatted)
+                'not "%s"' % maintainer)
 
 
 def validate_categories_and_tags(charm, linter):
@@ -799,33 +808,3 @@ def validate_categories_and_tags(charm, linter):
             'Categories are being deprecated in favor of tags. '
             'Please rename the "categories" field to "tags".'
         )
-
-
-def remote():
-    lp = Launchpad.login_anonymously('charm-tools', 'production',
-                                     version='devel')
-    charm = lp.distributions['charms']
-    current_series = str(charm.current_series).split('/').pop()
-    branches = charm.getBranchTips()
-    charms = []
-
-    for branch in branches:
-        try:
-            branch_series = str(branch[2][0]).split('/')[0]
-            charm_name = str(branch[0]).split('/')[3]
-        except IndexError:
-            branch_series = ''
-        if branch_series == current_series:
-            charms.append("lp:charms/%s" % charm_name)
-        else:
-            charms.append("lp:%s" % branch[0])
-    return charms
-
-
-def local(directory):
-    '''Show charms that actually exist locally. Different than Mr.list'''
-    local_charms = []
-    for charm in os.listdir(directory):
-        if os.path.exists(os.join(directory, charm, '.bzr')):
-            local_charms.append(charm)
-    return local_charms

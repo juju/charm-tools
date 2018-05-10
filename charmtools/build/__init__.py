@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
-import tactics
-import errors
-from builder import (
+import charmtools.build.tactics
+import charmtools.build.errors
+from charmtools.build.builder import (
     Builder,
     Layer,
     Interface,

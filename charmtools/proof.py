@@ -15,13 +15,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+
 import os
 import sys
 import argparse
 
-from bundles import Bundle
-from charms import Charm
-from cli import parser_defaults
+from charmtools.bundles import Bundle
+from charmtools.charms import Charm
+from charmtools.cli import parser_defaults
 from charmtools import utils
 
 

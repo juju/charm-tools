@@ -1,12 +1,22 @@
 """Unit test for juju_test"""
 
+from __future__ import print_function
+
 import os
+import six
 import unittest
 import yaml
 
 from contextlib import contextmanager
 from charmtools import test as juju_test
 from mock import patch, call, Mock, MagicMock
+
+
+if six.PY3:
+    _builtin__open = "builtins.open"
+else:
+    _builtin__open = "__builtin__.open"
+
 
 RAW_ENVIRONMENTS_YAML = '''
 default: gojuju
@@ -37,9 +47,9 @@ def cd(directory):
 
         >>> import os
         >>> os.chdir('/tmp')
-        >>> with cd('/bin'): print os.getcwd()
+        >>> with cd('/bin'): print(os.getcwd())
         /bin
-        >>> print os.getcwd()
+        >>> print(os.getcwd())
         /tmp
     """
     cwd = os.getcwd()
@@ -179,7 +189,8 @@ class JujuTestPluginTest(unittest.TestCase):
             self.assertEqual(results, None)
 
     @patch('os.path.exists')
-    @patch('__builtin__.open')
+    # @patch('__builtin__.open')
+    @patch(_builtin__open )
     def test_conductor_load_envs_yaml(self, mock_open, mock_exists):
         mock_open.return_value.__enter__ = lambda s: s
         mock_open.return_value.__exit__ = Mock()

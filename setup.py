@@ -6,11 +6,14 @@
 
 import os
 import subprocess
+import sys
 from setuptools import setup, find_packages
 
 
 version_script = os.path.join(os.path.dirname(__file__), 'charmtools', 'git_version.py')
 version = subprocess.check_output([version_script, '--format=short']).strip()
+if sys.version_info >= (3, 0):
+    version = version.decode('UTF-8')
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fh:
     readme = fh.read()
@@ -23,7 +26,7 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
         'launchpadlib<1.11',
-        'cheetah<=2.4.4',
+        'cheetah3>=3.0.0',
         'pyyaml==3.11',
         'paramiko<2.0.0',
         'requests<=2.9.1',
@@ -32,9 +35,10 @@ setup(
         'ruamel.yaml<=0.10.23',
         'pathspec<=0.3.4',
         'otherstuf<=1.1.0',
-        'path.py<=8.1.2',
+        # 'path.py<=8.1.2',
+        'path.py>=10.5',
         'pip>=1.5.4',
-        'jujubundlelib',
+        # 'jujubundlelib',
         'virtualenv>=1.11.4',
         'colander<=1.0b1',
         'jsonschema<=2.5.1',

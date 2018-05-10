@@ -17,6 +17,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import six
 import shutil
 import tempfile
 import unittest
@@ -31,6 +32,12 @@ import yaml
 from charmtools.create import (
     main,
 )
+
+
+if six.PY3:
+    _builtins_raw_input = "builtins.input"
+else:
+    _builtins_raw_input = "__builtin__.raw_input"
 
 
 def flatten(path):
@@ -108,7 +115,7 @@ class PythonServicesCreateTest(TestCase):
             'charmtools', 'templates/python_services/files')))
         return sorted(static_files)
 
-    @patch('__builtin__.raw_input')
+    @patch(_builtins_raw_input)
     @patch('charmtools.create.setup_parser')
     def test_interactive(self, setup_parser, raw_input_):
         """Functional test of a full 'charm create' run."""

@@ -176,6 +176,9 @@ class Builder(object):
         if self._name:
             return self._name
 
+        if self.charm is None:
+            return None
+
         # optionally extract name from the top layer
         self._name = str(path(self.charm).abspath().name)
 
@@ -374,7 +377,7 @@ class Builder(object):
         if self.HOOK_TEMPLATE_FILE not in output_files:
             raise BuildError('At least one layer must provide %s',
                              self.HOOK_TEMPLATE_FILE)
-        template_file = self.target / self.HOOK_TEMPLATE_FILE
+        template_file = self.target.directory / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         source_layer = output_files[self.HOOK_TEMPLATE_FILE].layer
         plan.append(
@@ -416,7 +419,7 @@ class Builder(object):
         elif not meta:
             log.warn('Empty metadata.yaml')
 
-        template_file = self.target / self.HOOK_TEMPLATE_FILE
+        template_file = path(self.target.directory) / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         specs = []
         used_interfaces = set()
@@ -480,7 +483,7 @@ class Builder(object):
             raise BuildError('At least one layer must provide %s',
                              self.HOOK_TEMPLATE_FILE)
 
-        template_file = self.target / self.HOOK_TEMPLATE_FILE
+        template_file = path(self.target.directory) / self.HOOK_TEMPLATE_FILE
         target_config = layers["layers"][-1].config
         for name, owner in meta_tac.storage.items():
             plan.append(

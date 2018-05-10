@@ -1,8 +1,10 @@
+from __future__ import print_function
+
 import os
 import mock
 from unittest import TestCase
 from charmtools import utils
-from StringIO import StringIO
+from six import StringIO
 
 
 class TestUtils(TestCase):
@@ -15,7 +17,7 @@ class TestUtils(TestCase):
 
         @when('db.ready')
         def react(db):
-            print db
+            print(db)
         """)
 
         b = StringIO("""
@@ -25,7 +27,7 @@ class TestUtils(TestCase):
 
         @when('db.ready', 'bar')
         def react(db):
-            print db
+            print(db)
         """)
 
         result = StringIO()

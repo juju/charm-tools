@@ -110,7 +110,7 @@ def shared_db_changed():
         # }
         #
         databases = {}
-        for k, v in settings.iteritems():
+        for k, v in settings.items():
             db = k.split('_')[0]
             x = '_'.join(k.split('_')[1:])
             if db not in databases:

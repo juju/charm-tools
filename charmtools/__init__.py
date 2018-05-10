@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 import os
 import sys
 
@@ -41,7 +43,7 @@ def charm():
         sys.exit(0)
 
     if sub == '--list':
-        print '\n'.join(cli.subcommands(os.path.realpath(__file__)))
+        print('\n'.join(cli.subcommands(os.path.realpath(__file__))))
         sys.exit(0)
 
     sub_exec = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),

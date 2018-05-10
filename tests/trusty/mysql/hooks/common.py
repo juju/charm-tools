@@ -1,4 +1,5 @@
 # vim: syntax=python
+from __future__ import print_function
 
 import os
 import MySQLdb
@@ -49,7 +50,7 @@ elif os.path.exists(database_name_file):
     with open(database_name_file, 'r') as dbname:
         database_name = dbname.readline().strip()
 else:
-    print 'No established database and no REMOTE_UNIT.'
+    print('No established database and no REMOTE_UNIT.')
 # A user per service unit so we can deny access quickly
 user, service_password = get_service_user(database_name)
 connection = None

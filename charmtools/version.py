@@ -1,9 +1,11 @@
+from __future__ import print_function
+from __future__ import absolute_import
 
 import os
 import pkg_resources
 import argparse
 
-from cli import parser_defaults
+from charmtools.cli import parser_defaults
 from charmtools import utils
 from charmtools.git_version import get_version_info
 
@@ -56,8 +58,8 @@ def charm_tools_version(ver_format):
 def main():
     args = get_args()
 
-    print "charm %s" % charm_version()
-    print "charm-tools %s" % charm_tools_version(args.format)
+    print("charm %s" % charm_version())
+    print("charm-tools %s" % charm_tools_version(args.format))
 
 
 if __name__ == '__main__':

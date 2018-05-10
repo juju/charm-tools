@@ -25,29 +25,29 @@ parts:
   charm-tools:
     source: .
     plugin: python
-    python-version: python2
+    python-version: python3
     requirements: requirements.txt
     stage-packages:
       - git-core
+      - libssl-dev
+      - libffi-dev
       - python3
-      - python-setuptools
+      - python3-setuptools
     stage:
-      - -lib/python2.7/site-packages/virtualenv_support/pip-9.0.1-py2.py3-none-any.whl
       - -usr/share/doc*
       - -usr/share/lintian
       - -usr/share/git-web
       - -usr/share/man
       - -usr/share/perl*
       - -usr/share/pixmaps
+    # work around python plugin forcibly excluding pip bins, even if they're
+    # explicitly added to stage
+    override-prime: |
+      snapcraftctl prime
+      cp $SNAPCRAFT_PART_INSTALL/bin/pip* bin/
   charm-version:
     source: snap/workarounds/
     plugin: dump
     stage:
       - charmstore-client-version
-      # we have to include both .whl and .zip copies of pip because creating the
-      # venv requires a .whl but installing into a created venv requires the zip
-      - pip-10.0.0.dev0.zip
-      - lib/python2.7/site-packages/virtualenv_support/pip-10.0.0.dev0-py2.py3-none-any.whl
-    organize:
-      "pip-10.0.0.dev0-py2.py3-none-any.whl": lib/python2.7/site-packages/virtualenv_support/pip-10.0.0.dev0-py2.py3-none-any.whl
     after: [charm-tools]
