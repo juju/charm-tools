@@ -40,11 +40,15 @@ parts:
       - -usr/share/man
       - -usr/share/perl*
       - -usr/share/pixmaps
-    # work around python plugin forcibly excluding pip bins, even if they're
-    # explicitly added to stage
+      # exclude the embedded pip, so we can replace it
+      - -lib/python*/site-packages/virtualenv_support/pip-*.whl
+    # Work around python plugin forcibly excluding pip bins, even if they're
+    # explicitly added to stage.  Also forcibly update the pip embedded in
+    # virtualenv to get the lsb_release fix that was released with pip 10.
     override-prime: |
       snapcraftctl prime
       cp $SNAPCRAFT_PART_INSTALL/bin/pip* bin/
+      pip download pip -d lib/python*/site-packages/virtualenv_support/
   charm-version:
     source: snap/workarounds/
     plugin: dump
