@@ -58,9 +58,9 @@ import textwrap
 
 import yaml
 
-from . import utils
-from .build import fetchers
-from fetchers import (
+from charmtools import utils
+from charmtools.build import fetchers
+from charmtools.fetchers import (
     CharmstoreDownloader,
     FETCHERS,
     get,
