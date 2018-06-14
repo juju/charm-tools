@@ -382,6 +382,8 @@ class StandardHooksBind(DynamicHookBind):
         'stop',
         'update-status',
         'upgrade-charm',
+        'pre-series-upgrade',
+        'post-series-upgrade',
     ]
 
 

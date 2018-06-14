@@ -17,6 +17,7 @@ man
 *.sw[nop]
 .venv/
 *.snap
+charm_source.tar.bz2
 parts/
 prime/
 stage/
