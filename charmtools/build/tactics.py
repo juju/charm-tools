@@ -579,6 +579,7 @@ class LayerYAML(YAMLTactic):
         defined_layer_names = set(self.schema['properties'].keys())
         options_layer_names = set(self.data['options'].keys())
         unknown_layer_names = options_layer_names - defined_layer_names
+        unknown_layer_names -= {'charms.reactive'}
         if unknown_layer_names:
             log.error('Options set for undefined layer{s}: {layers}'.format(
                 s='s' if len(unknown_layer_names) > 1 else '',
