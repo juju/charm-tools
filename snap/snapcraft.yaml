@@ -14,9 +14,12 @@ apps:
       - home
       - removable-media
 parts:
+  go:
+    source-tag: go1.10.3
   charm:
+    after: [go]
     source: https://github.com/juju/charmstore-client.git
-    source-tag: 2.2.3
+    source-tag: v2.3.0
     source-type: git
     plugin: godeps
     go-importpath: github.com/juju/charmstore-client
