@@ -10,7 +10,6 @@ from path import Path as path
 from charmtools import build
 from charmtools.build.errors import BuildError
 from charmtools import utils
-from path import Path as path
 from ruamel import yaml
 import mock
 import responses
@@ -484,6 +483,29 @@ class TestFetchers(unittest.TestCase):
         fetcher = build.fetchers.InterfaceFetcher('interface:foo')
         result = fetcher._get_repo_fetcher_and_target('repo', '/dir_')
         self.assertEqual(result, (f, '/dir_/foo'))
+
+    @mock.patch('charmtools.build.fetchers.RepoFetcher.can_fetch',
+                mock.Mock(return_value=False))
+    @mock.patch('charmtools.build.fetchers.InterfaceFetcher.NO_LOCAL_LAYERS',
+                True)
+    @mock.patch('tempfile.mkdtemp', mock.Mock(return_value='/tmp/src'))
+    @mock.patch('charmtools.fetchers.git')
+    @mock.patch('charmtools.build.fetchers.path.rmtree_p', mock.Mock())
+    @mock.patch('charmtools.build.fetchers.path.rename')
+    @mock.patch('charmtools.build.fetchers.requests')
+    def test_subdir(self, requests, rename, git):
+        requests.get.return_value.ok = True
+        requests.get.return_value.json.return_value = {
+            'repo': 'https://github.com/juju-solutions/mock-repo',
+            'subdir': 'layers/test',
+        }
+        fetcher = build.fetchers.get_fetcher('layer:test')
+        assert fetcher
+        assert fetcher.subdir == 'layers/test'
+        target = fetcher.fetch('/tmp/dst')
+        self.assertEqual(target, '/tmp/dst/test')
+        rename.assert_called_once_with(path('/tmp/src/layers/test'),
+                                       path('/tmp/dst/test'))
 
 
 if __name__ == '__main__':
