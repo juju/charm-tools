@@ -109,8 +109,13 @@ class InterfaceFetcher(fetchers.LocalFetcher):
             f, target = self._get_repo_fetcher_and_target(self.repo, dir_)
             res = f.fetch(dir_)
             if res != target:
+                res = path(res)
+                if hasattr(self, 'subdir'):
+                    res = res / self.subdir
                 target.rmtree_p()
-                path(res).rename(target)
+                # call this way instead of `res.rename(target)`
+                # to make unit test easier
+                path.rename(res, target)
             return target
 
 fetchers.FETCHERS.insert(0, InterfaceFetcher)
