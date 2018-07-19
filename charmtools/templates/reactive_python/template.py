@@ -18,6 +18,7 @@
 import logging
 import os
 import os.path as path
+import sys
 import time
 import shutil
 import subprocess
@@ -61,7 +62,10 @@ class ReactivePythonCharmTemplate(CharmTemplate):
         o = tempfile.NamedTemporaryFile(
             dir=path.dirname(outfile), delete=False)
         os.chmod(o.name, mode)
-        o.write(str(t))
+        st = str(t)
+        if sys.version_info >= (3, ):
+            st = st.encode('UTF-8')
+        o.write(st)
         o.close()
         backupname = outfile + str(time.time())
         os.rename(outfile, backupname)
