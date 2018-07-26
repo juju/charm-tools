@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH
+export GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates
+export UNIXCONFDIR=$SNAP/etc
+export PREFIX=$SNAP
+export GIT_EXEC_PATH=$SNAP/usr/lib/git-core
+export LC_ALL=C.UTF-8
+
+>&2 echo "To improve the developer experience, the confinement of this snap is changing "
+>&2 echo "from strict to classic. For security reasons, updates will be blocked until"
+>&2 echo "you manually refresh to authorize the new confinement."
+>&2 echo ""
+
+exec "$SNAP/bin/charm" "$@"

@@ -7,7 +7,7 @@ confinement: strict
 grade: stable
 apps:
   charm:
-    command: env PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates UNIXCONFDIR=$SNAP/etc PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
+    command: wrappers/charm
     plugs:
       - network
       - browser-support
@@ -64,3 +64,10 @@ parts:
     prime:
       - charm-tools-version
       - charmstore-client-version
+  wrappers:
+    after: [charm-tools]
+    source: snap/
+    source-type: git  # see https://bugs.launchpad.net/snapcraft/+bug/1791871
+    plugin: dump
+    stage:
+      - wrappers/*
