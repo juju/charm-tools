@@ -3,7 +3,7 @@ version: git
 version-script: charmtools/git_version.py
 summary: charm and charm-tools
 description: charmstore-client and charm-tools
-confinement: strict
+confinement: classic
 grade: stable
 apps:
   charm:
