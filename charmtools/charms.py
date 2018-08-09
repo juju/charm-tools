@@ -482,7 +482,7 @@ class ResourceItem(colander.MappingSchema):
 
     type_ = colander.SchemaNode(
         colander.String(),
-        validator=colander.OneOf(['file']),
+        validator=colander.OneOf(['file', 'oci-image']),
         name='type',
     )
     filename = colander.SchemaNode(
@@ -490,6 +490,15 @@ class ResourceItem(colander.MappingSchema):
         missing='',
     )
     description = colander.SchemaNode(
+        colander.String(),
+        missing='',
+    )
+    auto_fetch = colander.SchemaNode(
+        Boolean(),
+        missing=False,
+        name='auto-fetch',
+    )
+    validator = colander.SchemaNode(
         colander.String(),
         missing='',
     )

@@ -681,7 +681,7 @@ class ResourcesValidationTest(TestCase):
         validate_resources(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call('resources.buzz.type: "snap" is not one of file'),
+            call('resources.buzz.type: "snap" is not one of file, oci-image'),
         ], any_order=True)
 
     def test_resources_unknown_keys(self):
