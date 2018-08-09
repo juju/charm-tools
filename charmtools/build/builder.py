@@ -9,6 +9,7 @@ import requests
 import sys
 import uuid
 import yaml
+import string
 
 import charmtools.build.tactics
 
@@ -223,6 +224,8 @@ class Builder(object):
         # And anything it includes from will be placed here
         # outside the series
         self.deps = (base / "deps")
+        if not (self.name and str(self.name)[0] in string.ascii_lowercase):
+            raise BuildError('Charm name must start with a lower-case letter')
         self.target_dir = (self.repo / self.name)
 
     def find_or_create_repo(self, allow_create=True):
