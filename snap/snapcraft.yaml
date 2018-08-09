@@ -16,7 +16,7 @@ apps:
 parts:
   go:
     source-tag: go1.10.3
-  charm:
+  charmstore-client:
     after: [go]
     source: https://github.com/juju/charmstore-client.git
     source-branch: master
@@ -55,6 +55,7 @@ parts:
   charm-version:
     source: snap/workarounds/
     plugin: dump
-    stage:
-      - charmstore-client-version
+    override-stage: |
+      snapcraftctl stage
+      ../parts/charm-tools/build/charmtools/git_version.py --build-charm-version
     after: [charm-tools]

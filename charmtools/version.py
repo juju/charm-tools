@@ -2,7 +2,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import os
-import pkg_resources
+import json
 import argparse
 
 from charmtools.cli import parser_defaults
@@ -24,13 +24,19 @@ def get_args(args=None):
     return args
 
 
-def charm_version():
+def charm_version(ver_format):
     if 'SNAP' in os.environ:
         cscv = os.path.join(os.environ['SNAP'], 'charmstore-client-version')
-        if os.path.exists(cscv):
-            with open(cscv) as f:
-                charm_ver = f.read().strip()
-            return charm_ver
+        if not os.path.exists(cscv):
+            return 'unavailable'
+        with open(cscv) as f:
+            res_string = f.read().strip()
+        version_info = json.loads(res_string)
+        pre_release = version_info['pre_release'] or version_info['gitn']
+        if ver_format == 'long' or (ver_format == 'default' and pre_release):
+            return '{version}{snap}{git}'.format(**version_info)
+        else:
+            return version_info['version']
     try:
         from apt.cache import Cache
         charm_vers = Cache()['charm'].versions
@@ -58,7 +64,7 @@ def charm_tools_version(ver_format):
 def main():
     args = get_args()
 
-    print("charm %s" % charm_version())
+    print("charmstore-client %s" % charm_version(args.format))
     print("charm-tools %s" % charm_tools_version(args.format))
 
 
