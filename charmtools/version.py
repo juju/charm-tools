@@ -30,6 +30,7 @@ def get_args(args=None):
 def _add_snap_rev(version_info):
     if 'SNAP_REVISION' in os.environ:
         version_info['snap'] = '+snap-{}'.format(os.environ['SNAP_REVISION'])
+    return version_info
 
 
 def cached_charmstore_client_version():
