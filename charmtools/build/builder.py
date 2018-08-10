@@ -26,7 +26,7 @@ from charmtools.build.fetchers import (
     get_fetcher,
     FetchError,
 )
-from charmtools.version import charm_tools_version
+from charmtools.version import cached_charm_tools_version, format_version
 
 log = logging.getLogger("build")
 
@@ -523,7 +523,7 @@ class Builder(object):
                 't': 'event',
                 'ds': 'app',
                 'cid': cid,
-                'av': charm_tools_version('long'),
+                'av': format_version(cached_charm_tools_version(), 'long'),
                 'an': "charm-build",
                 'ec': kind,
                 'ea': 'fetch' if fetched else 'local',

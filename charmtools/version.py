@@ -27,6 +27,11 @@ def get_args(args=None):
     return args
 
 
+def _add_snap_rev(version_info):
+    if 'SNAP_REVISION' in os.environ:
+        version_info['snap'] = '+snap-{}'.format(os.environ['SNAP_REVISION'])
+
+
 def cached_charmstore_client_version():
     if 'SNAP' in os.environ:
         cscv = os.path.join(os.environ['SNAP'], 'charmstore-client-version')
@@ -34,7 +39,7 @@ def cached_charmstore_client_version():
             return {'version': 'unavailable', 'git': ''}
         with open(cscv) as f:
             res_string = f.read().strip()
-        return json.loads(res_string)
+        return _add_snap_rev(json.loads(res_string))
     try:
         from apt.cache import Cache
         charm_vers = Cache()['charm'].versions
@@ -47,7 +52,7 @@ def cached_charmstore_client_version():
     except:
         charm_ver = 'error'
 
-    return {'version': charm_ver}
+    return _add_snap_rev({'version': charm_ver})
 
 
 def cached_charm_tools_version():
@@ -55,12 +60,12 @@ def cached_charm_tools_version():
     if os.path.exists(ctv):
         with open(ctv) as f:
             res_string = f.read().strip()
-        return json.loads(res_string)
+        return _add_snap_rev(json.loads(res_string))
     if resource_exists(__name__, 'VERSION'):
         res_string = resource_string(__name__, 'VERSION')
         if sys.version_info >= (3, 0):
             res_string = res_string.decode('UTF-8')
-        return json.loads(res_string)
+        return _add_snap_rev(json.loads(res_string))
     if os.environ.get('SNAPCRAFT_PROJECT_VERSION', 'git') != 'git':
         version_parts = os.environ['SNAPCRAFT_PROJECT_VERSION'].split('+')
         git = ''
@@ -68,11 +73,11 @@ def cached_charm_tools_version():
         if len(version_parts) > 1:
             git = version_parts[1]
             gitn = int(git.split('-')[1])
-        return {
+        return _add_snap_rev({
             'version': version_parts[0],
             'git': '+{}'.format(git),
             'gitn': gitn,
-        }
+        })
     return {'version': 'unavailable'}
 
 

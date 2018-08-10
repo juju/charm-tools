@@ -39,14 +39,10 @@ def _scm_version(repo_path):
 def format_version(version_info, ver_format):
     if ver_format == 'json':
         return json.dumps(version_info)
-    if 'SNAP_REVISION' in os.environ:
-        snap = '+snap-{}'.format(os.environ['SNAP_REVISION'])
-    else:
-        snap = ''
     pre_release = version_info.get('pre_release') or version_info.get('gitn')
     if ver_format == 'long' or (ver_format == 'default' and pre_release):
         return '{version}{snap}{git}'.format(version=version_info['version'],
-                                             snap=snap,
+                                             snap=version_info.get('snap', ''),
                                              git=version_info.get('git', ''))
     else:
         return version_info['version']
