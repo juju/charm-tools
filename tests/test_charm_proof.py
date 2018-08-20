@@ -34,6 +34,7 @@ from charmtools.charms import validate_display_name
 from charmtools.charms import validate_maintainer
 from charmtools.charms import validate_categories_and_tags
 from charmtools.charms import validate_storage
+from charmtools.charms import validate_devices
 from charmtools.charms import validate_series
 from charmtools.charms import validate_min_juju_version
 from charmtools.charms import validate_extra_bindings
@@ -537,6 +538,73 @@ class MaintainerValidationTest(TestCase):
         validate_maintainer(charm, linter)
         self.assertFalse(linter.err.called)
         self.assertFalse(linter.warn.called, "linter.warn was called, sadly")
+
+
+class DevicesValidationTest(TestCase):
+    def test_minimal_devices_config(self):
+        """Charm has the minimum allowed devices configuration."""
+        linter = Mock()
+        charm = {
+            'devices': {
+                'bitcoinminer': {
+                    'type': 'nvidia.com/gpu',
+                    'count': 1
+                }
+            }
+        }
+        validate_devices(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_devices_with_empty_config(self):
+        """Charm has empty devices configuration."""
+        linter = Mock()
+        charm = {
+            'devices': {}
+        }
+        validate_devices(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('devices: must be a dictionary of device definitions'),
+        ], any_order=True)
+
+    def test_devices_with_invalid_values(self):
+        """Charm has devices with invalid values."""
+        linter = Mock()
+        charm = {
+            'devices': {
+                'bitcoinminer': {
+                    'type': 'nvidia.com/gpu',
+                    'count': 'non number'
+                },
+                'bitcoinminer1': {
+                    'count': 1
+                }
+            }
+        }
+        validate_devices(charm, linter)
+        self.assertEqual(linter.err.call_count, 2)
+        linter.err.assert_has_calls([
+            call('devices.bitcoinminer.count: "non number" is not a number'),
+            call('devices.bitcoinminer1.type: Required'),
+        ], any_order=True)
+
+    def test_devices_unknown_keys(self):
+        """Charm has devices with illegal keys."""
+        linter = Mock()
+        charm = {
+            'devices': {
+                'bitcoinminer': {
+                    'type': 'nvidia.com/gpu',
+                    'count': 1,
+                    'unknown': True
+                }
+            }
+        }
+        validate_devices(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('devices.bitcoinminer: Unrecognized keys in mapping: "{\'unknown\': True}"'),
+        ], any_order=True)
 
 
 class StorageValidationTest(TestCase):

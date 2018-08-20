@@ -36,6 +36,7 @@ KNOWN_METADATA_KEYS = [
     'payloads',
     'terms',
     'resources',
+    'devices',
 ]
 
 KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
@@ -298,6 +299,7 @@ class Charm(object):
             validate_maintainer(charm, lint)
             validate_categories_and_tags(charm, lint)
             validate_storage(charm, lint)
+            validate_devices(charm, lint)
             validate_series(charm, lint)
             validate_min_juju_version(charm, lint)
             validate_extra_bindings(charm, lint)
@@ -504,6 +506,20 @@ class ResourceItem(colander.MappingSchema):
     )
 
 
+class DevicesItem(colander.MappingSchema):
+    def schema_type(self, **kw):
+        return colander.Mapping(unknown='raise')
+
+    type_ = colander.SchemaNode(
+        colander.String(),
+        name='type',
+    )
+    count = colander.SchemaNode(
+        colander.Integer(),
+        missing=1,
+    )
+
+
 class StorageItem(colander.MappingSchema):
     def schema_type(self, **kw):
         return colander.Mapping(unknown='raise')
@@ -694,6 +710,33 @@ def validate_storage(charm, linter):
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('storage.{}: {}'.format(k, v))
+
+
+def validate_devices(charm, linter):
+    """Validate devices configuration in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    devices = charm.get('devices', None)
+    if devices is None:
+        return
+
+    if not isinstance(devices, dict) or not devices:
+        linter.err('devices: must be a dictionary of device definitions')
+        return
+
+    schema = colander.SchemaNode(colander.Mapping())
+    for dev in devices:
+        schema.add(DevicesItem(name=dev))
+
+    try:
+        schema.deserialize(devices)
+    except colander.Invalid as e:
+        for k, v in e.asdict().items():
+            linter.err('devices.{}: {}'.format(k, v))
 
 
 def validate_payloads(charm, linter):
