@@ -2,18 +2,21 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import os
-import pkg_resources
+import sys
+import json
 import argparse
+from pkg_resources import resource_string, resource_exists
 
 from charmtools.cli import parser_defaults
 from charmtools import utils
-from charmtools.git_version import get_version_info
+from charmtools.git_version import format_version
 
 
 def get_args(args=None):
     parser = argparse.ArgumentParser(
         description='display tooling version information')
-    parser.add_argument('--format', choices=['long', 'short', 'default'],
+    parser.add_argument('--format',
+                        choices=['long', 'short', 'default', 'json'],
                         default='default',
                         help="Version format. Long includes git revision "
                              "info. Default uses long if it's a pre-release.")
@@ -24,13 +27,20 @@ def get_args(args=None):
     return args
 
 
-def charm_version():
+def _add_snap_rev(version_info):
+    if 'SNAP_REVISION' in os.environ:
+        version_info['snap'] = '+snap-{}'.format(os.environ['SNAP_REVISION'])
+    return version_info
+
+
+def cached_charmstore_client_version():
     if 'SNAP' in os.environ:
         cscv = os.path.join(os.environ['SNAP'], 'charmstore-client-version')
-        if os.path.exists(cscv):
-            with open(cscv) as f:
-                charm_ver = f.read().strip()
-            return charm_ver
+        if not os.path.exists(cscv):
+            return {'version': 'unavailable', 'git': ''}
+        with open(cscv) as f:
+            res_string = f.read().strip()
+        return _add_snap_rev(json.loads(res_string))
     try:
         from apt.cache import Cache
         charm_vers = Cache()['charm'].versions
@@ -43,23 +53,48 @@ def charm_version():
     except:
         charm_ver = 'error'
 
-    return charm_ver
+    return _add_snap_rev({'version': charm_ver})
 
 
-def charm_tools_version(ver_format):
-    version_info = get_version_info()
-    pre_release = version_info['pre_release'] or version_info['gitn']
-    if ver_format == 'long' or (ver_format == 'default' and pre_release):
-        return '{version}{snap}{git}'.format(**version_info)
-    else:
-        return version_info['version']
+def cached_charm_tools_version():
+    ctv = os.path.join(os.environ.get('SNAP', ''), 'charm-tools-version')
+    if os.path.exists(ctv):
+        with open(ctv) as f:
+            res_string = f.read().strip()
+        return _add_snap_rev(json.loads(res_string))
+    if resource_exists(__name__, 'VERSION'):
+        res_string = resource_string(__name__, 'VERSION')
+        if sys.version_info >= (3, 0):
+            res_string = res_string.decode('UTF-8')
+        return _add_snap_rev(json.loads(res_string))
+    if os.environ.get('SNAPCRAFT_PROJECT_VERSION', 'git') != 'git':
+        version_parts = os.environ['SNAPCRAFT_PROJECT_VERSION'].split('+')
+        git = ''
+        gitn = 0
+        if len(version_parts) > 1:
+            git = version_parts[1]
+            gitn = int(git.split('-')[1])
+        return _add_snap_rev({
+            'version': version_parts[0],
+            'git': '+{}'.format(git),
+            'gitn': gitn,
+        })
+    return {'version': 'unavailable'}
 
 
 def main():
     args = get_args()
 
-    print("charm %s" % charm_version())
-    print("charm-tools %s" % charm_tools_version(args.format))
+    if args.format == 'json':
+        print(json.dumps({
+            'charmstore-client': cached_charmstore_client_version(),
+            'charm-tools': cached_charm_tools_version(),
+        }))
+    else:
+        print("charmstore-client {}".format(
+            format_version(cached_charmstore_client_version(), args.format)))
+        print("charm-tools {}".format(
+            format_version(cached_charm_tools_version(), args.format)))
 
 
 if __name__ == '__main__':

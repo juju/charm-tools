@@ -16,7 +16,7 @@ apps:
 parts:
   go:
     source-tag: go1.10.3
-  charm:
+  charmstore-client:
     after: [go]
     source: https://github.com/juju/charmstore-client.git
     source-branch: master
@@ -52,9 +52,15 @@ parts:
       snapcraftctl prime
       cp $SNAPCRAFT_PART_INSTALL/bin/pip* bin/
       pip download pip -d lib/python*/site-packages/virtualenv_support/
-  charm-version:
-    source: snap/workarounds/
+  versions:
+    after: [charmstore-client, charm-tools]
+    source: snap/
     plugin: dump
-    stage:
+    override-stage: |
+      charmtools=../parts/charm-tools/src
+      charmstore=../parts/charmstore-client/src
+      $charmtools/charmtools/git_version.py $charmtools --format=json > charm-tools-version
+      $charmtools/charmtools/git_version.py $charmstore --format=json > charmstore-client-version
+    prime:
+      - charm-tools-version
       - charmstore-client-version
-    after: [charm-tools]
