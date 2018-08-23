@@ -720,11 +720,11 @@ def validate_devices(charm, linter):
         messages will be written
 
     """
-    devices = charm.get('devices', None)
-    if devices is None:
+    devices = charm.get('devices', {})
+    if devices == {}:
         return
 
-    if not isinstance(devices, dict) or not devices:
+    if not isinstance(devices, dict):
         linter.err('devices: must be a dictionary of device definitions')
         return
 

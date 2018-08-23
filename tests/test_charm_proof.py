@@ -555,11 +555,11 @@ class DevicesValidationTest(TestCase):
         validate_devices(charm, linter)
         self.assertFalse(linter.err.called)
 
-    def test_devices_with_empty_config(self):
+    def test_devices_with_invalid_config(self):
         """Charm has empty devices configuration."""
         linter = Mock()
         charm = {
-            'devices': {}
+            'devices': 'invalid devices config'
         }
         validate_devices(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
