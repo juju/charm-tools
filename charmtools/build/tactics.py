@@ -958,8 +958,8 @@ class VersionTactic(Tactic):
 
     def read(self):
         if self.entity.isfile():
-            # try to read version file as it is optional
-            return self.entity.bytes()
+            # try to read existing version file
+            return self.entity.text()
         return ""
 
     @property
@@ -973,7 +973,7 @@ class VersionTactic(Tactic):
 
     def _try_to_get_current_sha(self):
         cmds = (
-            ('git', 'describe', '--always'),
+            ('git', 'describe', '--dirty'),
             ('bzr', 'version-info'),
             ('hg', 'id', '-n'),
         )
