@@ -45,7 +45,8 @@ class TestBuild(unittest.TestCase):
                 "Failed to process {0}. "
                 "Ensure the YAML is valid".format(metadata.abspath()), str(e))
 
-    def test_tester_layer(self):
+    @mock.patch("charmtools.build.builder.Builder.plan_version")
+    def test_tester_layer(self, pv):
         bu = build.Builder()
         bu.log_level = "WARNING"
         bu.output_dir = "out"
@@ -174,7 +175,8 @@ class TestBuild(unittest.TestCase):
         bu()
         self.assertFalse((base / 'to_remove').exists())
 
-    def test_regenerate_inplace(self):
+    @mock.patch("charmtools.build.builder.Builder.plan_version")
+    def test_regenerate_inplace(self, pv):
         # take a generated example where a base layer has changed
         # regenerate in place
         # make some assertions
@@ -238,8 +240,9 @@ class TestBuild(unittest.TestCase):
             init = base / "hooks/relations/mysql/__init__.py"
             self.assertTrue(init.exists())
 
+    @mock.patch("charmtools.build.builder.Builder.plan_version")
     @responses.activate
-    def test_remote_interface(self):
+    def test_remote_interface(self, pv):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
                       "https://juju.github.io/layer-index/"
@@ -273,10 +276,11 @@ class TestBuild(unittest.TestCase):
         main = base / "hooks/reactive/main.py"
         self.assertTrue(main.exists())
 
+    @mock.patch("charmtools.build.builder.Builder.plan_version")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
     @responses.activate
-    def test_remote_layer(self, mcall, ph):
+    def test_remote_layer(self, mcall, ph, pv):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
                       "https://juju.github.io/layer-index/"
@@ -312,9 +316,10 @@ class TestBuild(unittest.TestCase):
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
+    @mock.patch("charmtools.build.builder.Builder.plan_version")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
-    def test_pypi_installer(self, mcall, ph):
+    def test_pypi_installer(self, mcall, ph, pv):
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.output_dir = "out"
@@ -331,11 +336,64 @@ class TestBuild(unittest.TestCase):
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
 
+    @mock.patch(
+        "charmtools.build.tactics.VersionTactic._try_to_get_current_sha",
+        return_value="fake sha")
+    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
+    @mock.patch("charmtools.utils.Process")
+    def test_version_tactic_without_existing_version_file(self, mcall, ph, get_sha):
+        bu = build.Builder()
+        bu.log_level = "WARN"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/chlayer"
+        bu.hide_metrics = True
+        bu.report = False
+
+        # ensure no an existing version file
+        version_file = bu.charm / 'version'
+        version_file.remove_p()
+
+        # remove the sign phase
+        bu.PHASES = bu.PHASES[:-2]
+        bu()
+
+        self.assertEqual(
+            (path(bu.output_dir) / 'trusty' / bu.name / 'version').text(), 'fake sha')
+
+    @mock.patch("charmtools.build.tactics.VersionTactic.read", return_value="sha1")
+    @mock.patch(
+        "charmtools.build.tactics.VersionTactic._try_to_get_current_sha",
+        return_value="sha2")
+    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
+    @mock.patch("charmtools.utils.Process")
+    def test_version_tactic_with_existing_version_file(self, mcall, ph, get_sha, read):
+        bu = build.Builder()
+        bu.log_level = "WARN"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/chlayer"
+        bu.hide_metrics = True
+        bu.report = False
+
+        # remove the sign phase
+        bu.PHASES = bu.PHASES[:-2]
+        with mock.patch.object(build.tactics, 'log') as log:
+            bu()
+            log.warn.assert_has_calls(
+                [mock.call('version sha1 is out of update, new sha sha2 will be used!')],
+                any_order=True)
+
+        self.assertEqual((path(bu.output_dir) / 'trusty' / bu.name / 'version').text(), 'sha2')
+
+    @mock.patch("charmtools.build.builder.Builder.plan_version")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("path.Path.rmtree_p")
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
-    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph):
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pv):
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
         bu.log_level = "WARN"

@@ -494,6 +494,14 @@ class Builder(object):
                     name, owner, self.target,
                     target_config, output_files, template_file))
 
+    def plan_version(self, layers, output_files, plan):
+        plan.append(
+            charmtools.build.tactics.VersionTactic(
+                self.charm,
+                self.target,
+                self.top_layer, None,
+            ))
+
     def formulate_plan(self, layers):
         """Build out a plan for each file in the various
         layers, taking into account config at each layer"""
@@ -502,6 +510,7 @@ class Builder(object):
         self.plan_hooks(layers, output_files, self.plan)
         self.plan_interfaces(layers, output_files, self.plan)
         self.plan_storage(layers, output_files, self.plan)
+        self.plan_version(layers, output_files, self.plan)
         return self.plan
 
     def post_metrics(self, kind, layer_name, fetched):

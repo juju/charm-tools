@@ -947,6 +947,74 @@ class CopyrightTactic(Tactic):
         return sigs
 
 
+class VersionTactic(Tactic):
+
+    FILENAME = "version"
+
+    def __init__(self, charm, target, layer, next_config):
+        super(VersionTactic, self).__init__(
+            charm / self.FILENAME, target, layer, next_config)
+        self.charm = charm
+
+    def read(self):
+        if self.entity.isfile():
+            # try to read existing version file
+            return self.entity.text()
+        return ""
+
+    @property
+    def target_file(self):
+        target = self.target.directory / self.FILENAME
+        return target
+
+    @classmethod
+    def trigger(cls, entity, target, layer, next_config):
+        return True
+
+    def _try_to_get_current_sha(self):
+        cmds = (
+            ('git', 'describe', '--dirty'),
+            ('bzr', 'version-info'),
+            ('hg', 'id', '-n'),
+        )
+        with utils.cd(str(self.charm)):
+            for cmd in cmds:
+                try:
+                    sha = utils.Process(cmd)()
+                    if sha:
+                        return sha.output
+                except FileNotFoundError as e:
+                    log.debug(e)
+                    continue
+        return ""
+
+    def __call__(self):
+        self.target_file.dirname().makedirs_p()
+        new_sha = self._try_to_get_current_sha()
+        old_sha = self.read()
+        if new_sha and old_sha and new_sha != old_sha:
+            log.warn(
+                ("version {} is out of update, new sha {} "
+                "will be used!").format(old_sha, new_sha))
+        sha = new_sha or old_sha
+        if sha:
+            self.target_file.write_bytes(sha.encode())
+
+    def sign(self):
+        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        return {
+            self.target_file.relpath(self.target.directory): (
+                self.layer.url,
+                self.kind,
+                utils.sign(self.target_file)
+            )
+        }
+
+    def __str__(self):
+        return "Ensuring {}".format(self.entity)
+
+
 def load_tactic(dpath, basedir):
     """Load a tactic from the current layer using a dotted path. The last
     element in the path should be a Tactic subclass
