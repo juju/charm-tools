@@ -24,7 +24,7 @@ Next the build needs to be run::
 make
 ```
 
-Tests can be run my make or as a script (which allows for command-line options
+Tests can be run by make or as a script (which allows for command-line options
 to be passed).
 
 ```bash
