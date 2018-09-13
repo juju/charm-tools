@@ -7,7 +7,7 @@ confinement: strict
 grade: stable
 apps:
   charm:
-    command: wrappers/charm
+    command: bin/wrappers/charm
     plugs:
       - network
       - browser-support
@@ -52,6 +52,8 @@ parts:
       snapcraftctl prime
       cp $SNAPCRAFT_PART_INSTALL/bin/pip* bin/
       pip download pip -d lib/python*/site-packages/virtualenv_support/
+      mkdir bin/wrappers
+      cp $SNAPCRAFT_PART_INSTALL/../src/helpers/snap-wrappers/* bin/wrappers/
   versions:
     after: [charmstore-client, charm-tools]
     source-type: git  # see https://bugs.launchpad.net/snapcraft/+bug/1791871
@@ -64,10 +66,3 @@ parts:
     prime:
       - charm-tools-version
       - charmstore-client-version
-  wrappers:
-    after: [charm-tools]
-    source: snap/
-    source-type: git  # see https://bugs.launchpad.net/snapcraft/+bug/1791871
-    plugin: dump
-    stage:
-      - wrappers/*
