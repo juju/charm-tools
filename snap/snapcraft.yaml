@@ -7,7 +7,7 @@ confinement: strict
 grade: stable
 apps:
   charm:
-    command: env PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates UNIXCONFDIR=$SNAP/etc PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
+    command: bin/wrappers/charm
     plugs:
       - network
       - browser-support
@@ -52,6 +52,8 @@ parts:
       snapcraftctl prime
       cp $SNAPCRAFT_PART_INSTALL/bin/pip* bin/
       pip download pip -d lib/python*/site-packages/virtualenv_support/
+      mkdir bin/wrappers
+      cp $SNAPCRAFT_PART_INSTALL/../src/helpers/snap-wrappers/* bin/wrappers/
   versions:
     after: [charmstore-client, charm-tools]
     source-type: git  # see https://bugs.launchpad.net/snapcraft/+bug/1791871

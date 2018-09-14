@@ -1,0 +1,29 @@
+#!/bin/bash
+
+export PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH
+export GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates
+export UNIXCONFDIR=$SNAP/etc
+export PREFIX=$SNAP
+export GIT_EXEC_PATH=$SNAP/usr/lib/git-core
+export LC_ALL=C.UTF-8
+
+warn() {
+    if [ -t 1 ]; then
+        # colorize if term
+        tput bold
+        tput setaf 3
+    fi
+    >&2 echo "$1"
+    if [ -t 1 ]; then
+        # reset if term
+        tput sgr0
+    fi
+}
+
+warn "To improve the developer experience, the confinement of this snap is changing "
+warn "from strict to classic. For security reasons, updates will be blocked until"
+warn "you manually refresh to authorize the new confinement by doing the following:"
+warn ""
+warn "    sudo snap refresh charm --classic"
+
+exec "$SNAP/bin/charm" "$@"
