@@ -25,5 +25,6 @@ warn "from strict to classic. For security reasons, updates will be blocked unti
 warn "you manually refresh to authorize the new confinement by doing the following:"
 warn ""
 warn "    sudo snap refresh charm --classic"
+warn ""
 
 exec "$SNAP/bin/charm" "$@"
