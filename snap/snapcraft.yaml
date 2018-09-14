@@ -3,7 +3,7 @@ version: git
 version-script: charmtools/git_version.py
 summary: charm and charm-tools
 description: charmstore-client and charm-tools
-confinement: strict
+confinement: classic
 grade: stable
 apps:
   charm:
@@ -17,6 +17,7 @@ parts:
   go:
     source-tag: go1.10.3
   charmstore-client:
+    build-attributes: ['no-patchelf']
     after: [go]
     source: https://github.com/juju/charmstore-client.git
     source-branch: master
