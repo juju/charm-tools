@@ -29,7 +29,7 @@ setup(
         'cheetah3>=3.0.0',
         'pyyaml==3.11',
         'paramiko<2.0.0',
-        'requests<=2.9.1',
+        'requests<=2.19.1',
         'libcharmstore',
         'blessings<=1.6',
         'ruamel.yaml<=0.10.23',
