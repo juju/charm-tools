@@ -8,11 +8,6 @@ grade: stable
 apps:
   charm:
     command: bin/wrappers/charm
-    plugs:
-      - network
-      - browser-support
-      - home
-      - removable-media
 parts:
   go:
     source-tag: go1.10.3
