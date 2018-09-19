@@ -392,7 +392,7 @@ class Builder(object):
         """
         Add Tactics to the plan for each relation endpoint to render hooks
         for that relation endpoint from the template, as well as a tactic
-        to pull in the interface layer's code.
+        to pull in the interface layer's code (if there is an interface layer).
 
         :param layers: Data structure containing all of the layers composing
             this charm, along with some overall metadata.
@@ -405,8 +405,6 @@ class Builder(object):
         """
         # Interface includes don't directly map to output files
         # as they are computed in combination with the metadata.yaml
-        if not layers.get('interfaces'):
-            return
         metadata_tactic = [tactic for tactic in plan if isinstance(
                            tactic, charmtools.build.tactics.MetadataYAML)]
         if not metadata_tactic:
@@ -432,7 +430,7 @@ class Builder(object):
                 specs.append([role, k, v["interface"]])
                 used_interfaces.add(v["interface"])
 
-        for iface in layers["interfaces"]:
+        for iface in layers.get("interfaces", []):
             if iface.name not in used_interfaces:
                 # we shouldn't include something the charm doesn't use
                 log.warn("layer.yaml includes {} which isn't "
@@ -452,11 +450,14 @@ class Builder(object):
                         iface, relation_name, role,
                         self.target, target_config)
                 )
-                # Link Phase
-                plan.append(
-                    charmtools.build.tactics.InterfaceBind(
-                        relation_name, iface.url, self.target,
-                        target_config, output_files, template_file))
+
+        # Link Phase
+        # owner = metadata_tactic[0].layer.url
+        owner = output_files[self.HOOK_TEMPLATE_FILE].layer.url
+        for role, relation_name, interface_name in specs:
+            plan.append(charmtools.build.tactics.InterfaceBind(
+                relation_name, owner, self.target,
+                target_config, output_files, template_file))
 
     def plan_storage(self, layers, output_files, plan):
         """
