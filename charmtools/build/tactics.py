@@ -296,7 +296,12 @@ class InterfaceCopy(Tactic):
                       self.role)
             return False
         valid = True
-        for entry in self.interface.directory.walkfiles():
+        ignorer = utils.ignore_matcher(self.config.ignores +
+                                       self.interface.config.ignores)
+        for entry, _ in utils.walk(self.interface.directory,
+                                   lambda x: True,
+                                   matcher=ignorer,
+                                   kind="files"):
             if entry.splitext()[1] != ".py":
                 continue
             relpath = entry.relpath(self._target.directory)
