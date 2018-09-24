@@ -50,7 +50,6 @@ parts:
       pip download pip -d lib/python*/site-packages/virtualenv_support/
   versions:
     after: [charmstore-client, charm-tools]
-    source-type: git  # see https://bugs.launchpad.net/snapcraft/+bug/1791871
     plugin: dump
     override-stage: |
       charmtools=../parts/charm-tools/src
