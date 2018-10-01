@@ -636,9 +636,7 @@ class Builder(object):
 
     def inspect(self):
         self.charm = path(self.charm).abspath()
-        if not self._check_path(self.charm):
-            raise BuildError('For security reasons, only paths under '
-                             'your home directory can be accessed')
+        self._check_path(self.charm)
         inspector.inspect(self.charm, force_styling=self.force_raw)
 
     def normalize_outputdir(self):
@@ -652,29 +650,9 @@ class Builder(object):
             od = od.basename
         self.output_dir = od
 
-    def _check_home(self, path_to_check):
-        home_dir = utils.get_home()
-        home_msg = ('For security reasons, only paths under your '
-                    'home directory can be accessed, including '
-                    'the build output dir, JUJU_REPOSITORY, '
-                    'LAYER_PATH, INTERFACE_PATH, and any '
-                    'wheelhouse overrides.')
-        if not home_dir:  # expansion failed
-            if not self._warned_home:
-                log.warn(home_msg)
-            log.warn('Could not determine home directory.')
-            self._warned_home = True
-        elif not os.path.abspath(path_to_check).startswith(home_dir):
-            if not self._warned_home:
-                log.warn(home_msg)
-            log.warn('The path {} is not under your '
-                     'home directory.'.format(path_to_check))
-            self._warned_home = True
-
     def _check_path(self, path_to_check, need_write=False):
         if not path_to_check:
             return
-        self._check_home(path_to_check)
         if not os.access(path_to_check, os.R_OK):
             raise BuildError('Unable to read from: {}'.format(path_to_check))
         if need_write and not os.access(path_to_check, os.W_OK):
