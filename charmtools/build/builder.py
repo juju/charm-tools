@@ -10,6 +10,7 @@ import sys
 import uuid
 import yaml
 import string
+import traceback
 
 import charmtools.build.tactics
 
@@ -843,6 +844,7 @@ def main(args=None):
             elif line[0] == "E":
                 llog.error(line)
     except (BuildError, FetchError) as e:
+        log.debug(traceback.format_exc())
         if e.args:
             log.error(*e.args)
         raise SystemExit(1)
