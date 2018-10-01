@@ -653,6 +653,8 @@ class Builder(object):
     def _check_path(self, path_to_check, need_write=False):
         if not path_to_check:
             return
+        if not os.path.exists(path_to_check):
+            path_to_check = os.path.dirname(path_to_check)
         if not os.access(path_to_check, os.R_OK):
             raise BuildError('Unable to read from: {}'.format(path_to_check))
         if need_write and not os.access(path_to_check, os.W_OK):
