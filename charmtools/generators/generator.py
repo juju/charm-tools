@@ -23,7 +23,6 @@ import tempfile
 import pkg_resources
 
 from .utils import apt_fill
-from charmtools.utils import get_home
 
 try:
     from ubuntutools.config import ubu_email as get_maintainer
@@ -63,17 +62,7 @@ class CharmGenerator(object):
         create the files and directories for the new charm.
 
         """
-        home_path = get_home()
         output_path = self._get_output_path()
-        home_msg = ('For security reasons, only paths under '
-                    'your home directory can be accessed')
-        if not home_path:  # expansion failed
-            log.warn('Could not determine home directory')
-            log.warn(home_msg)
-        elif not os.path.abspath(output_path).startswith(home_path):
-            log.warn('The path {} is not under '
-                     'your home directory'.format(home_path))
-            log.warn(home_msg)
         if os.path.exists(output_path):
             raise CharmGeneratorException(
                 '{} exists. Please move it out of the way.'.format(
