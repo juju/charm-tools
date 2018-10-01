@@ -66,7 +66,15 @@ charm version --format=long
 ```
 
 PyPI should be kept up to date with full releases, but the authoritative source
-is always the snap.
+is always the snap.  Note: for the version to work on PyPI, it needs to be cached
+in the `charmtools/VERSION` file, in JSON format.  This is not checked into git,
+and should be regenerated just prior to release.  Thus, to release to PyPI, you
+should do the following:
+
+```bash
+./charmtools/git_version.py --format=json > charmtools/VERSION
+python setup.py sdist upload
+```
 
 
 # Filing Bugs
