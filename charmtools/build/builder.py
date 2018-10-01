@@ -10,6 +10,7 @@ import sys
 import uuid
 import yaml
 import string
+import traceback
 
 import charmtools.build.tactics
 
@@ -653,6 +654,8 @@ class Builder(object):
     def _check_path(self, path_to_check, need_write=False):
         if not path_to_check:
             return
+        if not os.path.exists(path_to_check):
+            path_to_check = os.path.dirname(path_to_check)
         if not os.access(path_to_check, os.R_OK):
             raise BuildError('Unable to read from: {}'.format(path_to_check))
         if need_write and not os.access(path_to_check, os.W_OK):
@@ -841,6 +844,7 @@ def main(args=None):
             elif line[0] == "E":
                 llog.error(line)
     except (BuildError, FetchError) as e:
+        log.debug(traceback.format_exc())
         if e.args:
             log.error(*e.args)
         raise SystemExit(1)
