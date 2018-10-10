@@ -787,7 +787,9 @@ def main(args=None):
     parser.add_argument('-s', '--series', default=None)
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
-    parser.add_argument('--interface-service',
+    parser.add_argument('--interface-service', dest='layer_index',
+                        help="Deprecated: use --layer-index")
+    parser.add_argument('--layer-index',
                         default="https://juju.github.io/layer-index/")
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
@@ -814,8 +816,8 @@ def main(args=None):
         build.log_level = logging.DEBUG
 
     # Monkey patch in the domain for the interface webservice
-    InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
-    LayerFetcher.INTERFACE_DOMAIN = build.interface_service
+    InterfaceFetcher.INTERFACE_DOMAIN = build.layer_index
+    LayerFetcher.INTERFACE_DOMAIN = build.layer_index
 
     InterfaceFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 
