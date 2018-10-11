@@ -70,7 +70,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                     choice_path = path(uri[7:])
                     if not choice_path.exists():
                         continue
-                    result = json.loads(path.text())
+                    result = json.loads(choice_path.text())
                     if not result.get('repo'):
                         continue
                     log.debug('Found repo: {}'.format(result['repo']))
