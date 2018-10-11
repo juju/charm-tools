@@ -51,11 +51,14 @@ parts:
   versions:
     after: [charmstore-client, charm-tools]
     plugin: dump
-    override-stage: |
-      charmtools=../parts/charm-tools/src
-      charmstore=../parts/charmstore-client/src
-      $charmtools/charmtools/git_version.py $charmtools --format=json > charm-tools-version
-      $charmtools/charmtools/git_version.py $charmstore --format=json > charmstore-client-version
+    build: |
+      charmtools=../../charm-tools/src
+      charmstore=../../charmstore-client/src
+      $charmtools/charmtools/git_version.py $charmtools --format=json > $SNAPCRAFT_PART_INSTALL/charm-tools-version
+      $charmtools/charmtools/git_version.py $charmstore --format=json > $SNAPCRAFT_PART_INSTALL/charmstore-client-version
+    stage:
+      - charm-tools-version
+      - charmstore-client-version
     prime:
       - charm-tools-version
       - charmstore-client-version
