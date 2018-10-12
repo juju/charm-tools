@@ -42,7 +42,7 @@ setup(
         'launchpadlib<1.11',
         'cheetah3>=3.0.0',
         'pyyaml==3.11',
-        'paramiko<2.0.0',
+        'paramiko',
         'requests<=2.19.1',
         'libcharmstore',
         'blessings<=1.6',
