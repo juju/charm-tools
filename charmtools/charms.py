@@ -166,7 +166,7 @@ class CharmLinter(Linter):
             self.info('File config.yaml not found.')
             return
         try:
-            with open(config_path) as config_file:
+            with open(config_path, "rb") as config_file:
                 config = yaml.safe_load(config_file.read())
         except Exception as error:
             self.err('Cannot parse config.yaml: %s' % error)
@@ -270,7 +270,7 @@ class Charm(object):
         yaml_path = os.path.join(charm_path, 'metadata.yaml')
         actions_yaml_file = os.path.join(charm_path, 'actions.yaml')
         try:
-            yamlfile = open(yaml_path, 'r')
+            yamlfile = open(yaml_path, "rb")
             try:
                 charm = yaml.safe_load(yamlfile)
             except Exception as e:
@@ -428,13 +428,13 @@ class Charm(object):
                 lint.check_hook('config-changed', hooks_path)
 
             if os.path.exists(actions_yaml_file):
-                with open(actions_yaml_file) as f:
+                with open(actions_yaml_file, "rb") as f:
                     try:
                         actions = yaml.safe_load(f.read())
+                        validate_actions(actions, actions_path, lint)
                     except Exception as e:
                         lint.crit('cannot parse {}: {}'.format(
                             actions_yaml_file, e))
-                    validate_actions(actions, actions_path, lint)
 
         except IOError:
             lint.err("could not find metadata file for " + charm_name)
@@ -458,7 +458,7 @@ class Charm(object):
 
     def metadata(self):
         metadata = None
-        with open(os.path.join(self.charm_path, 'metadata.yaml')) as f:
+        with open(os.path.join(self.charm_path, 'metadata.yaml'), "rb") as f:
             metadata = yaml.safe_load(f.read())
 
         return metadata
