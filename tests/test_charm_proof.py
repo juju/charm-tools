@@ -29,19 +29,20 @@ proof_path = join(proof_path, 'charmtools')
 
 sys.path.append(proof_path)
 
-from charmtools.charms import CharmLinter as Linter
-from charmtools.charms import validate_display_name
-from charmtools.charms import validate_maintainer
-from charmtools.charms import validate_categories_and_tags
-from charmtools.charms import validate_storage
-from charmtools.charms import validate_devices
-from charmtools.charms import validate_series
-from charmtools.charms import validate_min_juju_version
-from charmtools.charms import validate_extra_bindings
-from charmtools.charms import validate_payloads
-from charmtools.charms import validate_actions
-from charmtools.charms import validate_terms
-from charmtools.charms import validate_resources
+from charmtools.charms import CharmLinter as Linter  # noqa
+from charmtools.charms import Charm  # noqa
+from charmtools.charms import validate_display_name  # noqa
+from charmtools.charms import validate_maintainer  # noqa
+from charmtools.charms import validate_categories_and_tags  # noqa
+from charmtools.charms import validate_storage  # noqa
+from charmtools.charms import validate_devices  # noqa
+from charmtools.charms import validate_series  # noqa
+from charmtools.charms import validate_min_juju_version  # noqa
+from charmtools.charms import validate_extra_bindings  # noqa
+from charmtools.charms import validate_payloads  # noqa
+from charmtools.charms import validate_actions  # noqa
+from charmtools.charms import validate_terms  # noqa
+from charmtools.charms import validate_resources  # noqa
 
 
 class TestCharmProof(TestCase):
@@ -206,8 +207,8 @@ class TestCharmProof(TestCase):
             """)
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
-        expected = (
-            'W: config.yaml: description of option foo should be a non-empty string')
+        expected = ('W: config.yaml: description of option '
+                    'foo should be a non-empty string')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_option_data_with_blank_descr(self):
@@ -220,8 +221,8 @@ class TestCharmProof(TestCase):
             """)
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
-        expected = (
-            'W: config.yaml: description of option foo should be a non-empty string')
+        expected = ('W: config.yaml: description of option '
+                    'foo should be a non-empty string')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_option_data_with_missing_option_type(self):
@@ -352,6 +353,65 @@ class TestCharmProof(TestCase):
             "for the tag 'tag:yaml.org,2002:python/name:__builtin__.int'")
         self.assertTrue(self.linter.lint[0].startswith(expected))
 
+    def test_valid_layer_yaml(self):
+        with open(join(self.charm_dir, 'metadata.yaml'), 'w') as f:
+            f.write("{}")
+        with open(join(self.charm_dir, 'layer.yaml'), 'w') as f:
+            f.write("valid: {}")
+        with patch.object(Charm, 'is_charm'):
+            charm = Charm(self.charm_dir, self.linter)
+        charm.proof()
+        assert not any(msg.startswith('W: cannot parse {}/layer.yaml: '
+                                      ''.format(self.charm_dir))
+                       for msg in self.linter.lint)
+
+    def test_invalid_layer_yaml(self):
+        with open(join(self.charm_dir, 'metadata.yaml'), 'w') as f:
+            f.write("{}")
+        with open(join(self.charm_dir, 'layer.yaml'), 'w') as f:
+            f.write("invalid: {")
+        Charm(self.charm_dir, self.linter).proof()
+        assert any(msg.startswith('W: cannot parse {}/layer.yaml: '
+                                  ''.format(self.charm_dir))
+                   for msg in self.linter.lint)
+
+    def test_load_proof_extensions(self):
+        mocks = {
+            'validate_storage': None,
+            'validate_devices': None,
+            'validate_resources': None,
+            'validate_payloads': None,
+        }
+        for validator in mocks.keys():
+            patcher = patch('charmtools.charms.{}'.format(validator))
+            mocks[validator] = patcher.start()
+            self.addCleanup(patcher.stop)
+        with open(join(self.charm_dir, 'metadata.yaml'), 'w') as f:
+            f.write("{}")
+        with open(join(self.charm_dir, 'layer.yaml'), 'w') as f:
+            f.write(dedent("""
+                           proof:
+                             storage:
+                               - name: ext
+                                 type: Boolean
+                             devices:
+                               - name: ext
+                                 type: Boolean
+                             resources:
+                               - name: ext
+                                 type: Boolean
+                             payloads:
+                               - name: ext
+                                 type: Boolean
+                           """))
+        charm = Charm(self.charm_dir, self.linter)
+        charm.proof()
+        for mock in mocks.values():
+            mock.assert_called_once_with({},
+                                         self.linter,
+                                         [{'name': 'ext',
+                                           'type': 'Boolean'}])
+
 
 class CategoriesTagsValidationTest(TestCase):
     def test_no_categories_or_tags(self):
@@ -450,7 +510,10 @@ class DisplayNameValidationTest(TestCase):
             }
             validate_display_name(charm, linter)
             linter.err.assert_called_once_with(
-                'display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.')
+                'display-name: not in valid format. Only letters, numbers, '
+                'dashes, and hyphens are permitted.'
+            )
+
 
 class MaintainerValidationTest(TestCase):
     def test_two_maintainer_fields(self):
@@ -603,8 +666,30 @@ class DevicesValidationTest(TestCase):
         validate_devices(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call('devices.bitcoinminer: Unrecognized keys in mapping: "{\'unknown\': True}"'),
+            call('devices.bitcoinminer: Unrecognized keys in mapping: '
+                 '"{\'unknown\': True}"'),
         ], any_order=True)
+
+    def test_devices_proof_extensions(self):
+        """Charm has devices with proof extensions."""
+        linter = Mock()
+        charm = {
+            'devices': {
+                'bitcoinminer': {
+                    'type': 'nvidia.com/gpu',
+                    'count': 1,
+                    'unknown': True
+                }
+            }
+        }
+        extensions = [
+            {
+                'name': 'unknown',
+                'type': 'Boolean',
+            }
+        ]
+        validate_devices(charm, linter, extensions)
+        self.assertEqual(linter.err.call_args_list, [])
 
 
 class StorageValidationTest(TestCase):
@@ -708,6 +793,26 @@ class StorageValidationTest(TestCase):
                  '"{\'unknown\': \'invalid key\'}"'),
         ], any_order=True)
 
+    def test_storage_proof_extensions(self):
+        """Charm has storage with proof extensions."""
+        linter = Mock()
+        charm = {
+            'storage': {
+                'data': {
+                    'type': 'filesystem',
+                    'unknown': 'invalid key',
+                },
+            }
+        }
+        extensions = [
+            {
+                'name': 'unknown',
+                'type': 'String',
+            }
+        ]
+        validate_storage(charm, linter, extensions)
+        self.assertEqual(linter.err.call_args_list, [])
+
 
 class ResourcesValidationTest(TestCase):
     def test_minimal_resources_config(self):
@@ -769,6 +874,26 @@ class ResourcesValidationTest(TestCase):
             call('resources.vm: Unrecognized keys in mapping: '
                  '"{\'unknown\': \'invalid key\'}"'),
         ], any_order=True)
+
+    def test_resources_proof_extensions(self):
+        """Charm has resources with proof extensions."""
+        linter = Mock()
+        charm = {
+            'resources': {
+                'vm': {
+                    'type': 'file',
+                    'unknown': 'invalid key',
+                },
+            }
+        }
+        extensions = [
+            {
+                'name': 'unknown',
+                'type': 'String',
+            }
+        ]
+        validate_resources(charm, linter, extensions)
+        self.assertEqual(linter.err.call_args_list, [])
 
 
 class PayloadsValidationTest(TestCase):
@@ -847,6 +972,26 @@ class PayloadsValidationTest(TestCase):
             call('payloads.vm: Unrecognized keys in mapping: '
                  '"{\'unknown\': \'invalid key\'}"'),
         ], any_order=True)
+
+    def test_payloads_proof_extensions(self):
+        """Charm has payloads with proof extensions."""
+        linter = Mock()
+        charm = {
+            'payloads': {
+                'vm': {
+                    'type': 'kvm',
+                    'unknown': 'invalid key',
+                },
+            }
+        }
+        extensions = [
+            {
+                'name': 'unknown',
+                'type': 'String',
+            }
+        ]
+        validate_payloads(charm, linter, extensions)
+        self.assertEqual(linter.err.call_args_list, [])
 
 
 class ActionsValidationTest(TestCase):
