@@ -989,7 +989,7 @@ class VersionTactic(Tactic):
                     sha = utils.Process(cmd)()
                     if sha:
                         return sha.output
-                except FileNotFoundError as e:
+                except IOError as e:
                     log.debug(e)
                     continue
         return ""
