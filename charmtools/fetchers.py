@@ -110,14 +110,18 @@ class Fetcher(object):
         dirlist = os.listdir(dir_)
         if '.bzr' in dirlist:
             rev_info = check_output('bzr revision-info', cwd=dir_)
-            return rev_info.split()[1]
+            return rev_info.decode('utf8').strip().split()[1]
         elif '.git' in dirlist:
-            return check_output('git rev-parse HEAD', cwd=dir_)
+            rev_info = check_output('git rev-parse HEAD', cwd=dir_)
+            return rev_info.decode('utf8').strip()
         elif '.hg' in dirlist:
-            return check_output(
+            rev_info = check_output(
                 "hg log -l 1 --template '{node}\n' -r .", cwd=dir_)
-        else:
+            return rev_info.decode('utf8').strip()
+        elif hasattr(self, 'revision'):
             return self.revision
+        else:
+            return None
 
 
 class BzrFetcher(Fetcher):

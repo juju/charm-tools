@@ -49,6 +49,7 @@ def inspect(charm, force_styling=False):
 
     # ordered list of layers used for legend
     layers = list(manifest['layers'])
+    layers_index = {layer['url']: i for i, layer in enumerate(layers)}
 
     def get_depth(e):
         rel = e.relpath(charm)
@@ -68,7 +69,7 @@ def inspect(charm, force_styling=False):
         color = tw.term.normal
         if rel in manifest['signatures']:
             layer = manifest['signatures'][rel][0]
-            layer_key = layers.index(layer)
+            layer_key = layers_index[layer]
             color = getattr(tw, theme.get(layer_key, "normal"))
         else:
             if entry.isdir():
@@ -79,7 +80,7 @@ def inspect(charm, force_styling=False):
     for layer in layers:
         tw.write("# {color}{layer}{t.normal}\n",
                  color=getattr(tw, theme.get(
-                     layers.index(layer), "normal")),
+                     layers_index[layer], "normal")),
                  layer=layer)
     tw.write("\n")
     tw.write("{t.blue}{target}{t.normal}\n", target=charm)
