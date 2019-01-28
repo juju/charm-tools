@@ -210,9 +210,11 @@ class Builder(object):
         build series defined. If not, fall back to a default series.
 
         """
-        if self.series:
-            return
         if self.charm_metadata and self.charm_metadata.get('series'):
+            return
+        log.error('DEPRECATED: implicit series and --series flag; '
+                  'specify series in metadata.yaml instead')
+        if self.series:
             return
         self.series = self.DEFAULT_SERIES
 
@@ -807,7 +809,8 @@ def main(args=None):
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-o', '--output-dir', type=path)
-    parser.add_argument('-s', '--series', default=None)
+    parser.add_argument('-s', '--series', default=None,
+                        help='Deprecated: define series in metadata.yaml')
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
@@ -850,11 +853,10 @@ def main(args=None):
     configLogging(build)
 
     try:
+        build.check_series()
         if not build.output_dir:
             build.normalize_outputdir()
         build.check_paths()
-        if not build.series:
-            build.check_series()
 
         build()
 
