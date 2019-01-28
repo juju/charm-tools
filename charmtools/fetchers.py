@@ -122,8 +122,7 @@ class Fetcher(object):
                     return rev_info.decode('utf8').strip()
             except FetchError:
                 continue
-        else:
-            return None
+        return None
 
 
 class BzrFetcher(Fetcher):
