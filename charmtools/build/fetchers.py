@@ -35,7 +35,8 @@ fetchers.FETCHERS.insert(0, RepoFetcher)
 class InterfaceFetcher(fetchers.LocalFetcher):
     INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
     NAMESPACE = "interface"
-    ENVIRON = "INTERFACE_PATH"
+    ENVIRON = "CHARM_INTERFACES_DIR"
+    OLD_ENVIRON = "INTERFACE_PATH"
     OPTIONAL_PREFIX = "juju-relation-"
     ENDPOINT = "interfaces"
     NO_LOCAL_LAYERS = False
@@ -49,9 +50,10 @@ class InterfaceFetcher(fetchers.LocalFetcher):
             if not cls.NO_LOCAL_LAYERS:
                 prefixed_name = '{}-{}'.format(cls.NAMESPACE, name)
                 search_path = [os.environ.get("JUJU_REPOSITORY", ".")]
-                cp = os.environ.get(cls.ENVIRON)
-                if cp:
-                    search_path.extend(cp.split(os.pathsep))
+                if cls.ENVIRON in os.environ:
+                    search_path.append(os.environ[cls.ENVIRON])
+                if cls.OLD_ENVIRON in os.environ:
+                    search_path.append(os.environ[cls.OLD_ENVIRON])
                 for part in search_path:
                     basepath = path(part)
                     for dirname in (name, prefixed_name):
@@ -139,7 +141,8 @@ fetchers.FETCHERS.insert(0, InterfaceFetcher)
 class LayerFetcher(InterfaceFetcher):
     INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
     NAMESPACE = "layer"
-    ENVIRON = "LAYER_PATH"
+    ENVIRON = "CHARM_LAYERS_DIR"
+    OLD_ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"
     ENDPOINT = "layers"
 

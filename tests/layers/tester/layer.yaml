@@ -1,4 +1,4 @@
-includes: ["trusty/mysql"]
+includes: ["layers/mysql"]
 config:
     deletes:
         - vip
