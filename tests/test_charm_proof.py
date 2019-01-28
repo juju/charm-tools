@@ -890,6 +890,11 @@ class ResourcesValidationTest(TestCase):
             {
                 'name': 'unknown',
                 'type': 'String',
+            },
+            {
+                'name': 'unknown_default',
+                'type': 'String',
+                'missing': '',
             }
         ]
         validate_resources(charm, linter, extensions)
