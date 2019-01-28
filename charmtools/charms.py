@@ -106,7 +106,7 @@ class CharmLinter(Linter):
                 for line in hook_file:
                     count += 1
                     hook_warnings = [
-                        {'re': re.compile("http://169\.254\.169\.254/"),
+                        {'re': re.compile(r"http://169\.254\.169\.254/"),
                          'msg': "hook accesses EC2 metadata service directly"}]
                     for warning in hook_warnings:
                         if warning['re'].search(line):
@@ -196,7 +196,7 @@ class CharmLinter(Linter):
             return
 
         for option_name, option_value in options.items():
-            if not re.match('^[a-z0-9]+[\w-]+[a-z0-9]+$', option_name,
+            if not re.match(r'^[a-z0-9]+[\w-]+[a-z0-9]+$', option_name,
                             flags=re.IGNORECASE):
                 self.err('config.yaml: %s does not conform to naming pattern'
                          % option_name)
@@ -508,11 +508,31 @@ class Boolean(object):
                 node, '"%s" is not one of true, false' % cstruct)
 
 
+class StringOrEmpty(colander.String):
+    """
+    Subclass of colander.String that defaults allow_empty to True.
+    """
+    def __init__(self, encoding=None, allow_empty=True):
+        super(StringOrEmpty, self).__init__(encoding, allow_empty)
+
+
 class SchemaBuilder(dict2colander.SchemaBuilder):
     def __init__(self):
         super(SchemaBuilder, self).__init__()
         self.add_type('Mapping', StrictMapping)
         self.add_type('Boolean', Boolean)
+        # override String type to default to allow empty
+        self.add_type('String', StringOrEmpty)
+
+    def _get_validation_schema(self):
+        # override validation schema to ensure that the `missing`
+        # field allows empty strings
+        root = super(SchemaBuilder, self)._get_validation_schema()
+        node_for_missing = [node
+                            for node in root.children
+                            if node.name == 'missing'][0]
+        node_for_missing.typ = StringOrEmpty()
+        return root
 
 
 class ResourceItem(colander.MappingSchema):
@@ -526,10 +546,10 @@ class ResourceItem(colander.MappingSchema):
     )
     filename = colander.SchemaNode(
         colander.String(),
-        missing='',
+        missing=colander.drop,
     )
     description = colander.SchemaNode(
-        colander.String(),
+        colander.String(allow_empty=True),
         missing='',
     )
 
