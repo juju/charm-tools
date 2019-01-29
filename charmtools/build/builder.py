@@ -871,6 +871,10 @@ def main(args=None):
                 llog.warn(line)
             elif line[0] == "E":
                 llog.error(line)
+
+        if exit_code > 0:
+            raise SystemExit(exit_code)
+
     except (BuildError, FetchError) as e:
         log.debug(traceback.format_exc())
         if e.args:
