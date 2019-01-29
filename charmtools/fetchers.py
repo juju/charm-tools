@@ -107,17 +107,22 @@ class Fetcher(object):
         return match.groupdict() if match else {}
 
     def get_revision(self, dir_):
-        dirlist = os.listdir(dir_)
-        if '.bzr' in dirlist:
-            rev_info = check_output('bzr revision-info', cwd=dir_)
-            return rev_info.split()[1]
-        elif '.git' in dirlist:
-            return check_output('git rev-parse HEAD', cwd=dir_)
-        elif '.hg' in dirlist:
-            return check_output(
-                "hg log -l 1 --template '{node}\n' -r .", cwd=dir_)
-        else:
+        if self.revision:
             return self.revision
+        for cmd in ("git rev-parse HEAD",
+                    "bzr revision-info",
+                    "hg log -l 1 --template '{node}\n' -r ."):
+            try:
+                rev_info = check_output(cmd, cwd=dir_)
+                if cmd.startswith('git'):
+                    return rev_info.decode('utf8').strip()
+                if cmd.startswith('bzr'):
+                    return rev_info.decode('utf8').strip().split()[1]
+                if cmd.startswith('hg'):
+                    return rev_info.decode('utf8').strip()
+            except FetchError:
+                continue
+        return None
 
 
 class BzrFetcher(Fetcher):

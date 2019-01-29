@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import blessings
+import curses
 import json
 import logging
 import os
@@ -26,6 +27,7 @@ from charmtools.build.fetchers import (
     LayerFetcher,
     get_fetcher,
     FetchError,
+    RepoFetcher,
 )
 from charmtools.version import cached_charm_tools_version, format_version
 
@@ -64,6 +66,7 @@ class Fetched(Configable):
         self.directory = None
         self._name = name
         self.fetched = False
+        self.revision = None
 
     @property
     def name(self):
@@ -87,6 +90,7 @@ class Fetched(Configable):
             # We might be passing a local dir path directly
             # which fetchers don't currently  support
             self.directory = path(self.url)
+            self.revision = RepoFetcher(self.url).get_revision(self.url)
         else:
             if hasattr(fetcher, "path") and fetcher.path.exists():
                 self.directory = path(fetcher.path)
@@ -95,6 +99,7 @@ class Fetched(Configable):
                     self.target_repo.makedirs_p()
                 self.directory = path(fetcher.fetch(self.target_repo))
                 self.fetched = True
+            self.revision = fetcher.get_revision(self.directory)
 
         if not self.directory.exists():
             raise BuildError(
@@ -251,10 +256,15 @@ class Builder(object):
     def layers(self):
         layers = []
         for i in self._layers:
-            layers.append(i.url)
+            layers.append({
+                'url': i.url,
+                'rev': i.revision,
+            })
         for i in self._interfaces:
-            layers.append(i.url)
-        layers.append("build")
+            layers.append({
+                'url': i.url,
+                'rev': i.revision,
+            })
         return layers
 
     def fetch(self):
@@ -638,7 +648,7 @@ class Builder(object):
     def inspect(self):
         self.charm = path(self.charm).abspath()
         self._check_path(self.charm)
-        inspector.inspect(self.charm, force_styling=self.force_raw)
+        inspector.inspect(self.charm, force_styling=self.force_color)
 
     def normalize_outputdir(self):
         od = path(self.charm).abspath()
@@ -709,9 +719,20 @@ def configLogging(build):
     term = os.environ.get('TERM')
     if term and term.startswith('screen.'):
         term = term[7:]
-    clifmt = utils.ColoredFormatter(
-        blessings.Terminal(term),
-        '%(name)s: %(message)s')
+    record_format = '%(name)s: %(message)s'
+    try:
+        clifmt = utils.ColoredFormatter(
+            blessings.Terminal(term, force_styling=build.force_color),
+            record_format)
+    except curses.error:
+        try:
+            # try falling back to basic term type
+            clifmt = utils.ColoredFormatter(
+                blessings.Terminal('linux', force_styling=build.force_color),
+                record_format)
+        except curses.error:
+            # fall back to uncolored formatter
+            clifmt = logging.Formatter(record_format)
     root_logger = logging.getLogger()
     clihandler = logging.StreamHandler(sys.stdout)
     clihandler.setFormatter(clifmt)
@@ -735,6 +756,8 @@ def inspect(args=None):
                     'is presented in a legend at the top of the '
                     'output.')
     parser.add_argument('-r', '--force-raw', action="store_true",
+                        dest='force_color', help="Alias of --force-color")
+    parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('charm', nargs="?", default=".", type=path)
@@ -804,6 +827,8 @@ def main(args=None):
                              "for the built wheelhouse")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help="Increase output (same as -l DEBUG)")
+    parser.add_argument('-c', '--force-color', action="store_true",
+                        help="Force raw output (color)")
     parser.add_argument('charm', nargs="?", default=".", type=path)
     utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
