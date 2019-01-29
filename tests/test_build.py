@@ -47,6 +47,17 @@ class TestBuild(unittest.TestCase):
                 "Failed to process {0}. "
                 "Ensure the YAML is valid".format(metadata.abspath()), str(e))
 
+    @mock.patch("charmtools.build.builder.proof")
+    @mock.patch("charmtools.build.builder.Builder")
+    def test_failed_proof(self, mBuilder, mproof):
+        """Test that charm-proof failures get a BuildError exception."""
+        mproof.proof.return_value = ([], 200)
+        try:
+            build.builder.main()
+            self.fail('Expected Builder to throw an exception on proof error')
+        except SystemExit as e:
+            self.assertEqual(e.code, 200)
+
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     def test_tester_layer(self, pv):
         bu = build.Builder()
