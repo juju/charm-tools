@@ -119,6 +119,9 @@ class InterfaceFetcher(fetchers.LocalFetcher):
         elif hasattr(self, "repo"):
             f, target = self._get_repo_fetcher_and_target(self.repo, dir_)
             res = f.fetch(dir_)
+            # make sure we save the revision of the actual repo, before we
+            # start traversing subdirectories and moving contents around
+            self.revision = self.get_revision(res)
             if res != target:
                 res = path(res)
                 if hasattr(self, 'subdir'):

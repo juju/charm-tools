@@ -27,6 +27,7 @@ from charmtools.build.fetchers import (
     LayerFetcher,
     get_fetcher,
     FetchError,
+    RepoFetcher,
 )
 from charmtools.version import cached_charm_tools_version, format_version
 
@@ -65,6 +66,7 @@ class Fetched(Configable):
         self.directory = None
         self._name = name
         self.fetched = False
+        self.revision = None
 
     @property
     def name(self):
@@ -88,6 +90,7 @@ class Fetched(Configable):
             # We might be passing a local dir path directly
             # which fetchers don't currently  support
             self.directory = path(self.url)
+            self.revision = RepoFetcher(self.url).get_revision(self.url)
         else:
             if hasattr(fetcher, "path") and fetcher.path.exists():
                 self.directory = path(fetcher.path)
@@ -96,6 +99,7 @@ class Fetched(Configable):
                     self.target_repo.makedirs_p()
                 self.directory = path(fetcher.fetch(self.target_repo))
                 self.fetched = True
+            self.revision = fetcher.get_revision(self.directory)
 
         if not self.directory.exists():
             raise BuildError(
@@ -252,10 +256,15 @@ class Builder(object):
     def layers(self):
         layers = []
         for i in self._layers:
-            layers.append(i.url)
+            layers.append({
+                'url': i.url,
+                'rev': i.revision,
+            })
         for i in self._interfaces:
-            layers.append(i.url)
-        layers.append("build")
+            layers.append({
+                'url': i.url,
+                'rev': i.revision,
+            })
         return layers
 
     def fetch(self):
