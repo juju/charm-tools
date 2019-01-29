@@ -597,6 +597,12 @@ class Builder(object):
         if not (self.name and str(self.name)[0] in string.ascii_lowercase):
             raise BuildError('Charm name must start with a lower-case letter')
 
+        for cls in (InterfaceFetcher, LayerFetcher):
+            if cls.OLD_ENVIRON in os.environ and cls.ENVIRON not in os.environ:
+                log.warning('DEPRECATED: {} environment variable; '
+                            'please use {} instead'.format(cls.OLD_ENVIRON,
+                                                           cls.ENVIRON))
+
         self._validate_charm_repo()
 
         if not self.manifest.exists():

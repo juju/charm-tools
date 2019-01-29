@@ -52,7 +52,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                 search_path = [os.environ.get("JUJU_REPOSITORY", ".")]
                 if cls.ENVIRON in os.environ:
                     search_path.append(os.environ[cls.ENVIRON])
-                if cls.OLD_ENVIRON in os.environ:
+                elif cls.OLD_ENVIRON in os.environ:
                     search_path.append(os.environ[cls.OLD_ENVIRON])
                 for part in search_path:
                     basepath = path(part)
