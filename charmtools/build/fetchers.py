@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 
 import requests
@@ -26,6 +27,7 @@ class RepoFetcher(fetchers.LocalFetcher):
             if p.exists():
                 return dict(path=p)
         return {}
+
 
 fetchers.FETCHERS.insert(0, RepoFetcher)
 
@@ -64,9 +66,18 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                 uri = "%s%s/%s.json" % (
                     cls.INTERFACE_DOMAIN, cls.ENDPOINT, choice)
                 log.debug('Checking layer index: {}'.format(uri))
+                if uri.startswith('file://'):
+                    choice_path = path(uri[7:])
+                    if not choice_path.exists():
+                        continue
+                    result = json.loads(choice_path.text())
+                    if not result.get('repo'):
+                        continue
+                    log.debug('Found repo: {}'.format(result['repo']))
+                    return result
                 try:
                     result = requests.get(uri)
-                except:
+                except Exception:
                     result = None
                 if result and result.ok:
                     result = result.json()
@@ -118,6 +129,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                 path.rename(res, target)
             return target
 
+
 fetchers.FETCHERS.insert(0, InterfaceFetcher)
 
 
@@ -127,5 +139,6 @@ class LayerFetcher(InterfaceFetcher):
     ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"
     ENDPOINT = "layers"
+
 
 fetchers.FETCHERS.insert(0, LayerFetcher)

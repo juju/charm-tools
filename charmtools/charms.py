@@ -12,6 +12,8 @@ import yaml
 from stat import ST_MODE
 from stat import S_IXUSR
 
+import dict2colander
+
 from charmtools.linter import Linter
 from charmtools.utils import validate_display_name
 
@@ -37,6 +39,11 @@ KNOWN_METADATA_KEYS = [
     'terms',
     'resources',
     'devices',
+]
+
+REQUIRED_METADATA_KEYS = [
+    'name',
+    'summary',
 ]
 
 KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
@@ -99,7 +106,7 @@ class CharmLinter(Linter):
                 for line in hook_file:
                     count += 1
                     hook_warnings = [
-                        {'re': re.compile("http://169\.254\.169\.254/"),
+                        {'re': re.compile(r"http://169\.254\.169\.254/"),
                          'msg': "hook accesses EC2 metadata service directly"}]
                     for warning in hook_warnings:
                         if warning['re'].search(line):
@@ -166,7 +173,7 @@ class CharmLinter(Linter):
             self.info('File config.yaml not found.')
             return
         try:
-            with open(config_path) as config_file:
+            with open(config_path, "rb") as config_file:
                 config = yaml.safe_load(config_file.read())
         except Exception as error:
             self.err('Cannot parse config.yaml: %s' % error)
@@ -189,7 +196,7 @@ class CharmLinter(Linter):
             return
 
         for option_name, option_value in options.items():
-            if not re.match('^[a-z0-9]+[\w-]+[a-z0-9]+$', option_name,
+            if not re.match(r'^[a-z0-9]+[\w-]+[a-z0-9]+$', option_name,
                             flags=re.IGNORECASE):
                 self.err('config.yaml: %s does not conform to naming pattern'
                          % option_name)
@@ -244,8 +251,9 @@ class CharmLinter(Linter):
 
 
 class Charm(object):
-    def __init__(self, path):
+    def __init__(self, path, linter=None):
         self.charm_path = path
+        self.linter = linter or CharmLinter()
         if not self.is_charm():
             raise Exception('Not a Charm')
 
@@ -253,7 +261,7 @@ class Charm(object):
         return os.path.isfile(os.path.join(self.charm_path, 'metadata.yaml'))
 
     def proof(self):
-        lint = CharmLinter()
+        lint = self.linter
         charm_name = self.charm_path
         if os.path.isdir(charm_name):
             charm_path = charm_name
@@ -269,43 +277,60 @@ class Charm(object):
         actions_path = os.path.join(charm_path, 'actions')
         yaml_path = os.path.join(charm_path, 'metadata.yaml')
         actions_yaml_file = os.path.join(charm_path, 'actions.yaml')
+        layer_yaml_file = os.path.join(charm_path, 'layer.yaml')
         try:
-            yamlfile = open(yaml_path, 'r')
+            yamlfile = open(yaml_path, "rb")
             try:
                 charm = yaml.safe_load(yamlfile)
             except Exception as e:
                 lint.crit('cannot parse ' + yaml_path + ":" + str(e))
                 return lint.lint, lint.exit_code
-
             yamlfile.close()
+
+            proof_extensions = {}
+            try:
+                with open(layer_yaml_file, "rb") as yamlfile:
+                    try:
+                        layer_data = yaml.safe_load(yamlfile)
+                        proof_extensions.update(layer_data.get('proof', {}))
+                    except Exception as e:
+                        lint.warn('cannot parse {}: {}'.format(layer_yaml_file,
+                                                               str(e)))
+            except Exception:
+                # not all charms have a layer.yaml
+                pass
 
             for key in charm.keys():
                 if key not in KNOWN_METADATA_KEYS:
                     lint.err("Unknown root metadata field (%s)" % key)
 
+            for key in REQUIRED_METADATA_KEYS:
+                if key not in charm:
+                    lint.err("Missing required metadata field (%s)" % key)
+
             charm_basename = os.path.basename(charm_path)
-            if charm['name'] != charm_basename:
+            if charm.get('name') != charm_basename:
                 msg = (
                     "metadata name (%s) must match directory name (%s)"
-                    " exactly for local deployment.") % (charm['name'],
+                    " exactly for local deployment.") % (charm.get('name'),
                                                          charm_basename)
                 lint.info(msg)
 
             # summary should be short
-            if len(charm['summary']) > 72:
+            if len(charm.get('summary', '')) > 72:
                 lint.warn('summary should be less than 72')
 
             validate_display_name(charm, lint)
             validate_maintainer(charm, lint)
             validate_categories_and_tags(charm, lint)
-            validate_storage(charm, lint)
-            validate_devices(charm, lint)
+            validate_storage(charm, lint, proof_extensions.get('storage'))
+            validate_devices(charm, lint, proof_extensions.get('devices'))
             validate_series(charm, lint)
             validate_min_juju_version(charm, lint)
             validate_extra_bindings(charm, lint)
-            validate_payloads(charm, lint)
+            validate_payloads(charm, lint, proof_extensions.get('payloads'))
             validate_terms(charm, lint)
-            validate_resources(charm, lint)
+            validate_resources(charm, lint, proof_extensions.get('resources'))
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -428,13 +453,13 @@ class Charm(object):
                 lint.check_hook('config-changed', hooks_path)
 
             if os.path.exists(actions_yaml_file):
-                with open(actions_yaml_file) as f:
+                with open(actions_yaml_file, "rb") as f:
                     try:
                         actions = yaml.safe_load(f.read())
+                        validate_actions(actions, actions_path, lint)
                     except Exception as e:
                         lint.crit('cannot parse {}: {}'.format(
                             actions_yaml_file, e))
-                    validate_actions(actions, actions_path, lint)
 
         except IOError:
             lint.err("could not find metadata file for " + charm_name)
@@ -458,13 +483,18 @@ class Charm(object):
 
     def metadata(self):
         metadata = None
-        with open(os.path.join(self.charm_path, 'metadata.yaml')) as f:
+        with open(os.path.join(self.charm_path, 'metadata.yaml'), "rb") as f:
             metadata = yaml.safe_load(f.read())
 
         return metadata
 
     def promulgate(self):
         pass
+
+
+class StrictMapping(colander.Mapping):
+    def __init__(self):
+        super(StrictMapping, self).__init__(unknown='raise')
 
 
 class Boolean(object):
@@ -478,9 +508,36 @@ class Boolean(object):
                 node, '"%s" is not one of true, false' % cstruct)
 
 
+class StringOrEmpty(colander.String):
+    """
+    Subclass of colander.String that defaults allow_empty to True.
+    """
+    def __init__(self, encoding=None, allow_empty=True):
+        super(StringOrEmpty, self).__init__(encoding, allow_empty)
+
+
+class SchemaBuilder(dict2colander.SchemaBuilder):
+    def __init__(self):
+        super(SchemaBuilder, self).__init__()
+        self.add_type('Mapping', StrictMapping)
+        self.add_type('Boolean', Boolean)
+        # override String type to default to allow empty
+        self.add_type('String', StringOrEmpty)
+
+    def _get_validation_schema(self):
+        # override validation schema to ensure that the `missing`
+        # field allows empty strings
+        root = super(SchemaBuilder, self)._get_validation_schema()
+        node_for_missing = [node
+                            for node in root.children
+                            if node.name == 'missing'][0]
+        node_for_missing.typ = StringOrEmpty()
+        return root
+
+
 class ResourceItem(colander.MappingSchema):
     def schema_type(self, **kw):
-        return colander.Mapping(unknown='raise')
+        return StrictMapping()
 
     type_ = colander.SchemaNode(
         colander.String(),
@@ -489,26 +546,17 @@ class ResourceItem(colander.MappingSchema):
     )
     filename = colander.SchemaNode(
         colander.String(),
-        missing='',
+        missing=colander.drop,
     )
     description = colander.SchemaNode(
-        colander.String(),
-        missing='',
-    )
-    auto_fetch = colander.SchemaNode(
-        Boolean(),
-        missing=False,
-        name='auto-fetch',
-    )
-    validator = colander.SchemaNode(
-        colander.String(),
+        colander.String(allow_empty=True),
         missing='',
     )
 
 
 class DevicesItem(colander.MappingSchema):
     def schema_type(self, **kw):
-        return colander.Mapping(unknown='raise')
+        return StrictMapping()
 
     type_ = colander.SchemaNode(
         colander.String(),
@@ -522,7 +570,7 @@ class DevicesItem(colander.MappingSchema):
 
 class StorageItem(colander.MappingSchema):
     def schema_type(self, **kw):
-        return colander.Mapping(unknown='raise')
+        return StrictMapping()
 
     type_ = colander.SchemaNode(
         colander.String(),
@@ -560,7 +608,7 @@ class StorageItem(colander.MappingSchema):
     @colander.instantiate(missing={})
     class multiple(colander.MappingSchema):
         def schema_type(self, **kw):
-            return colander.Mapping(unknown='raise')
+            return StrictMapping()
 
         range_ = colander.SchemaNode(
             colander.String(),
@@ -575,13 +623,34 @@ class StorageItem(colander.MappingSchema):
 
 class PayloadItem(colander.MappingSchema):
     def schema_type(self, **kw):
-        return colander.Mapping(unknown='raise')
+        return StrictMapping()
 
     type_ = colander.SchemaNode(
         colander.String(),
         validator=colander.OneOf(['kvm', 'docker']),
         name='type',
     )
+
+
+def _try_proof_extensions(e, proof_extensions):
+    if not proof_extensions:
+        raise e
+    proof_extensions = {'name': 'extensions',
+                        'type': 'Mapping',
+                        'subnodes': proof_extensions}
+    new_e = colander.Invalid(e.node)
+    for child_e in e.children:
+        if isinstance(child_e, colander.UnsupportedFields):
+            try:
+                schema_builder = SchemaBuilder()
+                schema = schema_builder.dict_to_schema(proof_extensions)
+                schema.deserialize(child_e.fields)
+            except colander.Invalid as ext_e:
+                new_e.add(ext_e)
+        else:
+            new_e.add(child_e)
+    if new_e.children:
+        raise new_e
 
 
 def validate_terms(charm, linter):
@@ -599,12 +668,15 @@ def validate_terms(charm, linter):
         linter.err('terms: must be a list of term ids')
 
 
-def validate_resources(charm, linter):
+def validate_resources(charm, linter, proof_extensions=None):
     """Validate resources in charm metadata.
 
     :param charm: dict of charm metadata parsed from metadata.yaml
     :param linter: :class:`CharmLinter` object to which info/warning/error
         messages will be written
+    :param proof_extensions: optional dict of extensions to proof which will
+        only be applied to otherwise unrecognized fields; this allows for
+        layer-defined annotations to pass proof
 
     """
     if 'resources' not in charm:
@@ -620,7 +692,10 @@ def validate_resources(charm, linter):
         schema.add(ResourceItem(name=resource_def))
 
     try:
-        schema.deserialize(charm['resources'])
+        try:
+            schema.deserialize(charm['resources'])
+        except colander.Invalid as e:
+            _try_proof_extensions(e, proof_extensions)
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('resources.{}: {}'.format(k, v))
@@ -685,12 +760,15 @@ def validate_series(charm, linter):
         linter.err('series: must be a list of series names')
 
 
-def validate_storage(charm, linter):
+def validate_storage(charm, linter, proof_extensions=None):
     """Validate storage configuration in charm metadata.
 
     :param charm: dict of charm metadata parsed from metadata.yaml
     :param linter: :class:`CharmLinter` object to which info/warning/error
         messages will be written
+    :param proof_extensions: optional dict of extensions to proof which will
+        only be applied to otherwise unrecognized fields; this allows for
+        layer-defined annotations to pass proof
 
     """
     if 'storage' not in charm:
@@ -706,18 +784,24 @@ def validate_storage(charm, linter):
         schema.add(StorageItem(name=storage_def))
 
     try:
-        schema.deserialize(charm['storage'])
+        try:
+            schema.deserialize(charm['storage'])
+        except colander.Invalid as e:
+            _try_proof_extensions(e, proof_extensions)
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('storage.{}: {}'.format(k, v))
 
 
-def validate_devices(charm, linter):
+def validate_devices(charm, linter, proof_extensions=None):
     """Validate devices configuration in charm metadata.
 
     :param charm: dict of charm metadata parsed from metadata.yaml
     :param linter: :class:`CharmLinter` object to which info/warning/error
         messages will be written
+    :param proof_extensions: optional dict of extensions to proof which will
+        only be applied to otherwise unrecognized fields; this allows for
+        layer-defined annotations to pass proof
 
     """
     devices = charm.get('devices', {})
@@ -733,18 +817,24 @@ def validate_devices(charm, linter):
         schema.add(DevicesItem(name=dev))
 
     try:
-        schema.deserialize(devices)
+        try:
+            schema.deserialize(devices)
+        except colander.Invalid as e:
+            _try_proof_extensions(e, proof_extensions)
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('devices.{}: {}'.format(k, v))
 
 
-def validate_payloads(charm, linter):
+def validate_payloads(charm, linter, proof_extensions=None):
     """Validate paylaod configuration in charm metadata.
 
     :param charm: dict of charm metadata parsed from metadata.yaml
     :param linter: :class:`CharmLinter` object to which info/warning/error
         messages will be written
+    :param proof_extensions: optional dict of extensions to proof which will
+        only be applied to otherwise unrecognized fields; this allows for
+        layer-defined annotations to pass proof
 
     """
     if 'payloads' not in charm:
@@ -760,7 +850,10 @@ def validate_payloads(charm, linter):
         schema.add(PayloadItem(name=payload_def))
 
     try:
-        schema.deserialize(charm['payloads'])
+        try:
+            schema.deserialize(charm['payloads'])
+        except colander.Invalid as e:
+            _try_proof_extensions(e, proof_extensions)
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('payloads.{}: {}'.format(k, v))

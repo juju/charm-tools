@@ -605,25 +605,6 @@ class OrderedSet(collections.MutableSet):
         return set(self) == set(other)
 
 
-def get_home():
-    """
-    Get the current user's home directory in a portable way
-    that doesn't depend on env vars.
-
-    If the home directory can't be determined, it will return None.
-    """
-
-    try:
-        username = pwd.getpwuid(os.getuid()).pw_name
-    except Exception:
-        return None
-
-    home = os.path.expanduser('~{}'.format(username))
-    if home.startswith('~'):
-        return None
-    return home
-
-
 def validate_display_name(entity, linter):
     """Validate the display name info in entity metadata.
 

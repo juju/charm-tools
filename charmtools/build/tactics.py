@@ -296,7 +296,12 @@ class InterfaceCopy(Tactic):
                       self.role)
             return False
         valid = True
-        for entry in self.interface.directory.walkfiles():
+        ignorer = utils.ignore_matcher(self.config.ignores +
+                                       self.interface.config.ignores)
+        for entry, _ in utils.walk(self.interface.directory,
+                                   lambda x: True,
+                                   matcher=ignorer,
+                                   kind="files"):
             if entry.splitext()[1] != ".py":
                 continue
             relpath = entry.relpath(self._target.directory)
@@ -955,6 +960,7 @@ class VersionTactic(Tactic):
         super(VersionTactic, self).__init__(
             charm / self.FILENAME, target, layer, next_config)
         self.charm = charm
+        self.wrote_sha = False
 
     def read(self):
         if self.entity.isfile():
@@ -973,7 +979,7 @@ class VersionTactic(Tactic):
 
     def _try_to_get_current_sha(self):
         cmds = (
-            ('git', 'describe', '--dirty'),
+            ('git', 'describe', '--dirty', '--always'),
             ('bzr', 'version-info'),
             ('hg', 'id', '-n'),
         )
@@ -995,21 +1001,27 @@ class VersionTactic(Tactic):
         if new_sha and old_sha and new_sha != old_sha:
             log.warn(
                 ("version {} is out of update, new sha {} "
-                "will be used!").format(old_sha, new_sha))
+                 "will be used!").format(old_sha, new_sha))
         sha = new_sha or old_sha
         if sha:
             self.target_file.write_bytes(sha.encode())
+            self.wrote_sha = True
+        else:
+            self.wrote_sha = False
 
     def sign(self):
         """return sign in the form {relpath: (origin layer, SHA256)}
         """
-        return {
-            self.target_file.relpath(self.target.directory): (
-                self.layer.url,
-                self.kind,
-                utils.sign(self.target_file)
-            )
-        }
+        if self.wrote_sha:
+            return {
+                self.target_file.relpath(self.target.directory): (
+                    self.layer.url,
+                    "dynamic",
+                    utils.sign(self.target_file)
+                )
+            }
+        else:
+            return {}
 
     def __str__(self):
         return "Ensuring {}".format(self.entity)

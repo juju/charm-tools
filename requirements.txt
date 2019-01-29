@@ -2,7 +2,7 @@ PyYAML==3.11
 blessings==1.6
 libcharmstore>=0.0.3
 cheetah3==3.0.0
-colander==1.0b1
+colander==1.5.1
 coverage==3.7.1
 flake8==1.6.2
 juju-deployer==0.4.3
@@ -13,10 +13,11 @@ otherstuf==1.1.0
 path.py>=10.5
 pathspec==0.3.4
 pip>=10.0.0
-requests==2.9.1
+requests<=2.19.1
 responses==0.3.0
 ruamel.yaml==0.10.23
 virtualenv>=1.11.4
 jsonschema==2.5.1
 secretstorage<2.4
 six>=1.11.0
+dict2colander==0.2

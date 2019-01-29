@@ -7,13 +7,27 @@
 import os
 import subprocess
 import sys
+import json
 from setuptools import setup, find_packages
 
 
-version_script = os.path.join(os.path.dirname(__file__), 'charmtools', 'git_version.py')
-version = subprocess.check_output([sys.executable, version_script, '--format=short']).strip()
+curdir = os.path.dirname(__file__)
+version_cache = os.path.join(curdir, 'charmtools', 'VERSION')
+version_script = os.path.join(curdir, 'charmtools', 'git_version.py')
+version_raw = subprocess.check_output([sys.executable, version_script,
+                                       '--format=json']).strip()
 if sys.version_info >= (3, 0):
-    version = version.decode('UTF-8')
+    version_raw = version_raw.decode('UTF-8')
+version = json.loads(version_raw)['version']
+if version == 'unknown':
+    # during install; use cached VERSION
+    with open(version_cache, 'r') as fh:
+        version_raw = fh.read()
+    version = json.loads(version_raw)['version']
+else:
+    # during build; update cached VERSION
+    with open(version_cache, 'w') as fh:
+        fh.write(version_raw)
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fh:
     readme = fh.read()
@@ -28,8 +42,7 @@ setup(
         'launchpadlib<1.11',
         'cheetah3>=3.0.0',
         'pyyaml==3.11',
-        'paramiko<2.0.0',
-        'requests<=2.9.1',
+        'requests<=2.19.1',
         'libcharmstore',
         'blessings<=1.6',
         'ruamel.yaml<=0.10.23',
@@ -40,9 +53,10 @@ setup(
         'pip>=1.5.4',
         # 'jujubundlelib',
         'virtualenv>=1.11.4',
-        'colander<=1.0b1',
+        'colander<=1.5.1',
         'jsonschema<=2.5.1',
         'secretstorage<2.4',
+        'dict2colander==0.2',
     ],
     include_package_data=True,
     maintainer='Marco Ceppi',

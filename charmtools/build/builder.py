@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import blessings
+import curses
 import json
 import logging
 import os
@@ -10,6 +11,7 @@ import sys
 import uuid
 import yaml
 import string
+import traceback
 
 import charmtools.build.tactics
 
@@ -392,7 +394,7 @@ class Builder(object):
         """
         Add Tactics to the plan for each relation endpoint to render hooks
         for that relation endpoint from the template, as well as a tactic
-        to pull in the interface layer's code.
+        to pull in the interface layer's code (if there is an interface layer).
 
         :param layers: Data structure containing all of the layers composing
             this charm, along with some overall metadata.
@@ -405,8 +407,6 @@ class Builder(object):
         """
         # Interface includes don't directly map to output files
         # as they are computed in combination with the metadata.yaml
-        if not layers.get('interfaces'):
-            return
         metadata_tactic = [tactic for tactic in plan if isinstance(
                            tactic, charmtools.build.tactics.MetadataYAML)]
         if not metadata_tactic:
@@ -432,7 +432,7 @@ class Builder(object):
                 specs.append([role, k, v["interface"]])
                 used_interfaces.add(v["interface"])
 
-        for iface in layers["interfaces"]:
+        for iface in layers.get("interfaces", []):
             if iface.name not in used_interfaces:
                 # we shouldn't include something the charm doesn't use
                 log.warn("layer.yaml includes {} which isn't "
@@ -452,11 +452,14 @@ class Builder(object):
                         iface, relation_name, role,
                         self.target, target_config)
                 )
-                # Link Phase
-                plan.append(
-                    charmtools.build.tactics.InterfaceBind(
-                        relation_name, iface.url, self.target,
-                        target_config, output_files, template_file))
+
+        # Link Phase
+        # owner = metadata_tactic[0].layer.url
+        owner = output_files[self.HOOK_TEMPLATE_FILE].layer.url
+        for role, relation_name, interface_name in specs:
+            plan.append(charmtools.build.tactics.InterfaceBind(
+                relation_name, owner, self.target,
+                target_config, output_files, template_file))
 
     def plan_storage(self, layers, output_files, plan):
         """
@@ -635,10 +638,8 @@ class Builder(object):
 
     def inspect(self):
         self.charm = path(self.charm).abspath()
-        if not self._check_path(self.charm):
-            raise BuildError('For security reasons, only paths under '
-                             'your home directory can be accessed')
-        inspector.inspect(self.charm, force_styling=self.force_raw)
+        self._check_path(self.charm)
+        inspector.inspect(self.charm, force_styling=self.force_color)
 
     def normalize_outputdir(self):
         od = path(self.charm).abspath()
@@ -651,29 +652,11 @@ class Builder(object):
             od = od.basename
         self.output_dir = od
 
-    def _check_home(self, path_to_check):
-        home_dir = utils.get_home()
-        home_msg = ('For security reasons, only paths under your '
-                    'home directory can be accessed, including '
-                    'the build output dir, JUJU_REPOSITORY, '
-                    'LAYER_PATH, INTERFACE_PATH, and any '
-                    'wheelhouse overrides.')
-        if not home_dir:  # expansion failed
-            if not self._warned_home:
-                log.warn(home_msg)
-            log.warn('Could not determine home directory.')
-            self._warned_home = True
-        elif not os.path.abspath(path_to_check).startswith(home_dir):
-            if not self._warned_home:
-                log.warn(home_msg)
-            log.warn('The path {} is not under your '
-                     'home directory.'.format(path_to_check))
-            self._warned_home = True
-
     def _check_path(self, path_to_check, need_write=False):
         if not path_to_check:
             return
-        self._check_home(path_to_check)
+        if not os.path.exists(path_to_check):
+            path_to_check = os.path.dirname(path_to_check)
         if not os.access(path_to_check, os.R_OK):
             raise BuildError('Unable to read from: {}'.format(path_to_check))
         if need_write and not os.access(path_to_check, os.W_OK):
@@ -727,9 +710,20 @@ def configLogging(build):
     term = os.environ.get('TERM')
     if term and term.startswith('screen.'):
         term = term[7:]
-    clifmt = utils.ColoredFormatter(
-        blessings.Terminal(term),
-        '%(name)s: %(message)s')
+    record_format = '%(name)s: %(message)s'
+    try:
+        clifmt = utils.ColoredFormatter(
+            blessings.Terminal(term, force_styling=build.force_color),
+            record_format)
+    except curses.error:
+        try:
+            # try falling back to basic term type
+            clifmt = utils.ColoredFormatter(
+                blessings.Terminal('linux', force_styling=build.force_color),
+                record_format)
+        except curses.error:
+            # fall back to uncolored formatter
+            clifmt = logging.Formatter(record_format)
     root_logger = logging.getLogger()
     clihandler = logging.StreamHandler(sys.stdout)
     clihandler.setFormatter(clifmt)
@@ -753,6 +747,8 @@ def inspect(args=None):
                     'is presented in a legend at the top of the '
                     'output.')
     parser.add_argument('-r', '--force-raw', action="store_true",
+                        dest='force_color', help="Alias of --force-color")
+    parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('charm', nargs="?", default=".", type=path)
@@ -806,6 +802,8 @@ def main(args=None):
     parser.add_argument('--hide-metrics', dest="hide_metrics",
                         default=False, action="store_true")
     parser.add_argument('--interface-service',
+                        help="Deprecated: use --layer-index")
+    parser.add_argument('--layer-index',
                         default="https://juju.github.io/layer-index/")
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
@@ -820,6 +818,8 @@ def main(args=None):
                              "for the built wheelhouse")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help="Increase output (same as -l DEBUG)")
+    parser.add_argument('-c', '--force-color', action="store_true",
+                        help="Force raw output (color)")
     parser.add_argument('charm', nargs="?", default=".", type=path)
     utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
@@ -832,8 +832,9 @@ def main(args=None):
         build.log_level = logging.DEBUG
 
     # Monkey patch in the domain for the interface webservice
-    InterfaceFetcher.INTERFACE_DOMAIN = build.interface_service
-    LayerFetcher.INTERFACE_DOMAIN = build.interface_service
+    layer_index = build.interface_service or build.layer_index
+    InterfaceFetcher.INTERFACE_DOMAIN = layer_index
+    LayerFetcher.INTERFACE_DOMAIN = layer_index
 
     InterfaceFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 
@@ -866,6 +867,7 @@ def main(args=None):
             raise SystemExit(exit_code)
 
     except (BuildError, FetchError) as e:
+        log.debug(traceback.format_exc())
         if e.args:
             log.error(*e.args)
         raise SystemExit(1)

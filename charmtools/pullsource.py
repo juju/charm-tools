@@ -100,6 +100,7 @@ class CharmstoreRepoDownloader(CharmstoreDownloader):
                 return fetcher.fetch(dir_)
         return super(CharmstoreRepoDownloader, self).fetch(dir_)
 
+
 FETCHERS.insert(0, CharmstoreRepoDownloader)
 
 
@@ -134,6 +135,7 @@ class CharmstoreLayerDownloader(CharmstoreRepoDownloader):
                 return fetcher.fetch(dir_)
         return super(CharmstoreLayerDownloader, self).fetch(dir_)
 
+
 FETCHERS.insert(0, CharmstoreLayerDownloader)
 
 
@@ -161,15 +163,6 @@ def download_item(item, dir_):
     dir_ = dir_ or os.getcwd()
     dir_ = os.path.abspath(os.path.expanduser(dir_))
 
-    home_path = utils.get_home()
-    home_msg = ('For security reasons, only paths under '
-                'your home directory can be accessed')
-    if not home_path:  # expansion failed
-        print('Could not determine home directory')
-        print(home_msg)
-    elif not dir_.startswith(home_path):
-        print('The path {} is not under your home directory'.format(home_path))
-        print(home_msg)
     if not os.access(dir_, os.W_OK):
         print('Unable to write to {}'.format(dir_))
         return 200

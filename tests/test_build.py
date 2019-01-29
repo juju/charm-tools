@@ -240,6 +240,12 @@ class TestBuild(unittest.TestCase):
             init = base / "hooks/relations/mysql/__init__.py"
             self.assertTrue(init.exists())
 
+            # and ensure hooks for other relations defined in metadata.yaml
+            # also exist
+            for kind in ["joined", "changed", "broken", "departed"]:
+                self.assertTrue((base / "hooks" /
+                                 "unused-relation-{}".format(kind)).exists())
+
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     @responses.activate
     def test_remote_interface(self, pv):
@@ -277,10 +283,11 @@ class TestBuild(unittest.TestCase):
         self.assertTrue(main.exists())
 
     @mock.patch("charmtools.build.builder.Builder.plan_version")
+    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
     @responses.activate
-    def test_remote_layer(self, mcall, ph, pv):
+    def test_remote_layer(self, mcall, ph, pi, pv):
         # XXX: this test does pull the git repo in the response
         responses.add(responses.GET,
                       "https://juju.github.io/layer-index/"
@@ -317,9 +324,10 @@ class TestBuild(unittest.TestCase):
                                   mock.ANY), env=mock.ANY)
 
     @mock.patch("charmtools.build.builder.Builder.plan_version")
+    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
-    def test_pypi_installer(self, mcall, ph, pv):
+    def test_pypi_installer(self, mcall, ph, pi, pv):
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.output_dir = "out"
@@ -339,9 +347,10 @@ class TestBuild(unittest.TestCase):
     @mock.patch(
         "charmtools.build.tactics.VersionTactic._try_to_get_current_sha",
         return_value="fake sha")
+    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
-    def test_version_tactic_without_existing_version_file(self, mcall, ph, get_sha):
+    def test_version_tactic_without_existing_version_file(self, mcall, ph, pi, get_sha):
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.output_dir = "out"
@@ -366,9 +375,10 @@ class TestBuild(unittest.TestCase):
     @mock.patch(
         "charmtools.build.tactics.VersionTactic._try_to_get_current_sha",
         return_value="sha2")
+    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
-    def test_version_tactic_with_existing_version_file(self, mcall, ph, get_sha, read):
+    def test_version_tactic_with_existing_version_file(self, mcall, ph, pi, get_sha, read):
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.output_dir = "out"
@@ -389,11 +399,12 @@ class TestBuild(unittest.TestCase):
         self.assertEqual((path(bu.output_dir) / 'trusty' / bu.name / 'version').text(), 'sha2')
 
     @mock.patch("charmtools.build.builder.Builder.plan_version")
+    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("path.Path.rmtree_p")
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
-    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pv):
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv):
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
         bu.log_level = "WARN"
