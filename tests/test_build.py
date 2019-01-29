@@ -63,10 +63,18 @@ class TestBuild(unittest.TestCase):
         self.addCleanup(remove_layer_file.remove_p)
         with self.dirname:
             with mock.patch.object(build.builder, 'log') as log:
-                bu()
-                log.warn.assert_called_with(
-                    'Please add a `repo` key to your layer.yaml, '
-                    'with a url from which your layer can be cloned.')
+                with mock.patch.object(build.builder, 'repofinder') as rf:
+                    rf.get_recommended_repo.return_value = None
+                    bu()
+                    log.warn.assert_called_with(
+                        'Please add a `repo` key to your layer.yaml, '
+                        'with a url from which your layer can be cloned.')
+                    log.warn.reset_mock()
+                    rf.get_recommended_repo.return_value = 'myrepo'
+                    bu()
+                    log.warn.assert_called_with(
+                        'Please add a `repo` key to your layer.yaml, '
+                        'e.g. repo: myrepo')
         base = bu.target_dir
         self.assertTrue(base.exists())
 
