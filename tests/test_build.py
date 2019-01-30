@@ -18,15 +18,26 @@ class TestBuild(unittest.TestCase):
     def setUp(self):
         self.dirname = path(pkg_resources.resource_filename(__name__, ""))
         self.build_dir = TempDir()
+        os.environ["CHARM_HIDE_METRICS"] = 'true'
         os.environ["CHARM_LAYERS_DIR"] = self.dirname / "layers"
         os.environ["CHARM_INTERFACES_DIR"] = self.dirname / "interfaces"
-        os.environ["CHARM_CACHE_DIR"] = self.dirname / "cache"
+        os.environ["CHARM_CACHE_DIR"] = self.build_dir / "_cache"
+        os.environ.pop("JUJU_REPOSITORY", None)
+        os.environ.pop("LAYER_PATH", None)
+        os.environ.pop("INTERFACE_PATH", None)
+        ifd = build.fetchers.LayerFetcher.LAYER_INDEX
         self.p_post = mock.patch('requests.post')
         self.p_post.start()
+        # preserve the layer index between tests
+        self.p_layer_index = mock.patch('charmtools.build.fetchers.'
+                                        'LayerFetcher.LAYER_INDEX',
+                                        ifd)
+        self.p_layer_index.start()
 
     def tearDown(self):
         self.build_dir.rmtree_p()
         self.p_post.stop()
+        self.p_layer_index.stop()
 
     def test_invalid_layer(self):
         # Test that invalid metadata.yaml files get a BuildError exception.
@@ -37,6 +48,7 @@ class TestBuild(unittest.TestCase):
         builder.series = "trusty"
         builder.name = "invalid-charm"
         builder.charm = "layers/invalid-layer"
+        builder.no_local_layers = False
         metadata = path("tests/layers/invalid-layer/metadata.yaml")
         try:
             with self.dirname:
@@ -508,6 +520,8 @@ class TestBuild(unittest.TestCase):
                              url=tactics[0])
 
         builder = build.builder.Builder()
+        builder.build_dir = self.build_dir
+        builder.cache_dir = builder.build_dir / "_cache"
         builder.charm = 'foo'
         layers = {'layers': [
             _layer(['first']),

@@ -337,7 +337,7 @@ class Builder(object):
 
         for i, layer in enumerate(layers["layers"]):
             log.info("Processing layer: %s%s", layer.url,
-                     "" if 'deps' in layer.directory.splitall()
+                     "" if layer.directory.startswith(self.cache_dir)
                      else " (from %s)" % layer.directory.relpath())
             current_config = current_config.add_config(layer.config)
             if i + 1 < len(layers["layers"]):
@@ -448,7 +448,7 @@ class Builder(object):
                     continue
 
                 log.info("Processing interface: %s%s", interface_name,
-                         "" if 'deps' in iface.directory.splitall()
+                         "" if iface.directory.startswith(self.cache_dir)
                          else " (from %s)" % iface.directory.relpath())
                 # COPY phase
                 plan.append(
@@ -864,11 +864,12 @@ def main(args=None):
     parser.add_argument('-s', '--series', default=None,
                         help='Deprecated: define series in metadata.yaml')
     parser.add_argument('--hide-metrics', dest="hide_metrics",
-                        default=False, action="store_true")
+                        default=os.environ.get('CHARM_HIDE_METRICS', False),
+                        action="store_true")
     parser.add_argument('--interface-service',
                         help="Deprecated: use --layer-index")
     parser.add_argument('--layer-index',
-                        default="https://juju.github.io/layer-index/")
+                        default=LayerFetcher.LAYER_INDEX)
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
@@ -899,10 +900,9 @@ def main(args=None):
 
     # Monkey patch in the domain for the interface webservice
     layer_index = build.interface_service or build.layer_index
-    InterfaceFetcher.INTERFACE_DOMAIN = layer_index
-    LayerFetcher.INTERFACE_DOMAIN = layer_index
+    LayerFetcher.LAYER_INDEX = layer_index
 
-    InterfaceFetcher.NO_LOCAL_LAYERS = build.no_local_layers
+    LayerFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 
     configLogging(build)
 
