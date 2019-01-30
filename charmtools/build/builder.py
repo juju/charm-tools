@@ -664,10 +664,9 @@ class Builder(object):
                 self.build_dir = path(juju_repo_dir) / series
             else:
                 series = self.series or 'builds'
-                log.warn('DEPRECATED: Build dir not specified via '
-                         'command-line or environment; defaulting to '
-                         './' + series)
-                self.build_dir = path('.') / series
+                log.warn('Build dir not specified via command-line or '
+                         'environment; defaulting to /tmp/charm-builds')
+                self.build_dir = path('/tmp/charm-builds')
         self.build_dir = self.build_dir.abspath()
         if self.build_dir.startswith(path(self.charm).abspath()):
             raise BuildError('Build directory nested under source directory. '
