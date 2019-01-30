@@ -29,7 +29,7 @@ class TestBuild(unittest.TestCase):
         self.p_post.stop()
 
     def test_invalid_layer(self):
-        """Test that invalid metadata.yaml files get a BuildError exception."""
+        # Test that invalid metadata.yaml files get a BuildError exception.
         builder = build.Builder()
         builder.log_level = "DEBUG"
         builder.build_dir = self.build_dir
@@ -47,10 +47,11 @@ class TestBuild(unittest.TestCase):
                 "Failed to process {0}. "
                 "Ensure the YAML is valid".format(metadata.abspath()), str(e))
 
+    @mock.patch("argparse.ArgumentParser.parse_args")
     @mock.patch("charmtools.build.builder.proof")
     @mock.patch("charmtools.build.builder.Builder")
-    def test_failed_proof(self, mBuilder, mproof):
-        """Test that charm-proof failures get a BuildError exception."""
+    def test_failed_proof(self, mBuilder, mproof, mparse_args):
+        # Test that charm-proof failures get a BuildError exception.
         mproof.proof.return_value = ([], 200)
         try:
             build.builder.main()
