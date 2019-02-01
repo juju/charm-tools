@@ -987,9 +987,17 @@ class VersionTactic(Tactic):
         with utils.cd(str(self.charm)):
             for cmd in self.CMDS:
                 try:
+                    log.debug('Trying to determine version with: '
+                              '{}'.format(cmd[0]))
                     sha = utils.Process(cmd)()
-                    if sha:
+                    if sha and sha.exit_code == 0 and sha.output:
+                        log.debug('Got version: {}'.format(sha.output))
                         return sha.output
+                    else:
+                        log.debug('Failed to get version{}'.format(
+                            ': {}'.format(sha.output) if sha else ''
+                        ))
+                        continue
                 except OSError as e:
                     if e.errno != errno.ENOENT:
                         raise
