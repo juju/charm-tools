@@ -355,10 +355,11 @@ class TestBuild(unittest.TestCase):
     def test_version_tactic_missing_cmd(self, ph, pi):
         bu = build.Builder()
         bu.log_level = "WARN"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/chlayer"
+        bu.charm = "layers/chlayer"
         bu.hide_metrics = True
         bu.report = False
 
@@ -371,8 +372,7 @@ class TestBuild(unittest.TestCase):
         with self.dirname:
             bu()
 
-        assert not (path(bu.output_dir) / 'trusty' / bu.name /
-                    'version').exists()
+        assert not (bu.target_dir / 'version').exists()
 
     @mock.patch("charmtools.build.tactics.VersionTactic.read",
                 return_value="sha1")
