@@ -1,3 +1,4 @@
+import errno
 import json
 import jsonschema
 import logging
@@ -953,8 +954,13 @@ class CopyrightTactic(Tactic):
 
 
 class VersionTactic(Tactic):
-
     FILENAME = "version"
+
+    CMDS = (
+        ('git', 'describe', '--dirty', '--always'),
+        ('bzr', 'version-info'),
+        ('hg', 'id', '-n'),
+    )
 
     def __init__(self, charm, target, layer, next_config):
         super(VersionTactic, self).__init__(
@@ -978,18 +984,23 @@ class VersionTactic(Tactic):
         return True
 
     def _try_to_get_current_sha(self):
-        cmds = (
-            ('git', 'describe', '--dirty', '--always'),
-            ('bzr', 'version-info'),
-            ('hg', 'id', '-n'),
-        )
         with utils.cd(str(self.charm)):
-            for cmd in cmds:
+            for cmd in self.CMDS:
                 try:
+                    log.debug('Trying to determine version with: '
+                              '{}'.format(cmd[0]))
                     sha = utils.Process(cmd)()
-                    if sha:
+                    if sha and sha.exit_code == 0 and sha.output:
+                        log.debug('Got version: {}'.format(sha.output))
                         return sha.output
-                except FileNotFoundError as e:
+                    else:
+                        log.debug('Failed to get version{}'.format(
+                            ': {}'.format(sha.output) if sha else ''
+                        ))
+                        continue
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
                     log.debug(e)
                     continue
         return ""

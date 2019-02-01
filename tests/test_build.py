@@ -371,6 +371,35 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(
             (path(bu.output_dir) / 'trusty' / bu.name / 'version').text(), 'fake sha')
 
+    @mock.patch("charmtools.build.tactics.VersionTactic.CMDS", (
+        ('does_not_exist_cmd', ''),
+    ))
+    @mock.patch("charmtools.build.tactics.InstallerTactic.trigger",
+                classmethod(lambda *a: False))
+    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
+    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
+    def test_version_tactic_missing_cmd(self, ph, pi):
+        bu = build.Builder()
+        bu.log_level = "WARN"
+        bu.output_dir = "out"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "trusty/chlayer"
+        bu.hide_metrics = True
+        bu.report = False
+
+        # ensure no an existing version file
+        version_file = bu.charm / 'version'
+        version_file.remove_p()
+
+        # remove the sign phase
+        bu.PHASES = bu.PHASES[:-2]
+        with self.dirname:
+            bu()
+
+        assert not (path(bu.output_dir) / 'trusty' / bu.name /
+                    'version').exists()
+
     @mock.patch("charmtools.build.tactics.VersionTactic.read", return_value="sha1")
     @mock.patch(
         "charmtools.build.tactics.VersionTactic._try_to_get_current_sha",
