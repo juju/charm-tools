@@ -4,12 +4,11 @@ import json
 import unittest
 import logging
 import pkg_resources
-from path import Path as path
+from path import Path as path, TempDir
 
 
 from charmtools import build
 from charmtools.build.errors import BuildError
-from charmtools import utils
 from ruamel import yaml
 import mock
 import responses
@@ -18,52 +17,89 @@ import responses
 class TestBuild(unittest.TestCase):
     def setUp(self):
         self.dirname = path(pkg_resources.resource_filename(__name__, ""))
-        os.environ["LAYER_PATH"] = self.dirname
-        os.environ["INTERFACE_PATH"] = self.dirname / "interfaces"
-        path("out").rmtree_p()
+        self.build_dir = TempDir()
+        os.environ["CHARM_HIDE_METRICS"] = 'true'
+        os.environ["CHARM_LAYERS_DIR"] = self.dirname / "layers"
+        os.environ["CHARM_INTERFACES_DIR"] = self.dirname / "interfaces"
+        os.environ["CHARM_CACHE_DIR"] = self.build_dir / "_cache"
+        os.environ.pop("JUJU_REPOSITORY", None)
+        os.environ.pop("LAYER_PATH", None)
+        os.environ.pop("INTERFACE_PATH", None)
+        ifd = build.fetchers.LayerFetcher.LAYER_INDEX
         self.p_post = mock.patch('requests.post')
         self.p_post.start()
+        # preserve the layer index between tests
+        self.p_layer_index = mock.patch('charmtools.build.fetchers.'
+                                        'LayerFetcher.LAYER_INDEX',
+                                        ifd)
+        self.p_layer_index.start()
 
     def tearDown(self):
-        path("out").rmtree_p()
+        self.build_dir.rmtree_p()
         self.p_post.stop()
+        self.p_layer_index.stop()
 
     def test_invalid_layer(self):
-        """Test that invalid metadata.yaml files get a BuildError exception."""
+        # Test that invalid metadata.yaml files get a BuildError exception.
         builder = build.Builder()
         builder.log_level = "DEBUG"
-        builder.output_dir = "out"
+        builder.build_dir = self.build_dir
+        builder.cache_dir = builder.build_dir / "_cache"
         builder.series = "trusty"
         builder.name = "invalid-charm"
-        builder.charm = "trusty/invalid-layer"
-        metadata = path("tests/trusty/invalid-layer/metadata.yaml")
+        builder.charm = "layers/invalid-layer"
+        builder.no_local_layers = False
+        metadata = path("tests/layers/invalid-layer/metadata.yaml")
         try:
-            builder()
+            with self.dirname:
+                builder()
             self.fail('Expected Builder to throw an exception on invalid YAML')
         except BuildError as e:
             self.assertEqual(
                 "Failed to process {0}. "
                 "Ensure the YAML is valid".format(metadata.abspath()), str(e))
 
+    @mock.patch("argparse.ArgumentParser.parse_args")
+    @mock.patch("charmtools.build.builder.proof")
+    @mock.patch("charmtools.build.builder.Builder")
+    def test_failed_proof(self, mBuilder, mproof, mparse_args):
+        # Test that charm-proof failures get a BuildError exception.
+        mproof.proof.return_value = ([], 200)
+        try:
+            build.builder.main()
+            self.fail('Expected Builder to throw an exception on proof error')
+        except SystemExit as e:
+            self.assertEqual(e.code, 200)
+
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     def test_tester_layer(self, pv):
         bu = build.Builder()
         bu.log_level = "WARNING"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/tester"
+        bu.charm = "layers/tester"
         bu.hide_metrics = True
         bu.report = False
-        remove_layer_file = self.dirname / 'trusty/tester/to_remove'
+        remove_layer_file = self.dirname / 'layers/tester/to_remove'
         remove_layer_file.touch()
         self.addCleanup(remove_layer_file.remove_p)
-        with mock.patch.object(build.builder, 'log') as log:
-            bu()
-            log.warn.assert_called_with(
-                'Please add a `repo` key to your layer.yaml, '
-                'with a url from which your layer can be cloned.')
-        base = path('out/trusty/foo')
+        with self.dirname:
+            with mock.patch.object(build.builder, 'log') as log:
+                with mock.patch.object(build.builder, 'repofinder') as rf:
+                    rf.get_recommended_repo.return_value = None
+                    bu()
+                    log.warn.assert_called_with(
+                        'Please add a `repo` key to your layer.yaml, '
+                        'with a url from which your layer can be cloned.')
+                    log.warn.reset_mock()
+                    rf.get_recommended_repo.return_value = 'myrepo'
+                    bu()
+                    log.warn.assert_called_with(
+                        'Please add a `repo` key to your layer.yaml, '
+                        'e.g. repo: myrepo')
+        base = bu.target_dir
         self.assertTrue(base.exists())
 
         # Confirm that copyright file of lower layers gets renamed
@@ -124,8 +160,8 @@ class TestBuild(unittest.TestCase):
         cyaml = base / "layer.yaml"
         self.assertTrue(cyaml.exists())
         cyaml_data = yaml.load(cyaml.open())
-        self.assertEquals(cyaml_data['includes'], ['trusty/test-base',
-                                                   'trusty/mysql'])
+        self.assertEquals(cyaml_data['includes'], ['layers/test-base',
+                                                   'layers/mysql'])
         self.assertEquals(cyaml_data['is'], 'foo')
         self.assertEquals(cyaml_data['options']['mysql']['qux'], 'one')
 
@@ -172,79 +208,9 @@ class TestBuild(unittest.TestCase):
         # confirm that files removed from a base layer get cleaned up
         self.assertTrue((base / 'to_remove').exists())
         remove_layer_file.remove()
-        bu()
+        with self.dirname:
+            bu()
         self.assertFalse((base / 'to_remove').exists())
-
-    @mock.patch("charmtools.build.builder.Builder.plan_version")
-    def test_regenerate_inplace(self, pv):
-        # take a generated example where a base layer has changed
-        # regenerate in place
-        # make some assertions
-        bu = build.Builder()
-        bu.log_level = "WARNING"
-        bu.output_dir = "out"
-        bu.series = "trusty"
-        bu.name = "foo"
-        bu.charm = "trusty/b"
-        bu.hide_metrics = True
-        bu.report = False
-        bu()
-        base = path('out/trusty/foo')
-        self.assertTrue(base.exists())
-
-        # verify the 1st gen worked
-        self.assertTrue((base / "a").exists())
-        self.assertTrue((base / "README.md").exists())
-
-        # now regenerate from the target
-        with utils.cd("out/trusty/foo"):
-            bu = build.Builder()
-            bu.log_level = "WARNING"
-            bu.output_dir = path(os.getcwd())
-            bu.series = "trusty"
-            # The generate target and source are now the same
-            bu.name = "foo"
-            bu.charm = "."
-            bu.hide_metrics = True
-            bu.report = False
-            bu()
-            base = bu.output_dir
-            self.assertTrue(base.exists())
-
-            # Check that the generated layer.yaml makes sense
-            cy = base / "layer.yaml"
-            config = yaml.load(cy.open())
-            self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-            self.assertEquals(config["is"], "foo")
-
-            # We can even run it more than once
-            bu()
-            cy = base / "layer.yaml"
-            config = yaml.load(cy.open())
-            self.assertEquals(config["includes"], ["trusty/a", "interface:mysql"])
-            self.assertEquals(config["is"], "foo")
-
-            # We included an interface, we should be able to assert things about it
-            # in its final form as well
-            provides = base / "hooks/relations/mysql/provides.py"
-            requires = base / "hooks/relations/mysql/requires.py"
-            self.assertTrue(provides.exists())
-            self.assertTrue(requires.exists())
-
-            # and that we generated the hooks themselves
-            for kind in ["joined", "changed", "broken", "departed"]:
-                self.assertTrue((base / "hooks" /
-                                 "mysql-relation-{}".format(kind)).exists())
-
-            # and ensure we have an init file (the interface doesn't its added)
-            init = base / "hooks/relations/mysql/__init__.py"
-            self.assertTrue(init.exists())
-
-            # and ensure hooks for other relations defined in metadata.yaml
-            # also exist
-            for kind in ["joined", "changed", "broken", "departed"]:
-                self.assertTrue((base / "hooks" /
-                                 "unused-relation-{}".format(kind)).exists())
 
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     @responses.activate
@@ -263,14 +229,16 @@ class TestBuild(unittest.TestCase):
                       content_type="application/json")
         bu = build.Builder()
         bu.log_level = "WARNING"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/c-reactive"
+        bu.charm = "layers/c-reactive"
         bu.hide_metrics = True
         bu.report = False
-        bu()
-        base = path('out/trusty/foo')
+        with self.dirname:
+            bu()
+        base = bu.target_dir
         self.assertTrue(base.exists())
 
         # basics
@@ -302,17 +270,19 @@ class TestBuild(unittest.TestCase):
                       content_type="application/json")
         bu = build.Builder()
         bu.log_level = "WARNING"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/use-layers"
+        bu.charm = "layers/use-layers"
         bu.hide_metrics = True
         bu.report = False
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
 
-        bu()
-        base = path('out/trusty/foo')
+        with self.dirname:
+            bu()
+        base = bu.target_dir
         self.assertTrue(base.exists())
 
         # basics
@@ -330,16 +300,18 @@ class TestBuild(unittest.TestCase):
     def test_pypi_installer(self, mcall, ph, pi, pv):
         bu = build.Builder()
         bu.log_level = "WARN"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/chlayer"
+        bu.charm = "layers/chlayer"
         bu.hide_metrics = True
         bu.report = False
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
-        bu()
+        with self.dirname:
+            bu()
         mcall.assert_called_with(("pip3", "install",
                                   "--user", "--ignore-installed",
                                   mock.ANY), env=mock.ANY)
@@ -350,41 +322,15 @@ class TestBuild(unittest.TestCase):
     @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
-    def test_version_tactic_without_existing_version_file(self, mcall, ph, pi, get_sha):
+    def test_version_tactic_without_existing_version_file(self, mcall, ph, pi,
+                                                          get_sha):
         bu = build.Builder()
         bu.log_level = "WARN"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/chlayer"
-        bu.hide_metrics = True
-        bu.report = False
-
-        # ensure no an existing version file
-        version_file = bu.charm / 'version'
-        version_file.remove_p()
-
-        # remove the sign phase
-        bu.PHASES = bu.PHASES[:-2]
-        bu()
-
-        self.assertEqual(
-            (path(bu.output_dir) / 'trusty' / bu.name / 'version').text(), 'fake sha')
-
-    @mock.patch("charmtools.build.tactics.VersionTactic.CMDS", (
-        ('does_not_exist_cmd', ''),
-    ))
-    @mock.patch("charmtools.build.tactics.InstallerTactic.trigger",
-                classmethod(lambda *a: False))
-    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
-    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
-    def test_version_tactic_missing_cmd(self, ph, pi):
-        bu = build.Builder()
-        bu.log_level = "WARN"
-        bu.output_dir = "out"
-        bu.series = "trusty"
-        bu.name = "foo"
-        bu.charm = "trusty/chlayer"
+        bu.charm = "layers/chlayer"
         bu.hide_metrics = True
         bu.report = False
 
@@ -397,35 +343,68 @@ class TestBuild(unittest.TestCase):
         with self.dirname:
             bu()
 
-        assert not (path(bu.output_dir) / 'trusty' / bu.name /
-                    'version').exists()
+        self.assertEqual((bu.target_dir / 'version').text(), 'fake sha')
 
-    @mock.patch("charmtools.build.tactics.VersionTactic.read", return_value="sha1")
+    @mock.patch("charmtools.build.tactics.VersionTactic.CMDS", (
+        ('does_not_exist_cmd', ''),
+    ))
+    @mock.patch("charmtools.build.tactics.InstallerTactic.trigger",
+                classmethod(lambda *a: False))
+    @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
+    @mock.patch("charmtools.build.builder.Builder.plan_hooks")
+    def test_version_tactic_missing_cmd(self, ph, pi):
+        bu = build.Builder()
+        bu.log_level = "WARN"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
+        bu.series = "trusty"
+        bu.name = "foo"
+        bu.charm = "layers/chlayer"
+        bu.hide_metrics = True
+        bu.report = False
+
+        # ensure no an existing version file
+        version_file = bu.charm / 'version'
+        version_file.remove_p()
+
+        # remove the sign phase
+        bu.PHASES = bu.PHASES[:-2]
+        with self.dirname:
+            bu()
+
+        assert not (bu.target_dir / 'version').exists()
+
+    @mock.patch("charmtools.build.tactics.VersionTactic.read",
+                return_value="sha1")
     @mock.patch(
         "charmtools.build.tactics.VersionTactic._try_to_get_current_sha",
         return_value="sha2")
     @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("charmtools.utils.Process")
-    def test_version_tactic_with_existing_version_file(self, mcall, ph, pi, get_sha, read):
+    def test_version_tactic_with_existing_version_file(self, mcall, ph, pi,
+                                                       get_sha, read):
         bu = build.Builder()
         bu.log_level = "WARN"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/chlayer"
+        bu.charm = "layers/chlayer"
         bu.hide_metrics = True
         bu.report = False
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
-        with mock.patch.object(build.tactics, 'log') as log:
-            bu()
-            log.warn.assert_has_calls(
-                [mock.call('version sha1 is out of update, new sha sha2 will be used!')],
-                any_order=True)
+        with self.dirname:
+            with mock.patch.object(build.tactics, 'log') as log:
+                bu()
+                log.warn.assert_has_calls(
+                    [mock.call('version sha1 is out of update, '
+                               'new sha sha2 will be used!')],
+                    any_order=True)
 
-        self.assertEqual((path(bu.output_dir) / 'trusty' / bu.name / 'version').text(), 'sha2')
+        self.assertEqual((bu.target_dir / 'version').text(), 'sha2')
 
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
@@ -437,29 +416,31 @@ class TestBuild(unittest.TestCase):
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
         bu.log_level = "WARN"
-        bu.output_dir = "out"
+        bu.build_dir = self.build_dir
+        bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
         bu.name = "foo"
-        bu.charm = "trusty/whlayer"
+        bu.charm = "layers/whlayer"
         bu.hide_metrics = True
         bu.report = False
         bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
-        with mock.patch("path.Path.mkdir_p"):
-            with mock.patch("path.Path.files"):
-                bu()
-                Process.assert_any_call((
-                    'bash', '-c', '. /tmp/bin/activate ;'
-                    ' pip3 download --no-binary :all: '
-                    '-d /tmp -r ' +
-                    self.dirname / 'trusty/whlayer/wheelhouse.txt'))
-                Process.assert_any_call((
-                    'bash', '-c', '. /tmp/bin/activate ;'
-                    ' pip3 download --no-binary :all: '
-                    '-d /tmp -r ' +
-                    self.dirname / 'wh-over.txt'))
+        with self.dirname:
+            with mock.patch("path.Path.mkdir_p"):
+                with mock.patch("path.Path.files"):
+                    bu()
+                    Process.assert_any_call((
+                        'bash', '-c', '. /tmp/bin/activate ;'
+                        ' pip3 download --no-binary :all: '
+                        '-d /tmp -r ' +
+                        self.dirname / 'layers/whlayer/wheelhouse.txt'))
+                    Process.assert_any_call((
+                        'bash', '-c', '. /tmp/bin/activate ;'
+                        ' pip3 download --no-binary :all: '
+                        '-d /tmp -r ' +
+                        self.dirname / 'wh-over.txt'))
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',
@@ -539,6 +520,8 @@ class TestBuild(unittest.TestCase):
                              url=tactics[0])
 
         builder = build.builder.Builder()
+        builder.build_dir = self.build_dir
+        builder.cache_dir = builder.build_dir / "_cache"
         builder.charm = 'foo'
         layers = {'layers': [
             _layer(['first']),

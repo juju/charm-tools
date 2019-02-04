@@ -28,7 +28,7 @@ class TestConfig(unittest.TestCase):
         """ Test that utf8 characters in the layer config work."""
         del os.environ['LANG']
         c = BuildConfig()
-        c.configure("tests/trusty/utf8-layer/interface.yaml")
+        c.configure("tests/layers/utf8-layer/interface.yaml")
 
 
 if __name__ == '__main__':

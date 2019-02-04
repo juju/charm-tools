@@ -1,4 +1,4 @@
-includes: ['trusty/test-base']
+includes: ['layers/test-base']
 defines:
   qux:
     enum: ['one', 'two']

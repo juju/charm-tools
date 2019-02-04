@@ -32,13 +32,14 @@ class RepoFetcher(fetchers.LocalFetcher):
 fetchers.FETCHERS.insert(0, RepoFetcher)
 
 
-class InterfaceFetcher(fetchers.LocalFetcher):
-    INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
-    NAMESPACE = "interface"
-    ENVIRON = "INTERFACE_PATH"
-    OPTIONAL_PREFIX = "juju-relation-"
-    ENDPOINT = "interfaces"
+class LayerFetcher(fetchers.LocalFetcher):
+    LAYER_INDEX = "https://juju.github.io/layer-index/"
     NO_LOCAL_LAYERS = False
+    NAMESPACE = "layer"
+    ENVIRON = "CHARM_LAYERS_DIR"
+    OLD_ENVIRON = "LAYER_PATH"
+    OPTIONAL_PREFIX = "juju-layer-"
+    ENDPOINT = "layers"
 
     @classmethod
     def can_fetch(cls, url):
@@ -49,9 +50,10 @@ class InterfaceFetcher(fetchers.LocalFetcher):
             if not cls.NO_LOCAL_LAYERS:
                 prefixed_name = '{}-{}'.format(cls.NAMESPACE, name)
                 search_path = [os.environ.get("JUJU_REPOSITORY", ".")]
-                cp = os.environ.get(cls.ENVIRON)
-                if cp:
-                    search_path.extend(cp.split(os.pathsep))
+                if cls.ENVIRON in os.environ:
+                    search_path.append(os.environ[cls.ENVIRON])
+                elif cls.OLD_ENVIRON in os.environ:
+                    search_path.append(os.environ[cls.OLD_ENVIRON])
                 for part in search_path:
                     basepath = path(part)
                     for dirname in (name, prefixed_name):
@@ -64,7 +66,7 @@ class InterfaceFetcher(fetchers.LocalFetcher):
                 choices.append(name[len(cls.OPTIONAL_PREFIX):])
             for choice in choices:
                 uri = "%s%s/%s.json" % (
-                    cls.INTERFACE_DOMAIN, cls.ENDPOINT, choice)
+                    cls.LAYER_INDEX, cls.ENDPOINT, choice)
                 log.debug('Checking layer index: {}'.format(uri))
                 if uri.startswith('file://'):
                     choice_path = path(uri[7:])
@@ -133,15 +135,15 @@ class InterfaceFetcher(fetchers.LocalFetcher):
             return target
 
 
-fetchers.FETCHERS.insert(0, InterfaceFetcher)
-
-
-class LayerFetcher(InterfaceFetcher):
-    INTERFACE_DOMAIN = "https://juju.github.io/layer-index/"
-    NAMESPACE = "layer"
-    ENVIRON = "LAYER_PATH"
-    OPTIONAL_PREFIX = "juju-layer-"
-    ENDPOINT = "layers"
-
-
 fetchers.FETCHERS.insert(0, LayerFetcher)
+
+
+class InterfaceFetcher(LayerFetcher):
+    NAMESPACE = "interface"
+    ENVIRON = "CHARM_INTERFACES_DIR"
+    OLD_ENVIRON = "INTERFACE_PATH"
+    OPTIONAL_PREFIX = "juju-relation-"
+    ENDPOINT = "interfaces"
+
+
+fetchers.FETCHERS.insert(0, InterfaceFetcher)

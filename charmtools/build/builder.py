@@ -72,7 +72,7 @@ class Fetched(Configable):
     def name(self):
         if self._name:
             return self._name
-        if self.url.startswith(self.NAMESPACE):
+        if self.url.startswith(self.NAMESPACE + ':'):
             return self.url[len(self.NAMESPACE)+1:]
         return self.url.rsplit('/', 1)[-1]
 
@@ -118,14 +118,16 @@ class Fetched(Configable):
 class Interface(Fetched):
     CONFIG_FILE = "interface.yaml"
     NAMESPACE = "interface"
-    ENVIRON = "INTERFACE_PATH"
+    ENVIRON = "CHARM_INTERFACES_DIR"
+    OLD_ENVIRON = "INTERFACE_PATH"
 
 
 class Layer(Fetched):
     CONFIG_FILE = "layer.yaml"
     OLD_CONFIG_FILE = "composer.yaml"
     NAMESPACE = "layer"
-    ENVIRON = "LAYER_PATH"
+    ENVIRON = "CHARM_LAYERS_DIR"
+    OLD_ENVIRON = "LAYER_PATH"
 
 
 class Builder(object):
@@ -151,7 +153,7 @@ class Builder(object):
     @property
     def top_layer(self):
         if not self._top_layer:
-            self._top_layer = Layer(self.charm, self.deps).fetch()
+            self._top_layer = Layer(self.charm, self.cache_dir).fetch()
 
         return self._top_layer
 
@@ -202,6 +204,14 @@ class Builder(object):
         self._name = value
 
     @property
+    def source_dir(self):
+        return self.top_layer.directory
+
+    @property
+    def target_dir(self):
+        return self.build_dir / self.name
+
+    @property
     def manifest(self):
         return self.target_dir / '.build.manifest'
 
@@ -210,47 +220,31 @@ class Builder(object):
         build series defined. If not, fall back to a default series.
 
         """
-        if self.series:
-            return
         if self.charm_metadata and self.charm_metadata.get('series'):
             return
-        self.series = self.DEFAULT_SERIES
+        elif self.series:
+            log.warn('DEPRECATED: use of --series flag; '
+                     'specify series in metadata.yaml instead')
+            return
+        else:
+            log.warn('DEPRECATED: implicit series; '
+                     'specify series in metadata.yaml instead')
 
     def status(self):
         result = {}
         result.update(vars(self))
-        for e in ["LAYER_PATH", "INTERFACE_PATH", "JUJU_REPOSITORY"]:
+        for e in ["CHARM_LAYERS_DIR",
+                  "CHARM_INTERFACES_DIR",
+                  "CHARM_BUILD_DIR",
+                  "JUJU_REPOSITORY",
+                  "LAYER_PATH",
+                  "INTERFACE_PATH"]:
             result[e] = os.environ.get(e)
         return result
 
-    def create_repo(self):
-        # Generated output will go into this directory
-        base = path(self.output_dir)
-        self.repo = (base / (self.series if self.series else 'builds'))
-        # And anything it includes from will be placed here
-        # outside the series
-        self.deps = (base / "deps")
-        if not (self.name and str(self.name)[0] in string.ascii_lowercase):
-            raise BuildError('Charm name must start with a lower-case letter')
-        self.target_dir = (self.repo / self.name)
-
-    def find_or_create_repo(self, allow_create=True):
-        # see if output dir is already in a repo, we can use that directly
-        if self.output_dir == path(self.charm).abspath():
-            # we've indicated in the cmdline that we are doing an inplace
-            # update
-            if (self.series and
-                    self.output_dir.parent.basename() == self.series):
-                # we're already in a repo
-                self.repo = self.output_dir.parent.parent
-                self.deps = (self.repo / "deps")
-                self.target_dir = self.output_dir
-                return
-        if allow_create:
-            self.create_repo()
-        else:
-            raise ValueError("%s doesn't seem valid", self.charm.directory)
+    def find_or_create_target(self):
         log.info("Destination charm directory: {}".format(self.target_dir))
+        self.target_dir.makedirs_p()
 
     @property
     def layers(self):
@@ -273,12 +267,13 @@ class Builder(object):
             log.warn("The top level layer expects a "
                      "valid layer.yaml file")
         # Manually create a layer object for the output
-        self.target = Layer(self.name, self.repo)
+        self.target = Layer(self.name, self.build_dir)
         self.target.directory = self.target_dir
         self.post_metrics('charm', self.name, False)
         return self.fetch_deps(self.top_layer)
 
     def fetch_deps(self, layer):
+        self.cache_dir.makedirs_p()
         results = {"layers": [], "interfaces": []}
         self.fetch_dep(layer, results)
         # results should now be a bottom up list
@@ -306,13 +301,13 @@ class Builder(object):
             # The order of these commands is important. We only want to
             # fetch something if we haven't already fetched it.
             if base.startswith("interface:"):
-                iface = Interface(base, self.deps)
+                iface = Interface(base, self.cache_dir)
                 if iface.name in [i.name for i in results['interfaces']]:
                     continue
                 results["interfaces"].append(iface.fetch())
                 self.post_metrics('interface', iface.name, iface.fetched)
             else:
-                base_layer = Layer(base, self.deps)
+                base_layer = Layer(base, self.cache_dir)
                 if base_layer.name in [i.name for i in results['layers']]:
                     continue
                 base_layer.fetch()
@@ -342,7 +337,7 @@ class Builder(object):
 
         for i, layer in enumerate(layers["layers"]):
             log.info("Processing layer: %s%s", layer.url,
-                     "" if 'deps' in layer.directory.splitall()
+                     "" if layer.directory.startswith(self.cache_dir)
                      else " (from %s)" % layer.directory.relpath())
             current_config = current_config.add_config(layer.config)
             if i + 1 < len(layers["layers"]):
@@ -453,7 +448,7 @@ class Builder(object):
                     continue
 
                 log.info("Processing interface: %s%s", interface_name,
-                         "" if 'deps' in iface.directory.splitall()
+                         "" if iface.directory.startswith(self.cache_dir)
                          else " (from %s)" % iface.directory.relpath())
                 # COPY phase
                 plan.append(
@@ -599,6 +594,15 @@ class Builder(object):
         self.exec_plan(self.plan, self.layers)
 
     def validate(self):
+        if not (self.name and str(self.name)[0] in string.ascii_lowercase):
+            raise BuildError('Charm name must start with a lower-case letter')
+
+        for cls in (InterfaceFetcher, LayerFetcher):
+            if cls.OLD_ENVIRON in os.environ and cls.ENVIRON not in os.environ:
+                log.warning('DEPRECATED: {} environment variable; '
+                            'please use {} instead'.format(cls.OLD_ENVIRON,
+                                                           cls.ENVIRON))
+
         self._validate_charm_repo()
 
         if not self.manifest.exists():
@@ -638,11 +642,10 @@ class Builder(object):
             log.warn(msg)
 
     def __call__(self):
-        self.find_or_create_repo()
-
         log.debug(json.dumps(
             self.status(), indent=2, sort_keys=True, default=str))
         self.validate()
+        self.find_or_create_target()
         self.generate()
 
     def inspect(self):
@@ -650,16 +653,42 @@ class Builder(object):
         self._check_path(self.charm)
         inspector.inspect(self.charm, force_styling=self.force_color)
 
-    def normalize_outputdir(self):
-        od = path(self.charm).abspath()
-        repo = os.environ.get('JUJU_REPOSITORY')
-        if repo:
-            repo = path(repo)
-            if repo.exists():
-                od = repo
-        elif ":" in od:
-            od = od.basename
-        self.output_dir = od
+    def normalize_build_dir(self):
+        charm_build_dir = os.environ.get('CHARM_BUILD_DIR')
+        juju_repo_dir = os.environ.get('JUJU_REPOSITORY')
+        if not self.build_dir:
+            if charm_build_dir:
+                self.build_dir = path(charm_build_dir)
+            elif juju_repo_dir:
+                series = self.series or 'builds'
+                self.build_dir = path(juju_repo_dir) / series
+            else:
+                series = self.series or 'builds'
+                log.warn('Build dir not specified via command-line or '
+                         'environment; defaulting to /tmp/charm-builds')
+                self.build_dir = path('/tmp/charm-builds')
+        self.build_dir = self.build_dir.abspath()
+        if self.build_dir.startswith(path(self.charm).abspath()):
+            raise BuildError('Build directory nested under source directory. '
+                             'This will cause recursive nesting of build '
+                             'artifacts and can fill up your disk. Please '
+                             'specify a different build directory with '
+                             '--build-dir or $CHARM_BUILD_DIR')
+
+    def normalize_cache_dir(self):
+        charm_cache_dir = os.environ.get('CHARM_CACHE_DIR')
+        if not self.cache_dir:
+            if charm_cache_dir:
+                self.cache_dir = path(charm_cache_dir)
+            else:
+                self.cache_dir = path('~/.cache/charm').expanduser()
+        self.cache_dir = self.cache_dir.abspath()
+        if self.cache_dir.startswith(path(self.charm).abspath()):
+            raise BuildError('Cache directory nested under source directory. '
+                             'This will cause recursive nesting of build '
+                             'artifacts and can fill up your disk. Please '
+                             'specify a different build directory with '
+                             '--cache-dir or $CHARM_CACHE_DIR')
 
     def _check_path(self, path_to_check, need_write=False):
         if not path_to_check:
@@ -672,11 +701,9 @@ class Builder(object):
             raise BuildError('Unable to write to: {}'.format(path_to_check))
 
     def check_paths(self):
-        self._check_path(self.output_dir, need_write=True)
+        self._check_path(self.build_dir, need_write=True)
+        self._check_path(self.cache_dir, need_write=True)
         self._check_path(self.wheelhouse_overrides)
-        self._check_path(os.environ.get('JUJU_REPOSITORY'))
-        self._check_path(os.environ.get('LAYER_PATH'))
-        self._check_path(os.environ.get('INTERFACE_PATH'))
 
     def clean_removed(self, signatures):
         """
@@ -800,20 +827,48 @@ def deprecated_main():
 
 
 def main(args=None):
+    env_vars = (
+        ("CHARM_LAYERS_DIR", "Directory containing local copies of base "
+                             "layers"),
+        ("CHARM_INTERFACES_DIR", "Directory containing local copies of "
+                                 "interface layers"),
+        ("CHARM_BUILD_DIR", "Build charms will be placed into "
+                            "$CHARM_BUILD_DIR/{charm_name} "
+                            "(defaults to current directory)"),
+        ("JUJU_REPOSITORY", "Deprecated: If CHARM_BUILD_DIR is not set but "
+                            "this is, built charms will be placed into "
+                            "$JUJU_REPOSITORY/builds/{charm_name}"),
+        ("LAYER_PATH", "Deprecated: Alias of CHARM_LAYERS_DIR"),
+        ("INTERFACE_PATH", "Deprecated: Alias of CHARM_INTERFACES_DIR"),
+    )
     build = Builder()
     parser = argparse.ArgumentParser(
         description="build a charm from layers and interfaces",
+        epilog="The following environment variables will be honored:\n" +
+               "\n" +
+               "".join("  {:<20}  {}\n".format(name, desc)
+                       for name, desc in env_vars),
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
-    parser.add_argument('-o', '--output-dir', type=path)
-    parser.add_argument('-s', '--series', default=None)
+    parser.add_argument('-o', '--output-dir', type=path, dest='build_dir',
+                        help='Alias for --build-dir')
+    parser.add_argument('-d', '--build-dir', type=path,
+                        help='Directory under which to place built charms; '
+                             'overrides CHARM_BUILD_DIR env')
+    parser.add_argument('-C', '--cache-dir', type=path,
+                        help='Directory to cache build dependencies '
+                        '(default: ~/.cache/charm; can also be set via '
+                        'CHARM_CACHE_DIR env)')
+    parser.add_argument('-s', '--series', default=None,
+                        help='Deprecated: define series in metadata.yaml')
     parser.add_argument('--hide-metrics', dest="hide_metrics",
-                        default=False, action="store_true")
+                        default=os.environ.get('CHARM_HIDE_METRICS', False),
+                        action="store_true")
     parser.add_argument('--interface-service',
                         help="Deprecated: use --layer-index")
     parser.add_argument('--layer-index',
-                        default="https://juju.github.io/layer-index/")
+                        default=LayerFetcher.LAYER_INDEX)
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
@@ -829,7 +884,9 @@ def main(args=None):
                         help="Increase output (same as -l DEBUG)")
     parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
-    parser.add_argument('charm', nargs="?", default=".", type=path)
+    parser.add_argument('charm', nargs="?", default=".", type=path,
+                        help='Source directory for charm layer to build '
+                             '(default: .)')
     utils.add_plugin_description(parser)
     # Namespace will set the options as attrs of build
     parser.parse_args(args, namespace=build)
@@ -842,19 +899,17 @@ def main(args=None):
 
     # Monkey patch in the domain for the interface webservice
     layer_index = build.interface_service or build.layer_index
-    InterfaceFetcher.INTERFACE_DOMAIN = layer_index
-    LayerFetcher.INTERFACE_DOMAIN = layer_index
+    LayerFetcher.LAYER_INDEX = layer_index
 
-    InterfaceFetcher.NO_LOCAL_LAYERS = build.no_local_layers
+    LayerFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 
     configLogging(build)
 
     try:
-        if not build.output_dir:
-            build.normalize_outputdir()
+        build.check_series()
+        build.normalize_build_dir()
+        build.normalize_cache_dir()
         build.check_paths()
-        if not build.series:
-            build.check_series()
 
         build()
 
