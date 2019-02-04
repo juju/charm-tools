@@ -656,14 +656,15 @@ class Builder(object):
     def normalize_build_dir(self):
         charm_build_dir = os.environ.get('CHARM_BUILD_DIR')
         juju_repo_dir = os.environ.get('JUJU_REPOSITORY')
+        series = self.series or 'builds'
         if not self.build_dir:
+            if self.output_dir:
+                self.build_dir = self.output_dir / series
             if charm_build_dir:
                 self.build_dir = path(charm_build_dir)
             elif juju_repo_dir:
-                series = self.series or 'builds'
                 self.build_dir = path(juju_repo_dir) / series
             else:
-                series = self.series or 'builds'
                 log.warn('Build dir not specified via command-line or '
                          'environment; defaulting to /tmp/charm-builds')
                 self.build_dir = path('/tmp/charm-builds')
@@ -851,7 +852,7 @@ def main(args=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
-    parser.add_argument('-o', '--output-dir', type=path, dest='build_dir',
+    parser.add_argument('-o', '--output-dir', type=path,
                         help='Alias for --build-dir')
     parser.add_argument('-d', '--build-dir', type=path,
                         help='Directory under which to place built charms; '
