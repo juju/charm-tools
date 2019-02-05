@@ -19,7 +19,7 @@ Installation
 
 To run the latest stable release, use::
 
-    sudo snap install charm
+    sudo snap install charm --classic
 
 You'll also almost certainly want to install Juju as well::
 

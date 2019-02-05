@@ -49,11 +49,13 @@ class LayerFetcher(fetchers.LocalFetcher):
 
             if not cls.NO_LOCAL_LAYERS:
                 prefixed_name = '{}-{}'.format(cls.NAMESPACE, name)
-                search_path = [os.environ.get("JUJU_REPOSITORY", ".")]
+                search_path = []
                 if cls.ENVIRON in os.environ:
                     search_path.append(os.environ[cls.ENVIRON])
                 elif cls.OLD_ENVIRON in os.environ:
                     search_path.append(os.environ[cls.OLD_ENVIRON])
+                else:
+                    search_path.append(os.environ.get("JUJU_REPOSITORY", "."))
                 for part in search_path:
                     basepath = path(part)
                     for dirname in (name, prefixed_name):

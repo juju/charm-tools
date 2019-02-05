@@ -656,14 +656,15 @@ class Builder(object):
     def normalize_build_dir(self):
         charm_build_dir = os.environ.get('CHARM_BUILD_DIR')
         juju_repo_dir = os.environ.get('JUJU_REPOSITORY')
+        series = self.series or 'builds'
         if not self.build_dir:
+            if self.output_dir:
+                self.build_dir = self.output_dir / series
             if charm_build_dir:
                 self.build_dir = path(charm_build_dir)
             elif juju_repo_dir:
-                series = self.series or 'builds'
                 self.build_dir = path(juju_repo_dir) / series
             else:
-                series = self.series or 'builds'
                 log.warn('Build dir not specified via command-line or '
                          'environment; defaulting to /tmp/charm-builds')
                 self.build_dir = path('/tmp/charm-builds')
@@ -690,19 +691,26 @@ class Builder(object):
                              'specify a different build directory with '
                              '--cache-dir or $CHARM_CACHE_DIR')
 
-    def _check_path(self, path_to_check, need_write=False):
+    def _check_path(self, path_to_check, need_write=False, can_create=False):
         if not path_to_check:
             return
         if not os.path.exists(path_to_check):
-            path_to_check = os.path.dirname(path_to_check)
+            if not can_create:
+                raise BuildError('Missing required path: '
+                                 '{}'.format(path_to_check))
+            try:
+                path_to_check.makedirs_p()
+            except Exception:
+                raise BuildError('Unable to create required path: '
+                                 '{}'.format(path_to_check))
         if not os.access(path_to_check, os.R_OK):
             raise BuildError('Unable to read from: {}'.format(path_to_check))
         if need_write and not os.access(path_to_check, os.W_OK):
             raise BuildError('Unable to write to: {}'.format(path_to_check))
 
     def check_paths(self):
-        self._check_path(self.build_dir, need_write=True)
-        self._check_path(self.cache_dir, need_write=True)
+        self._check_path(self.build_dir, need_write=True, can_create=True)
+        self._check_path(self.cache_dir, need_write=True, can_create=True)
         self._check_path(self.wheelhouse_overrides)
 
     def clean_removed(self, signatures):
@@ -851,7 +859,7 @@ def main(args=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('-f', '--force', action="store_true")
-    parser.add_argument('-o', '--output-dir', type=path, dest='build_dir',
+    parser.add_argument('-o', '--output-dir', type=path,
                         help='Alias for --build-dir')
     parser.add_argument('-d', '--build-dir', type=path,
                         help='Directory under which to place built charms; '
