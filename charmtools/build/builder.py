@@ -691,19 +691,26 @@ class Builder(object):
                              'specify a different build directory with '
                              '--cache-dir or $CHARM_CACHE_DIR')
 
-    def _check_path(self, path_to_check, need_write=False):
+    def _check_path(self, path_to_check, need_write=False, can_create=False):
         if not path_to_check:
             return
         if not os.path.exists(path_to_check):
-            path_to_check = os.path.dirname(path_to_check)
+            if not can_create:
+                raise BuildError('Missing required path: '
+                                 '{}'.format(path_to_check))
+            try:
+                path_to_check.makedirs_p()
+            except Exception:
+                raise BuildError('Unable to create required path: '
+                                 '{}'.format(path_to_check))
         if not os.access(path_to_check, os.R_OK):
             raise BuildError('Unable to read from: {}'.format(path_to_check))
         if need_write and not os.access(path_to_check, os.W_OK):
             raise BuildError('Unable to write to: {}'.format(path_to_check))
 
     def check_paths(self):
-        self._check_path(self.build_dir, need_write=True)
-        self._check_path(self.cache_dir, need_write=True)
+        self._check_path(self.build_dir, need_write=True, can_create=True)
+        self._check_path(self.cache_dir, need_write=True, can_create=True)
         self._check_path(self.wheelhouse_overrides)
 
     def clean_removed(self, signatures):
