@@ -572,9 +572,9 @@ class TestFetchers(unittest.TestCase):
     @mock.patch('tempfile.mkdtemp', mock.Mock(return_value='/tmp/src'))
     @mock.patch('charmtools.fetchers.git')
     @mock.patch('charmtools.build.fetchers.path.rmtree_p', mock.Mock())
-    @mock.patch('charmtools.build.fetchers.path.rename')
+    @mock.patch('charmtools.build.fetchers.shutil.copytree')
     @mock.patch('charmtools.build.fetchers.requests')
-    def test_subdir(self, requests, rename, git):
+    def test_subdir(self, requests, copytree, git):
         requests.get.return_value.ok = True
         requests.get.return_value.json.return_value = {
             'repo': 'https://github.com/juju-solutions/mock-repo',
@@ -585,8 +585,8 @@ class TestFetchers(unittest.TestCase):
         assert fetcher.subdir == 'layers/test'
         target = fetcher.fetch('/tmp/dst')
         self.assertEqual(target, '/tmp/dst/test')
-        rename.assert_called_once_with(path('/tmp/src/layers/test'),
-                                       path('/tmp/dst/test'))
+        copytree.assert_called_once_with(path('/tmp/src/layers/test'),
+                                         path('/tmp/dst/test'))
 
 
 if __name__ == '__main__':

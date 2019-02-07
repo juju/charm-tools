@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import shutil
 
 import requests
 from charmtools import fetchers
@@ -131,9 +132,7 @@ class LayerFetcher(fetchers.LocalFetcher):
                 if hasattr(self, 'subdir'):
                     res = res / self.subdir
                 target.rmtree_p()
-                # call this way instead of `res.rename(target)`
-                # to make unit test easier
-                path.rename(res, target)
+                shutil.copytree(res, target)
             return target
 
 
