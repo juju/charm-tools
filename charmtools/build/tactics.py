@@ -14,6 +14,11 @@ from charmtools.build.errors import BuildError
 log = logging.getLogger(__name__)
 
 
+if not hasattr(yaml, 'danger_load'):
+    # follow convention for pyyaml 4.1
+    yaml.danger_load = yaml.load
+
+
 class Tactic(object):
     """
     Tactics are first considered in the context of the config layer being
@@ -483,7 +488,7 @@ class YAMLTactic(SerializedTactic):
     def load(self, fn):
         """Load the yaml file and return the contents as objects."""
         try:
-            return yaml.load(fn, Loader=yaml.RoundTripLoader)
+            return yaml.danger_load(fn, Loader=yaml.RoundTripLoader)
         except yaml.YAMLError as e:
             log.debug(e)
             raise BuildError("Failed to process {0}. "
