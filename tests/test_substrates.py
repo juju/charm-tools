@@ -25,13 +25,13 @@ substrates:
         self.assertIsNotNone(parse_substrates(self.INCLUDE_SKIP))
 
     def test_parse_substrate_dict(self):
-        data = yaml.load(self.INCLUDE_SKIP)
+        data = yaml.safe_load(self.INCLUDE_SKIP)
         self.assertIsNotNone(parse_substrates(data))
 
     def test_parse_substrate_object(self):
         class Object(object):
             pass
-        data = yaml.load(self.INCLUDE_SKIP)
+        data = yaml.safe_load(self.INCLUDE_SKIP)
         o = Object()
         o.__dict__ = data
         self.assertIsNotNone(parse_substrates(o))

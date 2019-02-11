@@ -24,7 +24,7 @@ def parse_config(conf_file):
     if not os.path.isfile(conf_file):
         logging.error('Invalid config file: %s.' % conf_file)
         return False
-    return yaml.load(open(conf_file).read())
+    return yaml.safe_load(open(conf_file).read())
 
 
 def clone_helpers(work_dir, branch):

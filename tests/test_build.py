@@ -132,8 +132,8 @@ class TestBuild(unittest.TestCase):
         self.assertFalse((base / "tests/00-setup").exists())
         self.assertFalse((base / "tests/15-configs").exists())
         self.assertTrue((base / "tests/20-deploy").exists())
-        actions = yaml.load((base / "actions.yaml").text())
-        resources = yaml.load((base / "resources.yaml").text())
+        actions = yaml.safe_load((base / "actions.yaml").text())
+        resources = yaml.safe_load((base / "resources.yaml").text())
         self.assertNotIn("test-base", actions)
         self.assertIn("mysql", actions)
         self.assertIn("tester", actions)
@@ -144,7 +144,7 @@ class TestBuild(unittest.TestCase):
         # Metadata should have combined provides fields
         metadata = base / "metadata.yaml"
         self.assertTrue(metadata.exists())
-        metadata_data = yaml.load(metadata.open())
+        metadata_data = yaml.safe_load(metadata.open())
         self.assertIn("shared-db", metadata_data['provides'])
         self.assertIn("storage", metadata_data['provides'])
         # The maintainer, maintainers values should only be from the top layer.
@@ -158,7 +158,7 @@ class TestBuild(unittest.TestCase):
         # Config should have keys but not the ones in deletes
         config = base / "config.yaml"
         self.assertTrue(config.exists())
-        config_data = yaml.load(config.open())['options']
+        config_data = yaml.safe_load(config.open())['options']
         self.assertIn("bind-address", config_data)
         self.assertNotIn("vip", config_data)
         self.assertIn("key", config_data)
@@ -173,7 +173,7 @@ class TestBuild(unittest.TestCase):
 
         cyaml = base / "layer.yaml"
         self.assertTrue(cyaml.exists())
-        cyaml_data = yaml.load(cyaml.open())
+        cyaml_data = yaml.safe_load(cyaml.open())
         self.assertEquals(cyaml_data['includes'], ['layers/test-base',
                                                    'layers/mysql'])
         self.assertEquals(cyaml_data['is'], 'foo')
