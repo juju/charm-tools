@@ -39,6 +39,20 @@ class TestBuild(unittest.TestCase):
         self.p_post.stop()
         self.p_layer_index.stop()
 
+    def test_default_no_hide_metrics(self):
+        # In the absence of environment variables or command-line options,
+        # Builder.hide_metrics is false.
+        os.environ.pop("CHARM_HIDE_METRICS", None)
+        builder = build.Builder()
+        self.assertFalse(builder.hide_metrics)
+
+    def test_environment_hide_metrics(self):
+        # Setting the environment variable CHARM_HIDE_METRICS to a non-empty
+        # value causes Builder.hide_metrics to be true.
+        os.environ["CHARM_HIDE_METRICS"] = 'true'
+        builder = build.Builder()
+        self.assertTrue(builder.hide_metrics)
+
     def test_invalid_layer(self):
         # Test that invalid metadata.yaml files get a BuildError exception.
         builder = build.Builder()
