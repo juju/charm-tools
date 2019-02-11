@@ -75,7 +75,7 @@ class BashCreateTest(TestCase):
         actual_files = list(flatten(outputdir))
         expected_files = list(flatten(pkg_resources.resource_filename(
             'charmtools', 'templates/bash/files')))
-        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
+        metadata = yaml.safe_load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
         self.assertEqual(expected_files, actual_files)
         self.assertEqual(metadata['name'], args.charmname)
@@ -100,7 +100,7 @@ class BashCreateTest(TestCase):
         actual_files = list(flatten(outputdir))
         expected_files = list(flatten(pkg_resources.resource_filename(
             'charmtools', 'templates/bash/files')))
-        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
+        metadata = yaml.safe_load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
         self.assertEqual(expected_files, actual_files)
         self.assertEqual(metadata['name'], args.charmname)

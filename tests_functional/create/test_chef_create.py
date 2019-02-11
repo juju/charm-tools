@@ -104,7 +104,7 @@ class ChefCreateTest(TestCase):
         outputdir = join(self.tempdir, args.charmname)
         actual_files = sorted(flatten(outputdir))
         expected_files = self._expected_files()
-        metadata = yaml.load(open(join(outputdir, 'metadata.yaml'), 'r'))
+        metadata = yaml.safe_load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
         self.assertEqual(expected_files, actual_files)
         self.assertEqual(metadata['name'], args.charmname)
