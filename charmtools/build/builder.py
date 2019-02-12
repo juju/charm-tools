@@ -146,7 +146,7 @@ class Builder(object):
         self._name = None
         self._charm = None
         self._top_layer = None
-        self.hide_metrics = False
+        self.hide_metrics = os.environ.get('CHARM_HIDE_METRICS', False)
         self.wheelhouse_overrides = None
         self._warned_home = False
 
@@ -871,7 +871,6 @@ def main(args=None):
     parser.add_argument('-s', '--series', default=None,
                         help='Deprecated: define series in metadata.yaml')
     parser.add_argument('--hide-metrics', dest="hide_metrics",
-                        default=os.environ.get('CHARM_HIDE_METRICS', False),
                         action="store_true")
     parser.add_argument('--interface-service',
                         help="Deprecated: use --layer-index")
