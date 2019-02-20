@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# flake8: ignore=E501
 #
 # Copyright 2012 Canonical Ltd.  This software is licensed under the
 # GNU General Public License version 3 (see the file LICENSE).
@@ -59,9 +58,9 @@ setup(
         'dict2colander==0.2',
     ],
     include_package_data=True,
-    maintainer='Marco Ceppi',
-    maintainer_email='marco@ceppi.net',
-    description=('Tools for maintaining Juju charms'),
+    maintainer='Cory Johns',
+    maintainer_email='johnsca@gmail.com',
+    description=('Tools for building and maintaining Juju charms'),
     long_description=readme,
     license='GPL v3',
     url='https://github.com/juju/charm-tools',
@@ -83,14 +82,13 @@ setup(
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
-            'reactive-python = charmtools.templates.reactive_python:ReactivePythonCharmTemplate',
-            'reactive-bash = charmtools.templates.reactive_bash:ReactiveBashCharmTemplate',
+            'reactive-python = charmtools.templates.reactive_python:ReactivePythonCharmTemplate',  # noqa: E501
+            'reactive-bash = charmtools.templates.reactive_bash:ReactiveBashCharmTemplate',  # noqa: E501
             'python-basic = charmtools.templates.python:PythonCharmTemplate',
-            'python = charmtools.templates.python_services'
-            ':PythonServicesCharmTemplate',
+            'python = charmtools.templates.python_services:PythonServicesCharmTemplate',  # noqa: E501
             'ansible = charmtools.templates.ansible:AnsibleCharmTemplate',
             'chef = charmtools.templates.chef:ChefCharmTemplate',
-            'powershell = charmtools.templates.powershell:PowerShellCharmTemplate',
+            'powershell = charmtools.templates.powershell:PowerShellCharmTemplate',  # noqa: E501
         ]
     },
 )

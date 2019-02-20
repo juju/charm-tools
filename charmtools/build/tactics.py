@@ -21,15 +21,10 @@ if not hasattr(yaml, 'danger_load'):
 
 class Tactic(object):
     """
-    Tactics are first considered in the context of the config layer being
-    called the config layer will attempt to (using its author provided info)
-    create a tactic for a given file. That will later be intersected with any
-    later layers to create a final single plan for each element of the output
-    charm.
+    Base class for all tactics.
 
-    Callable that will implement some portion of the charm composition
-    Subclasses should implement __str__ and __call__ which should take whatever
-    actions are needed.
+    Subclasses must implement at least ``trigger`` and ``process``, and
+    probably also want to implement ``combine``.
     """
     kind = "static"  # used in signatures
     _warnings = {}  # deprecation warnings we've shown
@@ -63,27 +58,43 @@ class Tactic(object):
                          '(no tactics matched)'.format(entity))
 
     def __init__(self, entity, target, layer, next_config):
-        self.entity = entity
+        self._entity = entity
         self._layer = layer
         self._target = target
         self.data = None
         self._next_config = next_config
 
-    def __call__(self):
+    def process(self):
+        """
+        Now that the tactics for the current entity have been combined for
+        all layers, process the entity to produce the final output file.
+
+        Must be implemented by a subclass.
+        """
         raise NotImplementedError
+
+    def __call__(self):
+        return self.process()
 
     def __str__(self):
         return "{}: {} -> {}".format(
             self.__class__.__name__, self.entity, self.target_file)
 
     @property
+    def entity(self):
+        """
+        The current entity (a.k.a. file) being processed.
+        """
+        return self._entity
+
+    @property
     def layer(self):
-        """The file in the current layer under consideration"""
+        """The current layer under consideration"""
         return self._layer
 
     @property
     def current(self):
-        """Alias for `Tactic.layer`"""
+        """Alias for ``Tactic.layer``"""
         return self.layer
 
     @property
@@ -93,15 +104,24 @@ class Tactic(object):
 
     @property
     def relpath(self):
+        """
+        The path to the file relative to the layer.
+        """
         return self.entity.relpath(self.layer.directory)
 
     @property
     def target_file(self):
+        """
+        The location where the processed file will be written to.
+        """
         target = self.target.directory / self.relpath
         return target
 
     @property
     def layer_name(self):
+        """
+        Name of the current layer being processed.
+        """
         return self.layer.name
 
     @property
@@ -120,18 +140,35 @@ class Tactic(object):
         return self._next_config
 
     def combine(self, existing):
-        """Produce a tactic informed by the last tactic for an entry.
+        """
+        Produce a tactic informed by the existing tactic for an entry.
+
         This is when a rule in a higher level charm overrode something in
-        one of its bases for example."""
+        one of its bases for example.
+
+        Should be implemented by a subclass if any sort of merging behavior is
+        desired.
+        """
         return self
 
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
-        """Should the rule trigger for a given path object"""
+        """
+        Determine whether the rule should apply to a given entity (file).
+
+        Generally, this should check the entity name, but could conceivably
+        also inspect the contents of the file.
+
+        Must be implemented by a subclass or the tactic will never match.
+        """
         return False
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        Return signature in the form ``{relpath: (origin layer, SHA256)}``
+
+        Can be overridden by a subclass, but the default implementation will
+        usually be fine.
         """
         target = self.target_file
         sig = {}
@@ -142,17 +179,37 @@ class Tactic(object):
         return sig
 
     def lint(self):
+        """
+        Test the resulting file to ensure that it is valid.
+
+        Return ``True`` if valid.  If invalid, return ``False`` or raise a
+        :class:`~charmtools.build.errors.BuildError`
+
+        Should be implemented by a subclass.
+        """
         return True
 
     def read(self):
+        """
+        Read the contents of the file to be processed.
+
+        Can be implemented by a subclass.  By default, returns ``None``.
+        """
         return None
 
 
 class ExactMatch(object):
+    """
+    Mixin to match a file with an exact name.
+    """
     FILENAME = None
+    "The filename to be matched"
 
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
+        """
+        Match if the current entity's filename is what we're looking for.
+        """
         relpath = entity.relpath(layer.directory)
         return cls.FILENAME == relpath
 
@@ -170,18 +227,15 @@ class IgnoreTactic(Tactic):
     """
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
-        """
-        Match if the given entity will be ignored by the next layer.
-        """
+        ""  # suppress inherited doc
+        # Match if the given entity will be ignored by the next layer.
         relpath = entity.relpath(layer.directory)
         ignored = utils.ignore_matcher(next_config.ignores)
         return not ignored(relpath)
 
     def __call__(cls):
-        """
-        If this tactic has not been replaced by another from a higher layer,
-        then we want to drop the file entirely, so do nothing.
-        """
+        # If this tactic has not been replaced by another from a higher layer,
+        # then we want to drop the file entirely, so do nothing.
         pass
 
 
@@ -198,30 +252,34 @@ class ExcludeTactic(Tactic):
     """
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
-        """
-        Match if the given entity is excluded by the current layer.
-        """
+        ""  # suppress inherited doc
+        # Match if the given entity is excluded by the current layer.
         relpath = entity.relpath(layer.directory)
         excluded = utils.ignore_matcher(layer.config.excludes)
         return not excluded(relpath)
 
     def combine(self, existing):
-        """
-        Combine with the tactic for this file from the lower layer by
-        returning the existing tactic, excluding any file or data from
-        this layer.
-        """
+        ""  # suppress inherited doc
+        # Combine with the tactic for this file from the lower layer by
+        # returning the existing tactic, excluding any file or data from
+        # this layer.
         return existing
 
     def __call__(self):
-        """
-        If no lower or higher level layer has provided a tactic for this file,
-        then we want to just skip processing of this file, so do nothing.
-        """
+        # If no lower or higher level layer has provided a tactic for this
+        # file, then we want to just skip processing of this file, so do
+        # nothing.
         pass
 
 
 class CopyTactic(Tactic):
+    """
+    Tactic to copy a file without modification or merging.
+
+    The last version of the file "wins" (e.g., from the charm layer).
+
+    This is the final fallback tactic if nothing else matches.
+    """
     def __call__(self):
         if self.entity.isdir():
             log.debug('Creating %s', self.target_file)
@@ -244,10 +302,19 @@ class CopyTactic(Tactic):
 
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
+        ""  # suppress inherited doc
+        # Always matches.
         return True
 
 
 class InterfaceCopy(Tactic):
+    """
+    Tactic to process a relation endpoint using an interface layer.
+
+    This tactic is not part of the normal set of tactics that are matched
+    against files.  Instead, it is manually called for each relation endpoint
+    that has a corresponding interface layer.
+    """
     def __init__(self, interface, relation_name, role, target, config):
         self.interface = interface
         self.relation_name = relation_name
@@ -257,6 +324,7 @@ class InterfaceCopy(Tactic):
 
     @property
     def target(self):
+        ""  # suppress inherited doc
         return (path(self._target.directory) /
                 "hooks/relations" /
                 self.interface.name)
@@ -286,8 +354,8 @@ class InterfaceCopy(Tactic):
         return "Copy Interface {}".format(self.interface.name)
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
+        ""  # suppress inherited doc
+        # Sign all of the files that were put into place.
         sigs = {}
         for entry, sig in utils.walk(self.target,
                                      utils.sign, kind="files"):
@@ -296,6 +364,8 @@ class InterfaceCopy(Tactic):
         return sigs
 
     def lint(self):
+        ""  # suppress inherited doc
+        # Ensure that the interface layer used is valid.
         impl = self.interface.directory / self.role + '.py'
         if not impl.exists():
             log.error('Missing implementation for interface role: %s.py',
@@ -322,7 +392,18 @@ class InterfaceCopy(Tactic):
 
 
 class DynamicHookBind(Tactic):
+    """
+    Base class for process hooks dynamically generated from the hook template.
+
+    This tactic is not used directly, but serves as a base for the
+    type-specific dynamic hook tactics, like
+    :class:`~charmtools.build.tactics.StandardHooksBind`, or
+    :class:`~charmtools.build.tactics.InterfaceBind`.
+    """
     HOOKS = []
+    """
+    List of all hooks to populate.
+    """
 
     def __init__(self, name, owner, target, config, output_files,
                  template_file):
@@ -359,6 +440,15 @@ class DynamicHookBind(Tactic):
         self.tracked = []
 
     def __call__(self):
+        """
+        Copy the template file into place for all the files listed in
+        ``HOOKS``.
+
+        If a given hook already has an implementation provided, it will take
+        precedence over the template.
+
+        The template is generally located at ``hooks/hook.template``
+        """
         template = self._template_file.text()
         for target in self.targets:
             if target.relpath(self._target.directory) in self._output_files:
@@ -369,7 +459,8 @@ class DynamicHookBind(Tactic):
             self.tracked.append(target)
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
+        """
+        Sign all hook files generated by this tactic.
         """
         sigs = {}
         for target in self.tracked:
@@ -384,6 +475,13 @@ class DynamicHookBind(Tactic):
 
 
 class StandardHooksBind(DynamicHookBind):
+    """
+    Tactic to copy the hook template into place for all standard hooks.
+
+    This tactic is not part of the normal set of tactics that are matched
+    against files.  Instead, it is manually called to fill in the standard
+    set of hook implementations.
+    """
     HOOKS = [
         'install',
         'config-changed',
@@ -399,6 +497,13 @@ class StandardHooksBind(DynamicHookBind):
 
 
 class InterfaceBind(DynamicHookBind):
+    """
+    Tactic to copy the hook template into place for all relation hooks.
+
+    This tactic is not part of the normal set of tactics that are matched
+    against files.  Instead, it is manually called to fill in the set of
+    relation hooks needed by this charm.
+    """
     HOOKS = [
         '{}-relation-joined',
         '{}-relation-changed',
@@ -408,6 +513,13 @@ class InterfaceBind(DynamicHookBind):
 
 
 class StorageBind(DynamicHookBind):
+    """
+    Tactic to copy the hook template into place for all storage hooks.
+
+    This tactic is not part of the normal set of tactics that are matched
+    against files.  Instead, it is manually called to fill in the set of
+    storage hooks needed by this charm.
+    """
     HOOKS = [
         '{}-storage-attached',
         '{}-storage-detaching',
@@ -415,7 +527,10 @@ class StorageBind(DynamicHookBind):
 
 
 class ManifestTactic(ExactMatch, Tactic):
-    FILENAME = ".composer.manifest"
+    """
+    Tactic to avoid copying a build manifest file from a base layer.
+    """
+    FILENAME = ".build.manifest"
 
     def __call__(self):
         # Don't copy manifests, they are regenerated
@@ -423,6 +538,10 @@ class ManifestTactic(ExactMatch, Tactic):
 
 
 class SerializedTactic(ExactMatch, Tactic):
+    """
+    Base class for tactics which deal with serialized data, such as YAML or
+    JSON.
+    """
     kind = "dynamic"
     section = None
     prefix = None
@@ -433,17 +552,33 @@ class SerializedTactic(ExactMatch, Tactic):
         self._read = False
 
     def load(self, fn):
+        """
+        Load and deserialize the data from the file.
+
+        Must be impelemented by a subclass.
+        """
         raise NotImplementedError('Must be implemented in subclass: load')
 
     def dump(self, data):
+        """
+        Serialize and write the data to the file.
+
+        Must be impelemented by a subclass.
+        """
         raise NotImplementedError('Must be implemented in subclass: dump')
 
     def read(self):
+        """
+        Read and cache the data into memory, using ``self.load()``.
+        """
         if not self._read:
             self.data = self.load(self.entity.open()) or {}
             self._read = True
 
     def combine(self, existing):
+        """
+        Merge the deserialized data from two layers using ``deepmerge``.
+        """
         # make sure both versions are read in
         existing.read()
         self.read()
@@ -455,6 +590,17 @@ class SerializedTactic(ExactMatch, Tactic):
         return self
 
     def apply_edits(self):
+        """
+        Apply any edits defined in the final ``layer.yaml`` file to the data.
+
+        An example edit definition:
+
+        .. code-block:: yaml
+
+           metadata:
+             deletes:
+               - requires.http
+        """
         # Apply any editing rules from config
         config = self.config
         if config:
@@ -477,16 +623,22 @@ class SerializedTactic(ExactMatch, Tactic):
         return self.data
 
     def __call__(self):
+        """
+        Load, process, and write the file.
+        """
         self.dump(self.process())
         return self.data
 
 
 class YAMLTactic(SerializedTactic):
-    """Rule Driven YAML generation"""
+    """
+    Base class for tactics dealing with YAML data.
+
+    Tries to ensure that the order of keys is preserved.
+    """
     prefix = None
 
     def load(self, fn):
-        """Load the yaml file and return the contents as objects."""
         try:
             return yaml.danger_load(fn, Loader=yaml.RoundTripLoader)
         except yaml.YAMLError as e:
@@ -495,7 +647,6 @@ class YAMLTactic(SerializedTactic):
                              "Ensure the YAML is valid".format(fn.name))
 
     def dump(self, data):
-        """Write the data to the target yaml file."""
         with open(self.target_file, 'w') as fd:
             yaml.dump(data, fd,
                       Dumper=yaml.RoundTripDumper,
@@ -504,7 +655,9 @@ class YAMLTactic(SerializedTactic):
 
 
 class JSONTactic(SerializedTactic):
-    """Rule Driven JSON generation"""
+    """
+    Base class for tactics dealing with JSON data.
+    """
     prefix = None
 
     def load(self, fn):
@@ -516,8 +669,8 @@ class JSONTactic(SerializedTactic):
 
 class LayerYAML(YAMLTactic):
     """
-    Process the ``layer.yaml`` file from each layer, and generate the
-    resulting ``layer.yaml`` for the built charm.
+    Tactic for processing and combining the ``layer.yaml`` file from
+    each layer.
 
     The input ``layer.yaml`` files can contain the following sections:
 
@@ -553,15 +706,18 @@ class LayerYAML(YAMLTactic):
 
     @property
     def target_file(self):
+        ""  # suppress inherited doc
         # force the non-deprecated name
         return self.target.directory / "layer.yaml"
 
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
+        ""  # suppress inherited doc
         relpath = entity.relpath(layer.directory)
         return relpath in cls.FILENAMES
 
     def read(self):
+        ""  # suppress inherited doc
         if not self._read:
             super(LayerYAML, self).read()
             ignores = self.data.get('ignore')
@@ -579,6 +735,7 @@ class LayerYAML(YAMLTactic):
             }
 
     def combine(self, existing):
+        ""  # suppress inherited doc
         self.read()
         existing.read()
         super(LayerYAML, self).combine(existing)
@@ -586,6 +743,7 @@ class LayerYAML(YAMLTactic):
         return self
 
     def lint(self):
+        ""  # suppress inherited doc
         self.read()
         defined_layer_names = set(self.schema['properties'].keys())
         options_layer_names = set(self.data['options'].keys())
@@ -630,8 +788,7 @@ class LayerYAML(YAMLTactic):
         return data
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
+        ""  # suppress inherited doc
         target = self.target_file
         sig = {}
         if target.exists() and target.isfile():
@@ -642,7 +799,10 @@ class LayerYAML(YAMLTactic):
 
 
 class MetadataYAML(YAMLTactic):
-    """Rule Driven metadata.yaml generation"""
+    """
+    Tactic for processing and combining the ``metadata.yaml`` file from
+    each layer.
+    """
     section = "metadata"
     FILENAME = "metadata.yaml"
     KEY_ORDER = [
@@ -665,6 +825,7 @@ class MetadataYAML(YAMLTactic):
         self.maintainers = []
 
     def read(self):
+        ""  # suppress inherited doc
         if not self._read:
             super(MetadataYAML, self).read()
             self.storage = {name: self.layer.url
@@ -673,6 +834,7 @@ class MetadataYAML(YAMLTactic):
             self.maintainers = self.data.get('maintainers')
 
     def combine(self, existing):
+        ""  # suppress inherited doc
         self.read()
         series = self.data.get('series', [])
         super(MetadataYAML, self).combine(existing)
@@ -682,6 +844,7 @@ class MetadataYAML(YAMLTactic):
         return self
 
     def apply_edits(self):
+        ""  # suppress inherited doc
         super(MetadataYAML, self).apply_edits()
         # Remove the merged maintainers from the self.data
         self.data.pop('maintainer', None)
@@ -704,6 +867,7 @@ class MetadataYAML(YAMLTactic):
             self.storage.pop(name, None)
 
     def dump(self, data):
+        ""  # suppress inherited doc
         final = yaml.comments.CommentedMap()
         # attempt keys in the desired order
         for k in self.KEY_ORDER:
@@ -717,38 +881,58 @@ class MetadataYAML(YAMLTactic):
 
 
 class ConfigYAML(YAMLTactic):
-    """Rule driven config.yaml generation"""
+    """
+    Tactic for processing and combining the ``config.yaml`` file from
+    each layer.
+    """
     section = "config"
     prefix = "options"
     FILENAME = "config.yaml"
 
 
 class ActionsYAML(YAMLTactic):
-    """Rule driven actions.yaml generation"""
+    """
+    Tactic for processing and combining the ``actions.yaml`` file from
+    each layer.
+    """
     section = "actions"
     FILENAME = "actions.yaml"
 
 
 class DistYAML(YAMLTactic):
-    """Rule driven dist.yaml generation"""
+    """
+    Tactic for processing and combining the ``dist.yaml`` file from
+    each layer.
+    """
     section = "dist"
     prefix = None
     FILENAME = "dist.yaml"
 
 
 class ResourcesYAML(YAMLTactic):
-    """Rule driven resources.yaml generation"""
+    """
+    Tactic for processing and combining the ``resources.yaml`` file from
+    each layer.
+    """
     section = "resources"
     prefix = None
     FILENAME = "resources.yaml"
 
 
 class InstallerTactic(Tactic):
+    """
+    Tactic to process any ``.pypi`` files and install Python packages directly
+    into the charm's ``lib/`` directory.
+
+    This is used in Kubernetes type charms due to the lack of a proper install
+    or bootstrap phase.
+    """
     def __str__(self):
         return "Installing software to {}".format(self.relpath)
 
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
+        ""  # suppress inherited doc
         relpath = entity.relpath(layer.directory)
         ext = relpath.splitext()[1]
         return ext in [".pypi", ]
@@ -803,8 +987,7 @@ class InstallerTactic(Tactic):
                     self._tracked.append(dst)
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
+        ""  # suppress inherited doc
         sigs = {}
         for d in self._tracked:
             if d.isdir():
@@ -820,6 +1003,10 @@ class InstallerTactic(Tactic):
 
 
 class WheelhouseTactic(ExactMatch, Tactic):
+    """
+    Tactic to process the ``wheelhouse.txt`` file and build a source-only
+    wheelhouse of Python packages in the charm's ``wheelhouse/`` directory.
+    """
     kind = "dynamic"
     FILENAME = 'wheelhouse.txt'
     removed = []  # has to be class level to affect all tactics during signing
@@ -836,6 +1023,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         return "Building wheelhouse in {}".format(directory)
 
     def combine(self, existing):
+        ""  # suppress inherited doc
         self.previous = existing.previous + [existing]
         return self
 
@@ -889,8 +1077,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             self._venv = None
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
+        ""  # suppress inherited doc
         sigs = {}
         for tactic in self.previous:
             sigs.update(tactic.sign())
@@ -904,6 +1091,10 @@ class WheelhouseTactic(ExactMatch, Tactic):
 
 
 class CopyrightTactic(Tactic):
+    """
+    Tactic to combine the copyright info from all layers into a final
+    machine-readable format.
+    """
     def __init__(self, *args, **kwargs):
         super(CopyrightTactic, self).__init__(*args, **kwargs)
         self.previous = []
@@ -911,6 +1102,7 @@ class CopyrightTactic(Tactic):
         self.relpath_target = self.relpath
 
     def combine(self, existing):
+        ""  # suppress inherited doc
         self.previous = existing.previous + [existing]
         existing.previous = []
         existing.toplevel = False
@@ -921,11 +1113,13 @@ class CopyrightTactic(Tactic):
 
     @property
     def target_file(self):
+        ""  # suppress inherited doc
         target = self.target.directory / self.relpath_target
         return target
 
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
+        ""  # suppress inherited doc
         relpath = entity.relpath(layer.directory)
         return relpath == "copyright"
 
@@ -945,8 +1139,7 @@ class CopyrightTactic(Tactic):
                 self.entity.copy2(self.target_file)
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
+        ""  # suppress inherited doc
         sigs = {}
         # sign the `copyright` file for all levels below us.
         for tactic in self.previous:
@@ -959,6 +1152,14 @@ class CopyrightTactic(Tactic):
 
 
 class VersionTactic(Tactic):
+    """
+    Tactic to generate the ``version`` file with VCS revision info to be
+    displayed in ``juju status``.
+
+    This tactic is not part of the normal set of tactics that are matched
+    against files.  Instead, it is manually called to generate the ``version``
+    file.
+    """
     FILENAME = "version"
 
     CMDS = (
@@ -974,6 +1175,7 @@ class VersionTactic(Tactic):
         self.wrote_sha = False
 
     def read(self):
+        ""  # suppress inherited doc
         if self.entity.isfile():
             # try to read existing version file
             return self.entity.text()
@@ -981,11 +1183,13 @@ class VersionTactic(Tactic):
 
     @property
     def target_file(self):
+        ""  # suppress inherited doc
         target = self.target.directory / self.FILENAME
         return target
 
     @classmethod
     def trigger(cls, entity, target, layer, next_config):
+        ""  # suppress inherited doc
         return True
 
     def _try_to_get_current_sha(self):
@@ -1026,8 +1230,7 @@ class VersionTactic(Tactic):
             self.wrote_sha = False
 
     def sign(self):
-        """return sign in the form {relpath: (origin layer, SHA256)}
-        """
+        ""  # suppress inherited doc
         if self.wrote_sha:
             return {
                 self.target_file.relpath(self.target.directory): (
@@ -1044,8 +1247,11 @@ class VersionTactic(Tactic):
 
 
 def load_tactic(dpath, basedir):
-    """Load a tactic from the current layer using a dotted path. The last
-    element in the path should be a Tactic subclass
+    """
+    Load a tactic from the current layer using a dotted path.
+
+    The final element in the path should be a
+    :class:`~charmtools.build.tactics.Tactic` subclass.
     """
     obj = utils.load_class(dpath, basedir)
     if not issubclass(obj, Tactic):
@@ -1057,6 +1263,9 @@ def extend_with_default(validator_class):
     """
     Extend a jsonschema validator to propagate default values prior
     to validating.
+
+    Used internally to ensure validation of layer options supports
+    default values.
     """
     validate_properties = validator_class.VALIDATORS["properties"]
 
