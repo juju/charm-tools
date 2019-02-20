@@ -44,7 +44,7 @@ setup(
         'requests<=2.20.1',
         'libcharmstore',
         'blessings<=1.6',
-        'ruamel.yaml<=0.10.23',
+        'ruamel.yaml<0.16.0',
         'pathspec<=0.3.4',
         'otherstuf<=1.1.0',
         # 'path.py<=8.1.2',
