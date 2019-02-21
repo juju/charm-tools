@@ -13,7 +13,6 @@ DEFAULT_IGNORES = [
     "*.pyc",
     "*~",
     ".tox",
-    "build",
 ]
 
 
