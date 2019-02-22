@@ -5,15 +5,13 @@ summary: charm and charm-tools
 description: charmstore-client and charm-tools
 confinement: classic
 grade: stable
+base: core18
 apps:
   charm:
     command: bin/wrappers/charm
 parts:
-  go:
-    source-tag: go1.10.3
   charmstore-client:
     build-attributes: ['no-patchelf']
-    after: [go]
     source: https://github.com/juju/charmstore-client.git
     source-branch: master
     source-type: git
@@ -21,11 +19,19 @@ parts:
     go-importpath: github.com/juju/charmstore-client
     build-packages:
       - bzr
+  bhttp:
+    plugin: godeps
+    build-attributes: ['no-patchelf']
+    source: https://github.com/rogpeppe/bhttp
+    source-branch: master
+    source-type: git
+    go-importpath: github.com/rogpeppe/bhttp
   charm-tools:
     source: .
     plugin: python
     python-version: python3
-    requirements: requirements.txt
+    requirements:
+      - requirements.txt
     stage-packages:
       - git-core
       - libssl-dev
@@ -51,7 +57,8 @@ parts:
   versions:
     after: [charmstore-client, charm-tools]
     plugin: dump
-    build: |
+    source: .
+    override-build: |
       charmtools=../../charm-tools/src
       charmstore=../../charmstore-client/src
       $charmtools/charmtools/git_version.py $charmtools --format=json > $SNAPCRAFT_PART_INSTALL/charm-tools-version

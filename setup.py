@@ -79,6 +79,8 @@ setup(
             'charm-proof = charmtools.proof:main',
             'charm-pull-source = charmtools.pullsource:main',
             'charm-version = charmtools.version:main',
+            'charm-promulgate = charmtools.promulgation:promulgate',
+            'charm-unpromulgate = charmtools.promulgation:unpromulgate',
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
