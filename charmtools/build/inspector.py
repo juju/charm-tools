@@ -6,18 +6,18 @@ from charmtools import utils
 
 theme = {
     -1: "bright_black",
-    0: "white",
+    0: "normal",
     1: "green",
     2: "cyan",
     3: "magenta",
     4: "yellow",
     5: "red",
-    6: "bright_white",
-    7: "bright_green",
-    8: "bright_cyan",
-    9: "bright_magenta",
-    10: "bright_yellow",
-    11: "bright_red",
+    6: "bold",
+    7: "bright_magenta",
+    8: "bright_red",
+    9: "bright_cyan",
+    10: "bright_green",
+    11: "bright_yellow",
 }
 
 
