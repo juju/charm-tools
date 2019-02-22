@@ -651,7 +651,9 @@ class Builder(object):
     def inspect(self):
         self.charm = path(self.charm).abspath()
         self._check_path(self.charm)
-        inspector.inspect(self.charm, force_styling=self.force_color)
+        inspector.inspect(self.charm,
+                          force_styling=self.force_color,
+                          annotate=self.annotate)
 
     def normalize_build_dir(self):
         charm_build_dir = os.environ.get('CHARM_BUILD_DIR')
@@ -795,6 +797,11 @@ def inspect(args=None):
                         dest='force_color', help="Alias of --force-color")
     parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
+    parser.add_argument('-a', '--annotate', action="store_true",
+                        help="Annotate each file with the layer name, "
+                             "rather than just using colors "
+                             "(this is enabled automatically enabled if "
+                             "colors are unavailable)")
     parser.add_argument('-l', '--log-level', default=logging.INFO)
     parser.add_argument('charm', nargs="?", default=".", type=path)
     utils.add_plugin_description(parser)
