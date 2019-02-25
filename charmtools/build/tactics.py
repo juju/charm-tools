@@ -678,21 +678,43 @@ class LayerYAML(YAMLTactic):
         layers referenced in this list value are pulled in during charm
         build and combined with each other to produce the final layer.
 
+      * ``defines`` This object can contain a jsonschema used to define and
+        validate options passed to this layer from another layer.  The options
+        and schema will be namespaced by the current layer name.
+
+      * ``options`` This object can contain option name/value sections for
+        other layers.
+
       * ``config``, ``metadata``, ``dist``, or ``resources`` These objects can
         contain a ``deletes`` object to list keys that should be deleted from
         the resulting ``<section>.yaml``.
 
-      * ``defines`` This object can contain a jsonschema used to defined and
-        validate options passed to this layer from another layer.  The options
-        and schema will be namespaced by the current layer name.  For example,
-        layer "foo" defining ``bar: {type: string}`` will accept
-        ``options: {foo: {bar: "foo"}}`` in the final ``layer.yaml``.
+    Example, layer ``foo`` might define this ``layer.yaml`` file:
 
-      * ``options`` This object can contain option name/value sections for
-        other layers. For example, if the current layer includes the previously
-        referenced "foo" layer, it could include ``foo: {bar: "foo"}`` in its
-        ``options`` section.
+    .. code-block:: yaml
 
+        includes:
+          - layer:basic
+          - interface:foo
+        defines:
+          foo-opt:
+            type: string
+            default: 'foo-default'
+        options:
+          basic:
+            use_venv: true
+
+    And layer ``bar`` might define this ``layer.yaml`` file:
+
+    .. code-block:: yaml
+
+        includes:
+          - layer:foo
+        options:
+          foo-opt: 'bar-value'
+        metadata:
+          deletes:
+            - 'requires.foo-relation'
     """
     FILENAMES = ["layer.yaml", "composer.yaml"]
 
