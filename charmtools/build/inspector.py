@@ -55,7 +55,10 @@ def inspect(charm, force_styling=False, annotate=False):
     a, c, d = utils.delta_signatures(manp)
 
     # ordered list of layers used for legend
-    layers = [layer['url'] for layer in manifest['layers']]
+    if isinstance(manifest['layers'][0], dict):
+        layers = [layer['url'] for layer in manifest['layers']]
+    else:
+        layers = list(manifest['layers'])
     layers.reverse()
     while layers[0].startswith('interface:'):
         layers.append(layers.pop(0))
