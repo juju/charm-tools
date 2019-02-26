@@ -671,8 +671,8 @@ class Builder(object):
                          'environment; defaulting to /tmp/charm-builds')
                 self.build_dir = path('/tmp/charm-builds')
         self.build_dir = self.build_dir.abspath()
-        charm_dir = path(self.charm).abspath()
-        if os.path.commonpath([self.build_dir, charm_dir]) == charm_dir:
+        charm_dir = path(self.charm).abspath() + os.path.sep
+        if os.path.commonprefix([self.build_dir, charm_dir]) == charm_dir:
             raise BuildError('Build directory nested under source directory. '
                              'This will cause recursive nesting of build '
                              'artifacts and can fill up your disk. Please '
