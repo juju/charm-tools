@@ -21,3 +21,4 @@ jsonschema==2.5.1
 secretstorage<2.4
 six>=1.11.0
 dict2colander==0.2
+setuptools>=40.8.0,<50.0.0
