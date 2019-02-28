@@ -754,9 +754,8 @@ def validate_series(charm, linter):
 
     """
     if 'series' not in charm:
-        return
-
-    if not isinstance(charm['series'], list):
+        linter.err('missing series: must be a list of series names')
+    elif not isinstance(charm['series'], list):
         linter.err('series: must be a list of series names')
 
 
