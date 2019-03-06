@@ -58,11 +58,12 @@ parts:
     after: [charmstore-client, charm-tools]
     plugin: dump
     source: .
+    build-packages:
+      - python-pip
     override-build: |
-      charmtools=../../charm-tools/src
-      charmstore=../../charmstore-client/src
-      $charmtools/charmtools/git_version.py $charmtools --format=json > $SNAPCRAFT_PART_INSTALL/charm-tools-version
-      $charmtools/charmtools/git_version.py $charmstore --format=json > $SNAPCRAFT_PART_INSTALL/charmstore-client-version
+      pip install vergit
+      vergit --format=json ../../charm-tools/src > $SNAPCRAFT_PART_INSTALL/charm-tools-version
+      vergit --format=json ../../charmstore-client/src > $SNAPCRAFT_PART_INSTALL/charmstore-client-version
     stage:
       - charm-tools-version
       - charmstore-client-version
