@@ -1,6 +1,5 @@
 name: charm
-version: git
-version-script: charmtools/git_version.py
+adopt-info: charm-tools
 summary: charm and charm-tools
 description: charmstore-client and charm-tools
 confinement: classic
@@ -19,6 +18,11 @@ parts:
     go-importpath: github.com/juju/charmstore-client
     build-packages:
       - bzr
+      - python-pip
+    override-build: |
+      snapcraftctl build
+      pip install vergit
+      vergit --format=json > $SNAPCRAFT_PART_INSTALL/charmstore-client-version
   bhttp:
     plugin: godeps
     build-attributes: ['no-patchelf']
@@ -38,7 +42,19 @@ parts:
       - libffi-dev
       - python3
       - python3-setuptools
+    override-build: |
+      snapcraftctl build
+      vergit --format=json > $SNAPCRAFT_PART_INSTALL/charm-tools-version
+      snapcraftctl set-version $(vergit)
+      # ensure we don't accidentally pick up system py2
+      ln -s python3 $SNAPCRAFT_PART_INSTALL/usr/bin/python
+      # copy our wrappers into the right place; note: we cannot use organize,
+      # because it will break things (see forum link below)
+      cp -R helpers/snap-wrappers $SNAPCRAFT_PART_INSTALL/bin/wrappers
     stage:
+      # IMPORTANT! Only specify excludes here! Includes will break things!
+      # See: https://forum.snapcraft.io/t/python-classic-snap-confusion-frustration-core18-entry-point-scripts-organize-stage-prime-override-build/10317
+      # exclude unnecessary docs
       - -usr/share/doc*
       - -usr/share/lintian
       - -usr/share/git-web
@@ -47,31 +63,10 @@ parts:
       - -usr/share/pixmaps
       # exclude the embedded pip, so we can replace it
       - -lib/python*/site-packages/virtualenv_support/pip-*.whl
-    # Work around python plugin forcibly excluding pip bins, even if they're
-    # explicitly added to stage.  Also forcibly update the pip embedded in
-    # virtualenv to get the lsb_release fix that was released with pip 10.
     override-prime: |
       snapcraftctl prime
+      # Work around python plugin forcibly excluding pip bins, even if they're
+      # explicitly added to stage.  Also forcibly update the pip embedded in
+      # virtualenv to get the lsb_release fix that was released with pip 10.
       cp $SNAPCRAFT_PART_INSTALL/bin/pip* bin/
       pip download pip -d lib/python*/site-packages/virtualenv_support/
-  versions:
-    after: [charmstore-client, charm-tools]
-    plugin: dump
-    source: .
-    build-packages:
-      - python-pip
-    override-build: |
-      pip install vergit
-      vergit --format=json ../../charm-tools/src > $SNAPCRAFT_PART_INSTALL/charm-tools-version
-      vergit --format=json ../../charmstore-client/src > $SNAPCRAFT_PART_INSTALL/charmstore-client-version
-    stage:
-      - charm-tools-version
-      - charmstore-client-version
-    prime:
-      - charm-tools-version
-      - charmstore-client-version
-  wrappers:
-    plugin: dump
-    source: helpers/snap-wrappers/
-    organize:
-      '*': bin/wrappers/

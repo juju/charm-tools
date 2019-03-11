@@ -12,9 +12,7 @@ from setuptools import setup, find_packages
 
 curdir = os.path.dirname(__file__)
 version_cache = os.path.join(curdir, 'charmtools', 'VERSION')
-version_script = os.path.join(curdir, 'charmtools', 'git_version.py')
-version_raw = subprocess.check_output([sys.executable, version_script,
-                                       '--format=json']).strip()
+version_raw = subprocess.check_output(['vergit', '--format=json']).strip()
 if sys.version_info >= (3, 0):
     version_raw = version_raw.decode('UTF-8')
 version = json.loads(version_raw)['version']
