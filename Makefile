@@ -58,7 +58,7 @@ install:
 	cp -rf helpers/* $(helperdir)
 
 pypi: clean
-	python setup.py sdist upload
+	tox -e pypi
 
 integration: build
 	tests_functional/helpers/helpers.sh || sh -x tests_functional/helpers/helpers.sh timeout

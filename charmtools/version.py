@@ -9,7 +9,7 @@ from pkg_resources import resource_string, resource_exists
 
 from charmtools.cli import parser_defaults
 from charmtools import utils
-from charmtools.git_version import format_version
+from vergit import format_version
 
 
 def get_args(args=None):
