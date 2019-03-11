@@ -19,6 +19,7 @@ parts:
     build-packages:
       - bzr
       - python-pip
+      - python-setuptools
     override-build: |
       snapcraftctl build
       pip install vergit
