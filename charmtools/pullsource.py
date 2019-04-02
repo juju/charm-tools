@@ -196,6 +196,15 @@ def download_item(item, dir_):
     print('Downloaded {} to {}'.format(item, final_dest_dir))
 
 
+def set_layer_index(layer_index_url):
+    """Override the default layer index url used by fetchers.
+
+    """
+    for f in FETCHERS:
+        if hasattr(f, "LAYER_INDEX"):
+            f.LAYER_INDEX = layer_index_url
+
+
 def setup_parser():
     parser = argparse.ArgumentParser(
         prog='charm pull-source',
@@ -216,6 +225,10 @@ def setup_parser():
         help='Show verbose output',
         action='store_true', default=False,
     )
+    parser.add_argument(
+        '--layer-index',
+        help='URL of the layer index to use (default: https://juju.github.io/layer-index)',
+    )
     utils.add_plugin_description(parser)
 
     return parser
@@ -235,6 +248,9 @@ def main():
             format='%(levelname)s: %(message)s',
             level=logging.WARN,
         )
+
+    if args.layer_index:
+        set_layer_index(args.layer_index)
 
     return download_item(args.item, args.dir)
 
