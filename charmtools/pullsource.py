@@ -255,7 +255,10 @@ def main():
         )
 
     fetchers.LayerFetcher.NO_LOCAL_LAYERS = True
-    fetchers.LayerFetcher.LAYER_INDEX = args.layer_index
+    if args.layer_index:
+        fetchers.LayerFetcher.LAYER_INDEXES = [args.layer_index]
+    if args.fallback_layer_index:
+        fetchers.LayerFetcher.LAYER_INDEXES.append(args.fallback_layer_index)
 
     return download_item(args)
 
