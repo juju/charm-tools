@@ -34,7 +34,7 @@ fetchers.FETCHERS.insert(0, RepoFetcher)
 
 
 class LayerFetcher(fetchers.LocalFetcher):
-    LAYER_INDEX = "https://juju.github.io/layer-index/"
+    LAYER_INDEXES = ["https://juju.github.io/layer-index/"]
     NO_LOCAL_LAYERS = False
     NAMESPACE = "layer"
     ENVIRON = "CHARM_LAYERS_DIR"
@@ -68,27 +68,28 @@ class LayerFetcher(fetchers.LocalFetcher):
             if name.startswith(cls.OPTIONAL_PREFIX):
                 choices.append(name[len(cls.OPTIONAL_PREFIX):])
             for choice in choices:
-                uri = "%s%s/%s.json" % (
-                    cls.LAYER_INDEX, cls.ENDPOINT, choice)
-                log.debug('Checking layer index: {}'.format(uri))
-                if uri.startswith('file://'):
-                    choice_path = path(uri[7:])
-                    if not choice_path.exists():
-                        continue
-                    result = json.loads(choice_path.text())
-                    if not result.get('repo'):
-                        continue
-                    log.debug('Found repo: {}'.format(result['repo']))
-                    return result
-                try:
-                    result = requests.get(uri)
-                except Exception:
-                    result = None
-                if result and result.ok:
-                    result = result.json()
-                    if result.get("repo"):
+                for layer_index in cls.LAYER_INDEXES:
+                    uri = "%s%s/%s.json" % (
+                        layer_index, cls.ENDPOINT, choice)
+                    log.debug('Checking layer index: {}'.format(uri))
+                    if uri.startswith('file://'):
+                        choice_path = path(uri[7:])
+                        if not choice_path.exists():
+                            continue
+                        result = json.loads(choice_path.text())
+                        if not result.get('repo'):
+                            continue
                         log.debug('Found repo: {}'.format(result['repo']))
                         return result
+                    try:
+                        result = requests.get(uri)
+                    except Exception:
+                        result = None
+                    if result and result.ok:
+                        result = result.json()
+                        if result.get("repo"):
+                            log.debug('Found repo: {}'.format(result['repo']))
+                            return result
             return {}
 
     def target(self, dir_):
@@ -120,7 +121,7 @@ class LayerFetcher(fetchers.LocalFetcher):
 
     def fetch(self, dir_):
         if hasattr(self, "path"):
-            return super(InterfaceFetcher, self).fetch(dir_)
+            return super(LayerFetcher, self).fetch(dir_)
         elif hasattr(self, "repo"):
             f, target = self._get_repo_fetcher_and_target(self.repo, dir_)
             res = f.fetch(dir_)

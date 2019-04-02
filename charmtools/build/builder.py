@@ -883,7 +883,12 @@ def main(args=None):
     parser.add_argument('--interface-service',
                         help="Deprecated: use --layer-index")
     parser.add_argument('--layer-index',
-                        default=LayerFetcher.LAYER_INDEX)
+                        help='URL of main index to use to look up layers '
+                             '(default: {})'.format(
+                                 LayerFetcher.LAYER_INDEXES[0]))
+    parser.add_argument('--fallback-layer-index',
+                        help='URL of index to use to look up layers '
+                             'not found in main layer index')
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
@@ -897,6 +902,8 @@ def main(args=None):
                              "for the built wheelhouse")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help="Increase output (same as -l DEBUG)")
+    parser.add_argument('--debug', action='store_true',
+                        help='Same as --log-level=DEBUG')
     parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
     parser.add_argument('charm', nargs="?", default=".", type=path,
@@ -909,12 +916,15 @@ def main(args=None):
         parser.print_help()
         raise SystemExit(0)
 
-    if build.verbose:
+    if build.verbose or build.debug:
         build.log_level = logging.DEBUG
 
     # Monkey patch in the domain for the interface webservice
     layer_index = build.interface_service or build.layer_index
-    LayerFetcher.LAYER_INDEX = layer_index
+    if layer_index:
+        LayerFetcher.LAYER_INDEXES = [layer_index]
+    if build.fallback_layer_index:
+        LayerFetcher.LAYER_INDEXES.append(build.fallback_layer_index)
 
     LayerFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 

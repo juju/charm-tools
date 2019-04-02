@@ -25,13 +25,13 @@ class TestBuild(unittest.TestCase):
         os.environ.pop("JUJU_REPOSITORY", None)
         os.environ.pop("LAYER_PATH", None)
         os.environ.pop("INTERFACE_PATH", None)
-        ifd = build.fetchers.LayerFetcher.LAYER_INDEX
+        layer_indexes = build.fetchers.LayerFetcher.LAYER_INDEXES
         self.p_post = mock.patch('requests.post')
         self.p_post.start()
-        # preserve the layer index between tests
+        # preserve the layer indexes between tests
         self.p_layer_index = mock.patch('charmtools.build.fetchers.'
-                                        'LayerFetcher.LAYER_INDEX',
-                                        ifd)
+                                        'LayerFetcher.LAYER_INDEXES',
+                                        layer_indexes)
         self.p_layer_index.start()
 
     def tearDown(self):

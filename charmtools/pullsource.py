@@ -36,9 +36,9 @@ archive will be downloaded and extracted from the charm store.
 If a download directory is not specified, the following environment vars
 will be used to determine the download location:
 
- - For charms, $JUJU_REPOSITORY
- - For layers, $LAYER_PATH
- - For interfaces, $INTERFACE_PATH
+ - For charms, $CHARM_BUILD_DIR/../charms or $JUJU_REPOSITORY (deprecated)
+ - For layers, $CHARM_LAYERS_DIR or $LAYER_PATH (deprecated)
+ - For interfaces, $CHARM_INTERFACES_DIR or $INTERFACE_PATH (deprecated)
 
 If a download location can not be determined from environment variables,
 the current working directory will be used.
@@ -69,9 +69,20 @@ from charmtools.fetchers import (
 
 log = logging.getLogger(__name__)
 
-LAYER_PREFIX = 'layer:'
-INTERFACE_PREFIX = 'interface:'
+LAYER_PREFIX = fetchers.LayerFetcher.NAMESPACE + ':'
+INTERFACE_PREFIX = fetchers.InterfaceFetcher.NAMESPACE + ':'
 CHARM_PREFIX = 'cs:'
+CHARM_LAYERS_DIR = os.environ.get(
+    fetchers.LayerFetcher.ENVIRON,
+    os.environ.get(fetchers.LayerFetcher.OLD_ENVIRON))
+CHARM_INTERFACES_DIR = os.environ.get(
+    fetchers.InterfaceFetcher.ENVIRON,
+    os.environ.get(fetchers.InterfaceFetcher.OLD_ENVIRON))
+if 'CHARM_BUILD_DIR' in os.environ:
+    CHARM_CHARMS_DIR = os.path.join(
+        os.path.dirname(os.environ['CHARM_BUILD_DIR']), 'charms')
+else:
+    CHARM_CHARMS_DIR = os.environ.get('JUJU_REPOSITORY')
 
 ERR_DIR_EXISTS = "Aborting, destination directory exists"
 
@@ -139,21 +150,21 @@ class CharmstoreLayerDownloader(CharmstoreRepoDownloader):
 FETCHERS.insert(0, CharmstoreLayerDownloader)
 
 
-def download_item(item, dir_):
+def download_item(args):
     series_dir = None
 
-    if item.startswith(LAYER_PREFIX):
-        dir_ = dir_ or os.environ.get('LAYER_PATH')
-        name = item[len(LAYER_PREFIX):]
-    elif item.startswith(INTERFACE_PREFIX):
-        dir_ = dir_ or os.environ.get('INTERFACE_PATH')
-        name = item[len(INTERFACE_PREFIX):]
+    if args.item.startswith(LAYER_PREFIX):
+        dir_ = args.dir or CHARM_LAYERS_DIR
+        name = args.item[len(LAYER_PREFIX):]
+    elif args.item.startswith(INTERFACE_PREFIX):
+        dir_ = args.dir or CHARM_INTERFACES_DIR
+        name = args.item[len(INTERFACE_PREFIX):]
     else:
-        dir_ = dir_ or os.environ.get('JUJU_REPOSITORY')
-        if not item.startswith(CHARM_PREFIX):
-            item = CHARM_PREFIX + item
+        dir_ = args.dir or CHARM_CHARMS_DIR
+        if not args.item.startswith(CHARM_PREFIX):
+            args.item = CHARM_PREFIX + args.item
 
-        url_parts = item[len(CHARM_PREFIX):].split('/')
+        url_parts = args.item[len(CHARM_PREFIX):].split('/')
         name = url_parts[-1]
         if len(url_parts) == 2 and not url_parts[0].startswith('~'):
             series_dir = url_parts[0]
@@ -185,15 +196,15 @@ def download_item(item, dir_):
     atexit.register(shutil.rmtree, tempdir)
     try:
         # Download the item
-        fetcher = fetchers.get_fetcher(item)
+        fetcher = fetchers.get_fetcher(args.item)
         download_dir = fetcher.fetch(tempdir)
     except fetchers.FetchError:
-        print("Can't find source for {}".format(item))
+        print("Can't find source for {}".format(args.item))
         return 1
 
     # Copy download dir to final destination dir
     shutil.copytree(download_dir, final_dest_dir, symlinks=True)
-    print('Downloaded {} to {}'.format(item, final_dest_dir))
+    print('Downloaded {} to {}'.format(args.item, final_dest_dir))
 
 
 def setup_parser():
@@ -211,6 +222,13 @@ def setup_parser():
         'dir', nargs='?',
         help='Directory in which to place the downloaded source.',
     )
+    parser.add_argument('--layer-index',
+                        help='URL of main index to use to look up layers '
+                             '(default: {})'.format(
+                                 fetchers.LayerFetcher.LAYER_INDEXES[0]))
+    parser.add_argument('--fallback-layer-index',
+                        help='URL of index to use to look up layers '
+                             'not found in main layer index')
     parser.add_argument(
         '-v', '--verbose',
         help='Show verbose output',
@@ -236,7 +254,10 @@ def main():
             level=logging.WARN,
         )
 
-    return download_item(args.item, args.dir)
+    fetchers.LayerFetcher.NO_LOCAL_LAYERS = True
+    fetchers.LayerFetcher.LAYER_INDEX = args.layer_index
+
+    return download_item(args)
 
 
 if __name__ == "__main__":

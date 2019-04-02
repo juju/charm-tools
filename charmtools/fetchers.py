@@ -349,7 +349,7 @@ def check_output(cmd, **kw):
         raise FetchError(msg)
     out, _ = p.communicate()
     if p.returncode != 0:
-        raise FetchError(out)
+        raise FetchError(out.decode('utf8'))
     log.debug('%s: %s', cmd, out)
     return out
 
