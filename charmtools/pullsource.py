@@ -222,13 +222,14 @@ def setup_parser():
         'dir', nargs='?',
         help='Directory in which to place the downloaded source.',
     )
-    parser.add_argument('--layer-index',
-                        help='URL of main index to use to look up layers '
-                             '(default: {})'.format(
-                                 fetchers.LayerFetcher.LAYER_INDEXES[0]))
-    parser.add_argument('--fallback-layer-index',
-                        help='URL of index to use to look up layers '
-                             'not found in main layer index')
+    parser.add_argument(
+        '-i', '--layer-index',
+        help='One or more index URLs use to look up layers, '
+             'separated by commas. Can include the token '
+             'DEFAULT, which will be replaced by the default '
+             'index{}: {}'.format(
+                 'es' if len(fetchers.LayerFetcher.LAYER_INDEXES) > 1 else '',
+                 ','.join(fetchers.LayerFetcher.LAYER_INDEXES)))
     parser.add_argument(
         '-v', '--verbose',
         help='Show verbose output',
@@ -255,10 +256,7 @@ def main():
         )
 
     fetchers.LayerFetcher.NO_LOCAL_LAYERS = True
-    if args.layer_index:
-        fetchers.LayerFetcher.LAYER_INDEXES = [args.layer_index]
-    if args.fallback_layer_index:
-        fetchers.LayerFetcher.LAYER_INDEXES.append(args.fallback_layer_index)
+    fetchers.LayerFetcher.set_layer_indexes(args.layer_index)
 
     return download_item(args)
 

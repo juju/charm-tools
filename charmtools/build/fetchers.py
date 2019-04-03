@@ -34,13 +34,32 @@ fetchers.FETCHERS.insert(0, RepoFetcher)
 
 
 class LayerFetcher(fetchers.LocalFetcher):
-    LAYER_INDEXES = ["https://juju.github.io/layer-index/"]
+    _DEFAULT_LAYER_INDEXES = ["https://juju.github.io/layer-index/"]
+    LAYER_INDEXES = _DEFAULT_LAYER_INDEXES
     NO_LOCAL_LAYERS = False
     NAMESPACE = "layer"
     ENVIRON = "CHARM_LAYERS_DIR"
     OLD_ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"
     ENDPOINT = "layers"
+
+    @classmethod
+    def set_layer_indexes(cls, layer_indexes):
+        if not layer_indexes:
+            return
+        if isinstance(layer_indexes, str):
+            layer_indexes = layer_indexes.split(',')
+        new_indexes = []
+        for layer_index in layer_indexes:
+            if layer_index == 'DEFAULT':
+                new_indexes.extend(cls.LAYER_INDEXES)
+            else:
+                new_indexes.append(layer_index)
+        cls.LAYER_INDEXES = new_indexes
+
+    @classmethod
+    def restore_layer_indexes(cls):
+        cls.LAYER_INDEXES = cls._DEFAULT_LAYER_INDEXES
 
     @classmethod
     def can_fetch(cls, url):

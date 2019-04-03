@@ -882,13 +882,14 @@ def main(args=None):
                         action="store_true")
     parser.add_argument('--interface-service',
                         help="Deprecated: use --layer-index")
-    parser.add_argument('--layer-index',
-                        help='URL of main index to use to look up layers '
-                             '(default: {})'.format(
-                                 LayerFetcher.LAYER_INDEXES[0]))
-    parser.add_argument('--fallback-layer-index',
-                        help='URL of index to use to look up layers '
-                             'not found in main layer index')
+    parser.add_argument('-i', '--layer-index',
+                        help='One or more index URLs use to look up layers, '
+                             'separated by commas. Can include the token '
+                             'DEFAULT, which will be replaced by the default '
+                             'index{}: {}'.format(
+                                 'es' if len(LayerFetcher.LAYER_INDEXES) > 1
+                                 else '',
+                                 ','.join(LayerFetcher.LAYER_INDEXES)))
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
@@ -919,13 +920,8 @@ def main(args=None):
     if build.verbose or build.debug:
         build.log_level = logging.DEBUG
 
-    # Monkey patch in the domain for the interface webservice
-    layer_index = build.interface_service or build.layer_index
-    if layer_index:
-        LayerFetcher.LAYER_INDEXES = [layer_index]
-    if build.fallback_layer_index:
-        LayerFetcher.LAYER_INDEXES.append(build.fallback_layer_index)
-
+    LayerFetcher.set_layer_indexes(build.interface_service or
+                                   build.layer_index)
     LayerFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 
     configLogging(build)

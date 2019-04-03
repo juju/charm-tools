@@ -25,19 +25,13 @@ class TestBuild(unittest.TestCase):
         os.environ.pop("JUJU_REPOSITORY", None)
         os.environ.pop("LAYER_PATH", None)
         os.environ.pop("INTERFACE_PATH", None)
-        layer_indexes = build.fetchers.LayerFetcher.LAYER_INDEXES
         self.p_post = mock.patch('requests.post')
         self.p_post.start()
-        # preserve the layer indexes between tests
-        self.p_layer_index = mock.patch('charmtools.build.fetchers.'
-                                        'LayerFetcher.LAYER_INDEXES',
-                                        layer_indexes)
-        self.p_layer_index.start()
 
     def tearDown(self):
         self.build_dir.rmtree_p()
         self.p_post.stop()
-        self.p_layer_index.stop()
+        build.fetchers.LayerFetcher.restore_layer_indexes()
 
     def test_default_no_hide_metrics(self):
         # In the absence of environment variables or command-line options,
