@@ -52,7 +52,7 @@ class LayerFetcher(fetchers.LocalFetcher):
         new_indexes = []
         for layer_index in layer_indexes:
             if layer_index == 'DEFAULT':
-                new_indexes.extend(cls.LAYER_INDEXES)
+                new_indexes.extend(cls._DEFAULT_LAYER_INDEXES)
             else:
                 new_indexes.append(layer_index)
         cls.LAYER_INDEXES = new_indexes

@@ -224,10 +224,10 @@ def setup_parser():
     )
     parser.add_argument(
         '-i', '--layer-index',
-        help='One or more index URLs use to look up layers, '
+        help='One or more index URLs used to look up layers, '
              'separated by commas. Can include the token '
              'DEFAULT, which will be replaced by the default '
-             'index{}: {}'.format(
+             'index{} ({}).  E.g.: https://my-site.com/index/,DEFAULT'.format(
                  'es' if len(fetchers.LayerFetcher.LAYER_INDEXES) > 1 else '',
                  ','.join(fetchers.LayerFetcher.LAYER_INDEXES)))
     parser.add_argument(
