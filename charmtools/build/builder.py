@@ -882,8 +882,15 @@ def main(args=None):
                         action="store_true")
     parser.add_argument('--interface-service',
                         help="Deprecated: use --layer-index")
-    parser.add_argument('--layer-index',
-                        default=LayerFetcher.LAYER_INDEX)
+    parser.add_argument('-i', '--layer-index',
+                        help='One or more index URLs used to look up layers, '
+                             'separated by commas. Can include the token '
+                             'DEFAULT, which will be replaced by the default '
+                             'index{} ({}).  E.g.: '
+                             'https://my-site.com/index/,DEFAULT'.format(
+                                 'es' if len(LayerFetcher.LAYER_INDEXES) > 1
+                                 else '',
+                                 ','.join(LayerFetcher.LAYER_INDEXES)))
     parser.add_argument('--no-local-layers', action="store_true",
                         help="Don't use local layers when building. "
                         "Forces included layers to be downloaded "
@@ -897,6 +904,8 @@ def main(args=None):
                              "for the built wheelhouse")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help="Increase output (same as -l DEBUG)")
+    parser.add_argument('--debug', action='store_true',
+                        help='Same as --log-level=DEBUG')
     parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
     parser.add_argument('charm', nargs="?", default=".", type=path,
@@ -909,13 +918,11 @@ def main(args=None):
         parser.print_help()
         raise SystemExit(0)
 
-    if build.verbose:
+    if build.verbose or build.debug:
         build.log_level = logging.DEBUG
 
-    # Monkey patch in the domain for the interface webservice
-    layer_index = build.interface_service or build.layer_index
-    LayerFetcher.LAYER_INDEX = layer_index
-
+    LayerFetcher.set_layer_indexes(build.interface_service or
+                                   build.layer_index)
     LayerFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 
     configLogging(build)
