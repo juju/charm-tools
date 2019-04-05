@@ -95,7 +95,12 @@ class LayerFetcher(fetchers.LocalFetcher):
                         choice_path = path(uri[7:])
                         if not choice_path.exists():
                             continue
-                        result = json.loads(choice_path.text())
+                        try:
+                            result = json.loads(choice_path.text())
+                        except json.JSONDecodeError as e:
+                            log.error('Unable to parse index entry for {}: '
+                                      '{}'.format(url, e))
+                            continue
                         if not result.get('repo'):
                             continue
                         log.debug('Found repo: {}'.format(result['repo']))
