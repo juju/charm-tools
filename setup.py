@@ -12,10 +12,13 @@ from setuptools import setup, find_packages
 
 curdir = os.path.dirname(__file__)
 version_cache = os.path.join(curdir, 'charmtools', 'VERSION')
-version_raw = subprocess.check_output(['vergit', '--format=json']).strip()
-if sys.version_info >= (3, 0):
-    version_raw = version_raw.decode('UTF-8')
-version = json.loads(version_raw)['version']
+try:
+    version_raw = subprocess.check_output(['vergit', '--format=json']).strip()
+    if sys.version_info >= (3, 0):
+        version_raw = version_raw.decode('UTF-8')
+    version = json.loads(version_raw)['version']
+except Exception:
+    version = 'unknown'
 if version == 'unknown':
     # during install; use cached VERSION
     with open(version_cache, 'r') as fh:
