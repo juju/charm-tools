@@ -21,9 +21,12 @@ except Exception:
     version = 'unknown'
 if version == 'unknown':
     # during install; use cached VERSION
-    with open(version_cache, 'r') as fh:
-        version_raw = fh.read()
-    version = json.loads(version_raw)['version']
+    try:
+        with open(version_cache, 'r') as fh:
+            version_raw = fh.read()
+        version = json.loads(version_raw)['version']
+    except Exception:
+        version = None
 else:
     # during build; update cached VERSION
     with open(version_cache, 'w') as fh:
