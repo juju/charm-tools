@@ -12,7 +12,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import pwd
 from contextlib import contextmanager
 
 from .diff_match_patch import diff_match_patch
@@ -372,13 +371,13 @@ def sign(pathobj):
     return hashlib.sha256(p.bytes()).hexdigest()
 
 
-def delta_signatures(manifest_filename):
+def delta_signatures(manifest_filename, ignore=None):
     md = path(manifest_filename)
     repo = md.normpath().dirname()
 
     expected = json.load(md.open())
     current = {}
-    for rel, sig in walk(repo, sign):
+    for rel, sig in walk(repo, sign, ignore_matcher(ignore or [])):
         rel = rel.relpath(repo)
         current[rel] = sig
     add, change, delete = set(), set(), set()
@@ -450,8 +449,8 @@ class _O(dict):
 
 
 REACTIVE_PATTERNS = [
-    re.compile("\s*@when"),
-    re.compile(".set_state\(")
+    re.compile(r"\s*@when"),
+    re.compile(r".set_state\(")
 ]
 
 
@@ -613,7 +612,8 @@ def validate_display_name(entity, linter):
         which info/warning/error messages will be written
     """
     if 'display-name' not in entity:
-        linter.info('`display-name` not provided, add for custom naming in the UI')
+        linter.info('`display-name` not provided, '
+                    'add for custom naming in the UI')
         return
 
     # Keep display name in sync with the juju/names package.
@@ -622,5 +622,6 @@ def validate_display_name(entity, linter):
         r'^[A-Za-z0-9]+( [-A-Za-z0-9_]|[-A-Za-z0-9_])*$',
         entity['display-name'])
     if not match:
-        linter.err('display-name: not in valid format. Only letters, numbers, dashes, and hyphens are permitted.')
+        linter.err('display-name: not in valid format. '
+                   'Only letters, numbers, dashes, and hyphens are permitted.')
         return
