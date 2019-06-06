@@ -20,7 +20,7 @@ from collections import OrderedDict
 from charmtools import (utils, repofinder, proof)
 from charmtools.build import inspector
 from charmtools.build.errors import BuildError
-from charmtools.build.config import BuildConfig
+from charmtools.build.config import BuildConfig, DEFAULT_IGNORES
 from charmtools.build.tactics import Tactic, WheelhouseTactic
 from charmtools.build.fetchers import (
     InterfaceFetcher,
@@ -607,7 +607,7 @@ class Builder(object):
 
         if not self.manifest.exists():
             return [], [], []
-        a, c, d = utils.delta_signatures(self.manifest)
+        a, c, d = utils.delta_signatures(self.manifest, ignore=DEFAULT_IGNORES)
 
         for f in a:
             log.warn("Conflict: File in destination directory "

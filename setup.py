@@ -60,6 +60,7 @@ setup(
         'jsonschema<=2.5.1',
         'secretstorage<2.4',
         'dict2colander==0.2',
+        'vergit>=1.0.0,<2.0.0',
     ],
     include_package_data=True,
     maintainer='Cory Johns',

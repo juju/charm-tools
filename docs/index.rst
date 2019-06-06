@@ -33,6 +33,15 @@ the command-line with:
    tactics
 
 
+.. toctree::
+   :caption: Project
+   :glob:
+   :maxdepth: 3
+
+   contributing
+   changelog
+
+
 
 Indices and tables
 ==================
