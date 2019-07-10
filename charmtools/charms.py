@@ -196,7 +196,7 @@ class CharmLinter(Linter):
             return
 
         for option_name, option_value in options.items():
-            if not re.match(r'^[a-z0-9]+[\w-]+[a-z0-9]+$', option_name,
+            if not re.match(r'^[a-z0-9]+(?:[\w-]*[a-z0-9]+)?$', option_name,
                             flags=re.IGNORECASE):
                 self.err('config.yaml: %s does not conform to naming pattern'
                          % option_name)
