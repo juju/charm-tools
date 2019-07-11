@@ -1,6 +1,18 @@
 Changelog
 =========
 
+charm-tools 2.6.1 + charmstore-client 2.4.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thursday July 11 2019
+
+**charm-tools**
+
+* Remove bad URL from PR template (#537)
+* Update pypi release target to work with newer tox (#530)
+* requirements.txt: update version limit for requests (#535) (#536)
+* Fix config key regexp to allow short config keys. (#534)
+
+
 charm-tools 2.6.0 + charmstore-client 2.4.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Thursday June 6 2019
