@@ -48,6 +48,8 @@ def cached_charmstore_client_version():
             if v.is_installed:
                 charm_ver = v.version
                 break
+        else:
+            charm_ver = 'unavailable'
     except ImportError:
         charm_ver = 'unavailable'
     except:
