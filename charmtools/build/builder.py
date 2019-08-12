@@ -647,6 +647,7 @@ class Builder(object):
         self.validate()
         self.find_or_create_target()
         self.generate()
+        self.cleanup()
 
     def inspect(self):
         self.charm = path(self.charm).abspath()
@@ -749,6 +750,11 @@ class Builder(object):
                     log.info(' {} {}'.format(sigil, filename))
         else:
             log.info('No new changes; no files were modified.')
+
+    def cleanup(self):
+        for cached_layer in self.cache_dir.glob('*/*'):
+            log.debug('Cleaning up {}'.format(cached_layer))
+            cached_layer.rmtree_p()
 
 
 def configLogging(build):

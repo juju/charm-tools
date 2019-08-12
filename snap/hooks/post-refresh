@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# clean up orphaned cache directories which take up unused space
+rm -rf /home/*/.cache/charm/*

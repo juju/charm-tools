@@ -456,18 +456,26 @@ REACTIVE_PATTERNS = [
 
 def delta_python(orig, dest, patterns=REACTIVE_PATTERNS, context=2):
     """Delta two python files looking for certain patterns"""
-    if isinstance(orig, path):
-        od = orig.text()
-    elif hasattr(orig, 'read'):
-        od = orig.read()
-    else:
-        raise TypeError("Expected path() or file(), got %s" % type(orig))
-    if isinstance(dest, path):
-        dd = dest.text()
-    elif hasattr(orig, 'read'):
-        dd = dest.read()
-    else:
-        raise TypeError("Expected path() or file(), got %s" % type(dest))
+    try:
+        if isinstance(orig, path):
+            od = orig.text()
+        elif hasattr(orig, 'read'):
+            od = orig.read()
+        else:
+            raise TypeError("Expected path() or file(), got %s" % type(orig))
+    except Exception:
+        log.error('Error reading {}'.format(orig))
+        raise
+    try:
+        if isinstance(dest, path):
+            dd = dest.text()
+        elif hasattr(orig, 'read'):
+            dd = dest.read()
+        else:
+            raise TypeError("Expected path() or file(), got %s" % type(dest))
+    except Exception:
+        log.error('Error reading {}'.format(dest))
+        raise
 
     differ = diff_match_patch()
     linect = 0
