@@ -856,7 +856,7 @@ def main(args=None):
                                  "interface layers"),
         ("CHARM_BUILD_DIR", "Build charms will be placed into "
                             "$CHARM_BUILD_DIR/{charm_name} "
-                            "(defaults to current directory)"),
+                            "(defaults to /tmp/charm-builds/)"),
         ("JUJU_REPOSITORY", "Deprecated: If CHARM_BUILD_DIR is not set but "
                             "this is, built charms will be placed into "
                             "$JUJU_REPOSITORY/builds/{charm_name}"),
