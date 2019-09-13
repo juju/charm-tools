@@ -17,7 +17,7 @@ import dict2colander
 from charmtools.linter import Linter
 from charmtools.utils import validate_display_name
 
-KNOWN_METADATA_KEYS = [
+KNOWN_METADATA_KEYS = (
     'name',
     'display-name',
     'summary',
@@ -39,16 +39,17 @@ KNOWN_METADATA_KEYS = [
     'terms',
     'resources',
     'devices',
-]
+    'deployment',
+)
 
-REQUIRED_METADATA_KEYS = [
+REQUIRED_METADATA_KEYS = (
     'name',
     'summary',
-]
+)
 
-KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
+KNOWN_RELATION_KEYS = ('interface', 'scope', 'limit', 'optional')
 
-KNOWN_SCOPES = ['global', 'container']
+KNOWN_SCOPES = ('global', 'container')
 
 TEMPLATE_PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -331,6 +332,7 @@ class Charm(object):
             validate_payloads(charm, lint, proof_extensions.get('payloads'))
             validate_terms(charm, lint)
             validate_resources(charm, lint, proof_extensions.get('resources'))
+            validate_deployment(charm, lint)
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -699,6 +701,35 @@ def validate_resources(charm, linter, proof_extensions=None):
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('resources.{}: {}'.format(k, v))
+
+
+def validate_deployment(charm, linter):
+    """Validate deployment in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    if 'deployment' not in charm:
+        return
+
+    deployment = charm['deployment']
+    if not isinstance(deployment, dict):
+        linter.err('deployment: must be a dict of config')
+    
+    known_field_types = {
+        'type': str,
+        'service': str,
+        'daemonset': bool,
+        'min-version': str,
+    }
+    for k, v in deployment.items():
+        field_type = known_field_types.get(k, None)
+        if field_type is None:
+            linter.err('deployment.{} is not supported'.format(k))
+        elif not isinstance(v, field_type):
+            linter.err('deployment.{} must be {} but got {}'.format(k, field_type, type(v)))
 
 
 def validate_extra_bindings(charm, linter):
