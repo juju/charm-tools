@@ -43,6 +43,7 @@ from charmtools.charms import validate_payloads  # noqa
 from charmtools.charms import validate_actions  # noqa
 from charmtools.charms import validate_terms  # noqa
 from charmtools.charms import validate_resources  # noqa
+from charmtools.charms import validate_deployment  # noqa
 
 
 class TestCharmProof(TestCase):
@@ -812,6 +813,121 @@ class StorageValidationTest(TestCase):
         ]
         validate_storage(charm, linter, extensions)
         self.assertEqual(linter.err.call_args_list, [])
+
+
+
+class DeploymentValidationTest(TestCase):
+    def test_deployment(self):
+        """Charm has valid deployment."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': "1.15",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_invalid_deployment(self):
+        """Charm has invalid deployment."""
+        linter = Mock()
+        charm = {
+            'deployment': [],
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('deployment: must be a dict of config'),
+        ], any_order=True)
+
+    def test_deployment_unsupported_field(self):
+        """Charm has the invalid deployment field."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': "1.15",
+                'unknow-field': 'xxx',
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('deployment.unknow-field is not supported'),
+        ], any_order=True)
+
+    def test_deployment_invalid_type(self):
+        """Charm has the invalid deployment type."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': True,
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': "1.15",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call("deployment.type must be str but got bool"),
+        ], any_order=True)
+
+    def test_deployment_invalid_service(self):
+        """Charm has the invalid deployment service."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 1,
+                'daemonset': True,
+                'min-version': "1.15",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call("deployment.service must be str but got int"),
+        ], any_order=True)
+
+    def test_deployment_invalid_daemonset(self):
+        """Charm has the invalid deployment daemonset."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': 'True',
+                'min-version': "1.15",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call("deployment.daemonset must be bool but got str"),
+        ], any_order=True)
+
+    def test_deployment_invalid_min_version(self):
+        """Charm has the invalid deployment min-version."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': 1.15,
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call("deployment.min-version must be str but got float"),
+        ], any_order=True)
 
 
 class ResourcesValidationTest(TestCase):

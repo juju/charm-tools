@@ -717,6 +717,7 @@ def validate_deployment(charm, linter):
     deployment = charm['deployment']
     if not isinstance(deployment, dict):
         linter.err('deployment: must be a dict of config')
+        return
     
     known_field_types = {
         'type': str,
@@ -729,7 +730,7 @@ def validate_deployment(charm, linter):
         if field_type is None:
             linter.err('deployment.{} is not supported'.format(k))
         elif not isinstance(v, field_type):
-            linter.err('deployment.{} must be {} but got {}'.format(k, field_type, type(v)))
+            linter.err('deployment.{} must be {} but got {}'.format(k, field_type.__name__, type(v).__name__))
 
 
 def validate_extra_bindings(charm, linter):
