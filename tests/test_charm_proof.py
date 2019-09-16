@@ -815,7 +815,6 @@ class StorageValidationTest(TestCase):
         self.assertEqual(linter.err.call_args_list, [])
 
 
-
 class DeploymentValidationTest(TestCase):
     def test_deployment(self):
         """Charm has valid deployment."""
@@ -825,7 +824,7 @@ class DeploymentValidationTest(TestCase):
                 'type': 'stateful',
                 'service': 'omit',
                 'daemonset': True,
-                'min-version': "1.15",
+                'min-version': "1.15.0",
             }
         }
         validate_deployment(charm, linter)
@@ -851,15 +850,16 @@ class DeploymentValidationTest(TestCase):
                 'type': 'stateful',
                 'service': 'omit',
                 'daemonset': True,
-                'min-version': "1.15",
+                'min-version': "1.15.0",
                 'unknow-field': 'xxx',
             }
         }
         validate_deployment(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call('deployment.unknow-field is not supported'),
+            call('deployment.deployment: Unrecognized keys in mapping: "{\'unknow-field\': \'xxx\'}"'),
         ], any_order=True)
+        
 
     def test_deployment_invalid_type(self):
         """Charm has the invalid deployment type."""
@@ -869,13 +869,13 @@ class DeploymentValidationTest(TestCase):
                 'type': True,
                 'service': 'omit',
                 'daemonset': True,
-                'min-version': "1.15",
+                'min-version': "1.15.0",
             }
         }
         validate_deployment(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call("deployment.type must be str but got bool"),
+            call("deployment.deployment.type: True is not a string: {'type': ''}"),
         ], any_order=True)
 
     def test_deployment_invalid_service(self):
@@ -886,13 +886,13 @@ class DeploymentValidationTest(TestCase):
                 'type': 'stateful',
                 'service': 1,
                 'daemonset': True,
-                'min-version': "1.15",
+                'min-version': "1.15.0",
             }
         }
         validate_deployment(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call("deployment.service must be str but got int"),
+            call("deployment.deployment.service: 1 is not a string: {'service': ''}"),
         ], any_order=True)
 
     def test_deployment_invalid_daemonset(self):
@@ -902,14 +902,14 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': 'stateful',
                 'service': 'omit',
-                'daemonset': 'True',
-                'min-version': "1.15",
+                'daemonset': 'xx',
+                'min-version': "1.15.0",
             }
         }
         validate_deployment(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call("deployment.daemonset must be bool but got str"),
+            call('deployment.deployment.daemonset: "xx" is not one of true, false'),
         ], any_order=True)
 
     def test_deployment_invalid_min_version(self):
@@ -926,7 +926,7 @@ class DeploymentValidationTest(TestCase):
         validate_deployment(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call("deployment.min-version must be str but got float"),
+            call("deployment.deployment.min-version: 1.15 is not a string: {'min-version': ''}"),
         ], any_order=True)
 
 
