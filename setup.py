@@ -45,7 +45,7 @@ setup(
         'launchpadlib<1.11',
         'cheetah3>=3.0.0',
         'pyyaml>=3.11,<4.3',
-        'requests<=2.20.1',
+        'requests>=2.0.0,<3.0.0',
         'libcharmstore',
         'blessings<=1.6',
         'ruamel.yaml<0.16.0',

@@ -17,7 +17,7 @@ import dict2colander
 from charmtools.linter import Linter
 from charmtools.utils import validate_display_name
 
-KNOWN_METADATA_KEYS = [
+KNOWN_METADATA_KEYS = (
     'name',
     'display-name',
     'summary',
@@ -39,16 +39,17 @@ KNOWN_METADATA_KEYS = [
     'terms',
     'resources',
     'devices',
-]
+    'deployment',
+)
 
-REQUIRED_METADATA_KEYS = [
+REQUIRED_METADATA_KEYS = (
     'name',
     'summary',
-]
+)
 
-KNOWN_RELATION_KEYS = ['interface', 'scope', 'limit', 'optional']
+KNOWN_RELATION_KEYS = ('interface', 'scope', 'limit', 'optional')
 
-KNOWN_SCOPES = ['global', 'container']
+KNOWN_SCOPES = ('global', 'container')
 
 TEMPLATE_PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -196,7 +197,7 @@ class CharmLinter(Linter):
             return
 
         for option_name, option_value in options.items():
-            if not re.match(r'^[a-z0-9]+[\w-]+[a-z0-9]+$', option_name,
+            if not re.match(r'^[a-z0-9]+(?:[\w-]*[a-z0-9]+)?$', option_name,
                             flags=re.IGNORECASE):
                 self.err('config.yaml: %s does not conform to naming pattern'
                          % option_name)
@@ -331,6 +332,7 @@ class Charm(object):
             validate_payloads(charm, lint, proof_extensions.get('payloads'))
             validate_terms(charm, lint)
             validate_resources(charm, lint, proof_extensions.get('resources'))
+            validate_deployment(charm, lint, proof_extensions.get('deployment'))
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -562,9 +564,39 @@ class DevicesItem(colander.MappingSchema):
         colander.String(),
         name='type',
     )
+
     count = colander.SchemaNode(
         colander.Integer(),
         missing=1,
+    )
+
+
+class DeploymentItem(colander.MappingSchema):
+    def schema_type(self, **kw):
+        return StrictMapping()
+
+    type_ = colander.SchemaNode(
+        colander.String(),
+        validator=colander.OneOf(['stateless', 'stateful']),
+        name='type',
+    )
+
+    service = colander.SchemaNode(
+        colander.String(),
+        validator=colander.OneOf(['loadbalancer', 'cluster', 'omit']),
+        name='service',
+    )
+
+    daemonset = colander.SchemaNode(
+        Boolean(),
+        name='daemonset',
+        missing=False,
+    )
+
+    min_version = colander.SchemaNode(
+        colander.String(),
+        name='min-version',
+        missing='',
     )
 
 
@@ -699,6 +731,38 @@ def validate_resources(charm, linter, proof_extensions=None):
     except colander.Invalid as e:
         for k, v in e.asdict().items():
             linter.err('resources.{}: {}'.format(k, v))
+
+
+def validate_deployment(charm, linter, proof_extensions=None):
+    """Validate deployment in charm metadata.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+
+    deployment = charm.get('deployment', {})
+    if deployment == {}:
+        return
+
+    if not isinstance(deployment, dict):
+        linter.err('deployment: must be a dict of config')
+        return
+
+    deployment = dict(deployment=deployment)
+    schema = colander.SchemaNode(colander.Mapping())
+    for item in deployment:
+        schema.add(DeploymentItem(name=item))
+
+    try:
+        try:
+            schema.deserialize(deployment)
+        except colander.Invalid as e:
+            _try_proof_extensions(e, proof_extensions)
+    except colander.Invalid as e:
+        for k, v in e.asdict().items():
+            linter.err('deployment.{}: {}'.format(k, v))
 
 
 def validate_extra_bindings(charm, linter):

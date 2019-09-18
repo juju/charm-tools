@@ -148,7 +148,7 @@ class LayerFetcher(fetchers.LocalFetcher):
             return super(LayerFetcher, self).fetch(dir_)
         elif hasattr(self, "repo"):
             f, target = self._get_repo_fetcher_and_target(self.repo, dir_)
-            res = f.fetch(dir_)
+            orig_res = res = f.fetch(dir_)
             # make sure we save the revision of the actual repo, before we
             # start traversing subdirectories and moving contents around
             self.revision = self.get_revision(res)
@@ -157,7 +157,10 @@ class LayerFetcher(fetchers.LocalFetcher):
                 if hasattr(self, 'subdir'):
                     res = res / self.subdir
                 target.rmtree_p()
+                log.debug('Copying {} to {}'.format(res, target))
                 shutil.copytree(res, target)
+                log.debug('Cleaning up {}'.format(orig_res))
+                path(orig_res).rmtree_p()  # cleanup from cache after copied
             return target
 
 

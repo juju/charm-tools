@@ -336,7 +336,9 @@ class InterfaceCopy(Tactic):
         log.debug("Copying Interface %s: %s",
                   self.interface.name, self.target)
         ignorer = utils.ignore_matcher(self.config.ignores +
-                                       self.interface.config.ignores)
+                                       self.interface.config.ignores +
+                                       self.config.excludes +
+                                       self.interface.config.excludes)
         for entity, _ in utils.walk(self.interface.directory,
                                     lambda x: True,
                                     matcher=ignorer,
@@ -373,7 +375,9 @@ class InterfaceCopy(Tactic):
             return False
         valid = True
         ignorer = utils.ignore_matcher(self.config.ignores +
-                                       self.interface.config.ignores)
+                                       self.interface.config.ignores +
+                                       self.config.excludes +
+                                       self.interface.config.excludes)
         for entry, _ in utils.walk(self.interface.directory,
                                    lambda x: True,
                                    matcher=ignorer,

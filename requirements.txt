@@ -13,7 +13,7 @@ otherstuf==1.1.0
 path.py>=10.5
 pathspec==0.3.4
 pip>=10.0.0
-requests<=2.20.1
+requests>=2.0.0,<3.0.0
 responses==0.3.0
 ruamel.yaml<0.16.0
 virtualenv>=1.11.4

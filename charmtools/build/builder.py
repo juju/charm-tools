@@ -647,6 +647,7 @@ class Builder(object):
         self.validate()
         self.find_or_create_target()
         self.generate()
+        self.cleanup()
 
     def inspect(self):
         self.charm = path(self.charm).abspath()
@@ -750,6 +751,11 @@ class Builder(object):
         else:
             log.info('No new changes; no files were modified.')
 
+    def cleanup(self):
+        for cached_layer in self.cache_dir.glob('*/*'):
+            log.debug('Cleaning up {}'.format(cached_layer))
+            cached_layer.rmtree_p()
+
 
 def configLogging(build):
     global log
@@ -850,7 +856,7 @@ def main(args=None):
                                  "interface layers"),
         ("CHARM_BUILD_DIR", "Build charms will be placed into "
                             "$CHARM_BUILD_DIR/{charm_name} "
-                            "(defaults to current directory)"),
+                            "(defaults to /tmp/charm-builds/)"),
         ("JUJU_REPOSITORY", "Deprecated: If CHARM_BUILD_DIR is not set but "
                             "this is, built charms will be placed into "
                             "$JUJU_REPOSITORY/builds/{charm_name}"),

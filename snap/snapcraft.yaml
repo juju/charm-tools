@@ -48,7 +48,7 @@ parts:
       vergit --format=json > $SNAPCRAFT_PART_INSTALL/charm-tools-version
       snapcraftctl set-version $(vergit)
       # ensure we don't accidentally pick up system py2
-      ln -s python3 $SNAPCRAFT_PART_INSTALL/usr/bin/python
+      ln -s python3 $SNAPCRAFT_PART_INSTALL/usr/bin/python || true
       # copy our wrappers into the right place; note: we cannot use organize,
       # because it will break things (see forum link below)
       cp -R helpers/snap-wrappers $SNAPCRAFT_PART_INSTALL/bin/wrappers
