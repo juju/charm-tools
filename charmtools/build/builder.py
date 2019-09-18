@@ -687,7 +687,7 @@ class Builder(object):
                 self.cache_dir = path(charm_cache_dir)
             else:
                 self.cache_dir = path('~/.cache/charm').expanduser()
-        self.cache_dir = self.cache_dir.abspath()
+        self.cache_dir = self.cache_dir.abspath() / str(os.getpid())
         if self.cache_dir.startswith(path(self.charm).abspath()):
             raise BuildError('Cache directory nested under source directory. '
                              'This will cause recursive nesting of build '
@@ -752,9 +752,8 @@ class Builder(object):
             log.info('No new changes; no files were modified.')
 
     def cleanup(self):
-        for cached_layer in self.cache_dir.glob('*/*'):
-            log.debug('Cleaning up {}'.format(cached_layer))
-            cached_layer.rmtree_p()
+        log.debug('Cleaning up {}'.format(self.cache_dir))
+        self.cache_dir.rmtree_p()
 
 
 def configLogging(build):
