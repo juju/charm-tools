@@ -43,6 +43,7 @@ from charmtools.charms import validate_payloads  # noqa
 from charmtools.charms import validate_actions  # noqa
 from charmtools.charms import validate_terms  # noqa
 from charmtools.charms import validate_resources  # noqa
+from charmtools.charms import validate_deployment  # noqa
 
 
 class TestCharmProof(TestCase):
@@ -812,6 +813,155 @@ class StorageValidationTest(TestCase):
         ]
         validate_storage(charm, linter, extensions)
         self.assertEqual(linter.err.call_args_list, [])
+
+
+class DeploymentValidationTest(TestCase):
+    def test_deployment(self):
+        """Charm has valid deployment."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': "1.15.0",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertFalse(linter.err.called)
+
+    def test_invalid_deployment(self):
+        """Charm has invalid deployment."""
+        linter = Mock()
+        charm = {
+            'deployment': [],
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('deployment: must be a dict of config'),
+        ], any_order=True)
+
+    def test_deployment_unsupported_field(self):
+        """Charm has the invalid deployment field."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': "1.15.0",
+                'unknow-field': 'xxx',
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('deployment.deployment: Unrecognized keys in mapping: "{\'unknow-field\': \'xxx\'}"'),
+        ], any_order=True)
+        
+
+    def test_deployment_invalid_type(self):
+        """Charm has the invalid deployment type."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': True,
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': "1.15.0",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call("deployment.deployment.type: True is not a string: {'type': ''}"),
+        ], any_order=True)
+
+    def test_deployment_unsupported_type(self):
+        """Charm has the unsupported deployment type."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'foo',
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': "1.15.0",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('deployment.deployment.type: "foo" is not one of stateless, stateful'),
+        ], any_order=True)
+
+    def test_deployment_invalid_service(self):
+        """Charm has the invalid deployment service."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 1,
+                'daemonset': True,
+                'min-version': "1.15.0",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call("deployment.deployment.service: 1 is not a string: {'service': ''}"),
+        ], any_order=True)
+
+    def test_deployment_unsupported_service(self):
+        """Charm has the unsupported deployment service."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'foo',
+                'daemonset': True,
+                'min-version': "1.15.0",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('deployment.deployment.service: "foo" is not one of loadbalancer, cluster, omit'),
+        ], any_order=True)
+
+    def test_deployment_invalid_daemonset(self):
+        """Charm has the invalid deployment daemonset."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': 'xx',
+                'min-version': "1.15.0",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call('deployment.deployment.daemonset: "xx" is not one of true, false'),
+        ], any_order=True)
+
+    def test_deployment_invalid_min_version(self):
+        """Charm has the invalid deployment min-version."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'type': 'stateful',
+                'service': 'omit',
+                'daemonset': True,
+                'min-version': 1.15,
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertEqual(linter.err.call_count, 1)
+        linter.err.assert_has_calls([
+            call("deployment.deployment.min-version: 1.15 is not a string: {'min-version': ''}"),
+        ], any_order=True)
 
 
 class ResourcesValidationTest(TestCase):
