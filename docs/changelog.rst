@@ -1,6 +1,22 @@
 Changelog
 =========
 
+
+charm-tools 2.7.0 + charmstore-client 2.4.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Wednesday September 18 2019
+
+**charm-tools**
+
+* Fix charm-build conflict when building concurrently (#545)
+* Rename README files with markdown extension (#543)
+* Update charm.1 manpage (#522)
+* Feature/add deployment field2metadata (#544)
+* fix charm build help message (#542)
+* Cleanup cached layers / interfaces after build (#540)
+* edge case for setting charm_ver (#538)
+
+
 charm-tools 2.6.1 + charmstore-client 2.4.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Thursday July 11 2019
