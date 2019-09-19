@@ -829,6 +829,18 @@ class DeploymentValidationTest(TestCase):
         validate_deployment(charm, linter)
         self.assertFalse(linter.err.called)
 
+    def test_deployment_type_optional(self):
+        """Charm has valid deployment with empty type."""
+        linter = Mock()
+        charm = {
+            'deployment': {
+                'service': 'omit',
+                'min-version': "1.15.0",
+            }
+        }
+        validate_deployment(charm, linter)
+        self.assertFalse(linter.err.called)
+
     def test_invalid_deployment(self):
         """Charm has invalid deployment."""
         linter = Mock()

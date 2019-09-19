@@ -579,6 +579,7 @@ class DeploymentItem(colander.MappingSchema):
         colander.String(),
         validator=colander.OneOf(['stateless', 'stateful', 'daemon']),
         name='type',
+        missing='',
     )
 
     service = colander.SchemaNode(
