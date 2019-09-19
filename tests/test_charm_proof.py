@@ -823,7 +823,6 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': 'stateful',
                 'service': 'omit',
-                'daemonset': True,
                 'min-version': "1.15.0",
             }
         }
@@ -849,7 +848,6 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': 'stateful',
                 'service': 'omit',
-                'daemonset': True,
                 'min-version': "1.15.0",
                 'unknow-field': 'xxx',
             }
@@ -868,7 +866,6 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': True,
                 'service': 'omit',
-                'daemonset': True,
                 'min-version': "1.15.0",
             }
         }
@@ -885,14 +882,13 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': 'foo',
                 'service': 'omit',
-                'daemonset': True,
                 'min-version': "1.15.0",
             }
         }
         validate_deployment(charm, linter)
         self.assertEqual(linter.err.call_count, 1)
         linter.err.assert_has_calls([
-            call('deployment.deployment.type: "foo" is not one of stateless, stateful'),
+            call('deployment.deployment.type: "foo" is not one of stateless, stateful, daemon'),
         ], any_order=True)
 
     def test_deployment_invalid_service(self):
@@ -902,7 +898,6 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': 'stateful',
                 'service': 1,
-                'daemonset': True,
                 'min-version': "1.15.0",
             }
         }
@@ -919,7 +914,6 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': 'stateful',
                 'service': 'foo',
-                'daemonset': True,
                 'min-version': "1.15.0",
             }
         }
@@ -929,23 +923,6 @@ class DeploymentValidationTest(TestCase):
             call('deployment.deployment.service: "foo" is not one of loadbalancer, cluster, omit'),
         ], any_order=True)
 
-    def test_deployment_invalid_daemonset(self):
-        """Charm has the invalid deployment daemonset."""
-        linter = Mock()
-        charm = {
-            'deployment': {
-                'type': 'stateful',
-                'service': 'omit',
-                'daemonset': 'xx',
-                'min-version': "1.15.0",
-            }
-        }
-        validate_deployment(charm, linter)
-        self.assertEqual(linter.err.call_count, 1)
-        linter.err.assert_has_calls([
-            call('deployment.deployment.daemonset: "xx" is not one of true, false'),
-        ], any_order=True)
-
     def test_deployment_invalid_min_version(self):
         """Charm has the invalid deployment min-version."""
         linter = Mock()
@@ -953,7 +930,6 @@ class DeploymentValidationTest(TestCase):
             'deployment': {
                 'type': 'stateful',
                 'service': 'omit',
-                'daemonset': True,
                 'min-version': 1.15,
             }
         }
