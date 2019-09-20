@@ -18,11 +18,10 @@ parts:
     go-importpath: github.com/juju/charmstore-client
     build-packages:
       - bzr
-      - python-pip
-      - python-setuptools
+      - python3-pip
     override-build: |
       snapcraftctl build
-      pip install vergit
+      pip3 install vergit
       vergit --format=json > $SNAPCRAFT_PART_INSTALL/charmstore-client-version
   bhttp:
     plugin: godeps
@@ -41,8 +40,6 @@ parts:
       - git-core
       - libssl-dev
       - libffi-dev
-      - python3
-      - python3-setuptools
     override-build: |
       snapcraftctl build
       vergit --format=json > $SNAPCRAFT_PART_INSTALL/charm-tools-version
