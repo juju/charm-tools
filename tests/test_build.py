@@ -144,7 +144,8 @@ class TestBuild(unittest.TestCase):
         # The maintainer, maintainers values should only be from the top layer.
         self.assertIn("maintainer", metadata_data)
         self.assertEqual(metadata_data['maintainer'],
-                         "Tésty Téstér <téstér@example.com>")
+                         b"T\xc3\xa9sty T\xc3\xa9st\xc3\xa9r "
+                         b"<t\xc3\xa9st\xc3\xa9r@example.com>".decode('utf8'))
         self.assertNotIn("maintainers", metadata_data)
         # The tags list must be de-duplicated.
         self.assertEqual(metadata_data['tags'], ["databases"])
