@@ -577,20 +577,15 @@ class DeploymentItem(colander.MappingSchema):
 
     type_ = colander.SchemaNode(
         colander.String(),
-        validator=colander.OneOf(['stateless', 'stateful']),
+        validator=colander.OneOf(['stateless', 'stateful', 'daemon']),
         name='type',
+        missing='',
     )
 
     service = colander.SchemaNode(
         colander.String(),
         validator=colander.OneOf(['loadbalancer', 'cluster', 'omit']),
         name='service',
-    )
-
-    daemonset = colander.SchemaNode(
-        Boolean(),
-        name='daemonset',
-        missing=False,
     )
 
     min_version = colander.SchemaNode(
