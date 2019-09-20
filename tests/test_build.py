@@ -143,7 +143,9 @@ class TestBuild(unittest.TestCase):
         self.assertIn("storage", metadata_data['provides'])
         # The maintainer, maintainers values should only be from the top layer.
         self.assertIn("maintainer", metadata_data)
-        self.assertEqual(metadata_data['maintainer'], "Tester <test@er.com>")
+        self.assertEqual(metadata_data['maintainer'],
+                         b"T\xc3\xa9sty T\xc3\xa9st\xc3\xa9r "
+                         b"<t\xc3\xa9st\xc3\xa9r@example.com>".decode('utf8'))
         self.assertNotIn("maintainers", metadata_data)
         # The tags list must be de-duplicated.
         self.assertEqual(metadata_data['tags'], ["databases"])
@@ -203,7 +205,7 @@ class TestBuild(unittest.TestCase):
         self.assertEquals(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
-            u'03fc06a5e698e624231b826f4c47a60d3251cbc968fc1183ada444ca09b29ea6'
+            u'12c1f6fc865da0660f6dc044cca03b0244e883d9a99fdbdfab6ef6fc2fed63b7'
             ])
 
         storage_attached = base / "hooks/data-storage-attached"

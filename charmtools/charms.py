@@ -332,7 +332,8 @@ class Charm(object):
             validate_payloads(charm, lint, proof_extensions.get('payloads'))
             validate_terms(charm, lint)
             validate_resources(charm, lint, proof_extensions.get('resources'))
-            validate_deployment(charm, lint, proof_extensions.get('deployment'))
+            validate_deployment(charm, lint,
+                                proof_extensions.get('deployment'))
 
             if not os.path.exists(os.path.join(charm_path, 'icon.svg')):
                 lint.info("No icon.svg file.")
@@ -978,11 +979,7 @@ def validate_maintainer(charm, linter):
 
     for maintainer in maintainers:
         (name, address) = email.utils.parseaddr(maintainer)
-        formatted = email.utils.formataddr((name, address))
-        lt = formatted.find('<')
-        gt = formatted.find('>')
-        if (formatted.replace('"', '') != maintainer or
-                lt < 0 or gt < 0 or gt < lt):
+        if not (name and address):
             linter.warn(
                 'Maintainer format should be "Name <Email>", '
                 'not "%s"' % maintainer)
