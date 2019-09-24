@@ -2,6 +2,18 @@ Changelog
 =========
 
 
+charm-tools 2.7.1 + charmstore-client 2.4.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tuesday September 24 2019
+
+**charm-tools**
+
+* Fix maintainer validation not handling unicode (#550)
+* Fix snap builds on other arches (#548)
+* Change deployment.type optional (for k8s charms) (#547)
+* Move daemonset to deployment.type (for k8s charms) (#546)
+
+
 charm-tools 2.7.0 + charmstore-client 2.4.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Wednesday September 18 2019
