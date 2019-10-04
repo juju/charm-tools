@@ -7,6 +7,7 @@ from charmtools.fetchers import (
     BzrFetcher,
     BzrMergeProposalFetcher,
     GithubFetcher,
+    OpendevFetcher,
     GitFetcher,
     BitbucketFetcher,
     LocalFetcher,
@@ -127,6 +128,82 @@ class GithubFetcherTest(unittest.TestCase):
 
         for test in good_tests:
             self.assertEqual(test['repo'], 'charms/meteor')
+
+        for test in bad_tests:
+            self.assertEqual(test, {})
+
+
+class OpendevFetcherGenericTest(unittest.TestCase):
+    def test_can_fetch(self):
+        f = OpendevFetcher.can_fetch
+
+        good_tests = [
+            f('https://opendev.org/charms/foo'),
+            f('https://www.opendev.org/charms/foo'),
+            f('git@opendev.org:charms/foo'),
+        ]
+
+        bad_tests = [
+            f('http://www.opendev.org/charms/foo'),
+            f('http://opendev.org/charms/foo'),
+            f('https://opendev.com/charms/foo'),
+            f('https://www.opendev.com/charms/foo'),
+            f('git@opendev.com:charms/foo'),
+            f('gh:charms/foo'),
+            f('github:charms/foo'),
+            f('http://github.com/charms/foo'),
+            f('https://github.com/charms/foo'),
+            f('http://www.github.com/charms/foo'),
+            f('https://www.github.com/charms/foo'),
+            f('git@github.com:charms/foo'),
+            f('lp:~openstack-charmers/charms/bionic/foo'),
+            f('lp:~openstack-charmers/charms/bionic/foo/+merge/12345'),
+            f('bb:charms/foo'),
+            f('local:~/src/charms/bionic/foo'),
+            f('cs:bionic/foo'),
+            f('bundle:openstack-base/single'),
+        ]
+
+        for test in good_tests:
+            self.assertEqual(test['repo'], 'charms/foo')
+
+        for test in bad_tests:
+            self.assertEqual(test, {})
+
+
+class OpendevFetcherSpecificTest(unittest.TestCase):
+    def test_can_fetch(self):
+        f = OpendevFetcher.can_fetch
+
+        good_tests = [
+            f('https://opendev.org/x/charm-interface-barbican-hsm'),
+            f('https://www.opendev.org/x/charm-interface-barbican-hsm'),
+            f('git@opendev.org:x/charm-interface-barbican-hsm'),
+        ]
+
+        bad_tests = [
+            f('http://opendev.org/x/charm-interface-barbican-hsm'),
+            f('http://www.opendev.org/x/charm-interface-barbican-hsm'),
+            f('https://opendev.com/x/charm-interface-barbican-hsm'),
+            f('https://www.opendev.com/x/charm-interface-barbican-hsm'),
+            f('git@opendev.com:x/charm-interface-barbican-hsm'),
+            f('gh:x/charm-interface-barbican-hsm'),
+            f('github:x/charm-interface-barbican-hsm'),
+            f('http://github.com/x/charm-interface-barbican-hsm'),
+            f('https://github.com/x/charm-interface-barbican-hsm'),
+            f('http://www.github.com/x/charm-interface-barbican-hsm'),
+            f('https://www.github.com/x/charm-interface-barbican-hsm'),
+            f('git@github.com:x/charm-interface-barbican-hsm'),
+            f('lp:~openstack-charmers/x/charm-interface-barbican-hsm'),
+            f('lp:~openstack-charmers/x/charm-interface-barbican-hsm/+merge/12345'),
+            f('bb:x/charm-interface-barbican-hsm'),
+            f('local:~/src/charms/bionic/x/charm-interface-barbican-hsm'),
+            f('cs:bionic/x/charm-interface-barbican-hsm'),
+            f('bundle:openstack-base/x/charm-interface-barbican-hsm'),
+        ]
+
+        for test in good_tests:
+            self.assertEqual(test['repo'], 'x/charm-interface-barbican-hsm')
 
         for test in bad_tests:
             self.assertEqual(test, {})

@@ -195,6 +195,21 @@ class GithubFetcher(Fetcher):
         return rename(dir_)
 
 
+class OpendevFetcher(Fetcher):
+    MATCH = re.compile(r"""
+    ^(https:\/\/(www\.)?opendev\.org\/|git@opendev.org:)
+    (?P<repo>[^@]*)(@(?P<revision>.*))?$
+    """, re.VERBOSE)
+
+    def fetch(self, dir_):
+        dir_ = tempfile.mkdtemp(dir=dir_)
+        url = 'https://opendev.org/' + self.repo
+        git('clone {} {}'.format(url, dir_))
+        if self.revision:
+            git('checkout {}'.format(self.revision), cwd=dir_)
+        return rename(dir_)
+
+
 class GitFetcher(Fetcher):
     """Generic git fetcher.
 
@@ -358,6 +373,7 @@ FETCHERS = [
     BzrFetcher,
     BzrMergeProposalFetcher,
     GithubFetcher,
+    OpendevFetcher,
     BitbucketFetcher,
     LocalFetcher,
     CharmstoreDownloader,
