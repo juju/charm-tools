@@ -2,6 +2,15 @@ Changelog
 =========
 
 
+charm-tools 2.7.2 + charmstore-client 2.4.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tuesday October 8 2019
+
+**charm-tools**
+
+* Add opendev.org https and git fetcher (#553)
+
+
 charm-tools 2.7.1 + charmstore-client 2.4.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Tuesday September 24 2019
