@@ -340,7 +340,7 @@ class TestCharmProof(TestCase):
         self.linter.check_config_file(self.charm_dir)
         self.assertEqual(1, len(self.linter.lint))
         expected = (
-            'W: config.yaml: option foo has no default value')
+            'I: config.yaml: option foo has no default value')
         self.assertEqual(expected, self.linter.lint[0])
 
     def test_yaml_with_python_objects(self):

@@ -68,7 +68,7 @@ KNOWN_OPTION_TYPES = {
     'boolean': bool,
 }
 
-ALLOW_NONE_DEFAULT = (six.string_types[0], int, float)
+ALLOW_NONE_DEFAULT = (six.string_types[0], int, float, bool)
 
 
 class RelationError(Exception):
