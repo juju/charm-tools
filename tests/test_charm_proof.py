@@ -41,6 +41,7 @@ from charmtools.charms import validate_min_juju_version  # noqa
 from charmtools.charms import validate_extra_bindings  # noqa
 from charmtools.charms import validate_payloads  # noqa
 from charmtools.charms import validate_actions  # noqa
+from charmtools.charms import validate_functions  # noqa
 from charmtools.charms import validate_terms  # noqa
 from charmtools.charms import validate_resources  # noqa
 from charmtools.charms import validate_deployment  # noqa
@@ -1176,6 +1177,48 @@ class ActionsValidationTest(TestCase):
 
         with patch('os.path.exists'):
             validate_actions(actions, 'actions', linter)
+        self.assertEqual(linter.err.call_count, 1)
+
+
+class FunctionsValidationTest(TestCase):
+    def test_minimal_actions_config(self):
+        """Charm has the minimum allowed functions configuration."""
+        linter = Mock()
+        functions = {
+            'an-function': {}
+        }
+        validate_functions(functions, 'functions', linter)
+        self.assertFalse(linter.err.called)
+
+    def test_complete_functions_config(self):
+        """Charm has multiple functions."""
+        linter = Mock()
+        functions = {
+            'do': {
+                'description': 'a thing',
+            },
+            'do-not': {
+                'description': 'not a thing',
+            },
+        }
+        with patch('os.path.exists'):
+            validate_functions(functions, 'functions', linter)
+        self.assertFalse(linter.err.called)
+
+    def test_juju_functions_fail(self):
+        """Charm has multiple functions."""
+        linter = Mock()
+        functions = {
+            'juju-do': {
+                'description': 'a thing',
+            },
+            'do-not': {
+                'description': 'not a thing',
+            },
+        }
+
+        with patch('os.path.exists'):
+            validate_functions(functions, 'functions', linter)
         self.assertEqual(linter.err.call_count, 1)
 
 
