@@ -276,8 +276,10 @@ class Charm(object):
 
         hooks_path = os.path.join(charm_path, 'hooks')
         actions_path = os.path.join(charm_path, 'actions')
+        functions_path = os.path.join(charm_path, 'functions')
         yaml_path = os.path.join(charm_path, 'metadata.yaml')
         actions_yaml_file = os.path.join(charm_path, 'actions.yaml')
+        functions_yaml_file = os.path.join(charm_path, 'functions.yaml')
         layer_yaml_file = os.path.join(charm_path, 'layer.yaml')
         try:
             yamlfile = open(yaml_path, "rb")
@@ -456,6 +458,7 @@ class Charm(object):
                 lint.check_hook('config-changed', hooks_path)
 
             if os.path.exists(actions_yaml_file):
+                # TODO: remove action code when it's deprecated.
                 with open(actions_yaml_file, "rb") as f:
                     try:
                         actions = yaml.safe_load(f.read())
@@ -463,6 +466,14 @@ class Charm(object):
                     except Exception as e:
                         lint.crit('cannot parse {}: {}'.format(
                             actions_yaml_file, e))
+            elif os.path.exists(functions_yaml_file):
+                with open(functions_yaml_file, "rb") as f:
+                    try:
+                        functions = yaml.safe_load(f.read())
+                        validate_functions(functions, functions_path, lint)
+                    except Exception as e:
+                        lint.crit('cannot parse {}: {}'.format(
+                            functions_yaml_file, e))
 
         except IOError:
             lint.err("could not find metadata file for " + charm_name)
@@ -945,6 +956,35 @@ def validate_actions(actions, action_hooks, linter):
             linter.warn('actions.{0}: actions/{0} does not exist'.format(k))
         elif not os.access(h, os.X_OK):
             linter.err('actions.{0}: actions/{0} is not executable'.format(k))
+
+
+def validate_functions(functions, function_hooks, linter):
+    """Validate functions in a charm.
+
+    :param functions: dict of charm functions parsed from functions.yaml
+    :param function_hooks: path of charm's /functions/ directory
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+
+    if not functions:
+        return
+
+    if not isinstance(functions, dict):
+        linter.err('functions: must be a dictionary of json schemas')
+        return
+
+    # TODO: Schema validation
+    for k in functions:
+        if k.startswith('juju'):
+            linter.err('functions.{}: juju is a reserved namespace'.format(k))
+            continue
+        h = os.path.join(function_hooks, k)
+        if not os.path.isfile(h):
+            linter.warn('functions.{0}: functions/{0} does not exist'.format(k))
+        elif not os.access(h, os.X_OK):
+            linter.err('functions.{0}: functions/{0} is not executable'.format(k))
 
 
 def validate_maintainer(charm, linter):
