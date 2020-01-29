@@ -18,6 +18,7 @@ responses==0.3.0
 ruamel.yaml<0.16.0
 virtualenv>=1.11.4
 jsonschema==2.5.1
+keyring<21
 secretstorage<2.4
 six>=1.11.0
 dict2colander==0.2
