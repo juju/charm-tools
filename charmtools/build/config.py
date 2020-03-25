@@ -13,6 +13,7 @@ DEFAULT_IGNORES = [
     "*.pyc",
     "*~",
     ".tox",
+    "*.swp",
 ]
 
 
