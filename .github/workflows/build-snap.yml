@@ -22,5 +22,5 @@ jobs:
       id: snapcraft
     - uses: actions/upload-artifact@v1
       with:
-        name: snap
+        name: charm.snap
         path: ${{ steps.snapcraft.outputs.snap }}
