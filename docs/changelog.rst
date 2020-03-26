@@ -2,14 +2,47 @@ Changelog
 =========
 
 
-charm-tools 2.7.2 + charmstore-client 2.4.0
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+charm-tools 2.7.4 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thursday March 26 2020
+
+**charm-tools**
+
+* Add workaround for user site package conflicts (#561)
+* Add Build Snap action so PRs have snap to test easily (#562)
+
+charm-tools 2.7.3 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Saturday Feb 29 2020
+
+**charm-tools**
+
+* Add Operator charm template (#557)
+* Add OpenStack templates to requirements (#558)
+* Fix 471 (#556)
+* Add functions support; (#555)
+* Allow boolean config options to have null default (#554)
+
+**charmstore-client**
+
+* fix dependencies
+* cmd/charm: allow users with domains in ACLs
+* Updated charmstore and charmrepo dependency.
+* charm whoami: return an error when the user is not logged in
+* Update dependencies
+* Fix dependency files
+
+charm-tools 2.7.2 + charmstore-client 2.4.0+git-3-cbbf887
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Tuesday October 8 2019
 
 **charm-tools**
 
 * Add opendev.org https and git fetcher (#553)
 
+**charmstore-client**
+
+* Disallow release in promulgated namespace
 
 charm-tools 2.7.1 + charmstore-client 2.4.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
