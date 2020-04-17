@@ -662,7 +662,7 @@ class Builder(object):
         series = self.series or 'builds'
         if not self.build_dir:
             if self.output_dir:
-                self.build_dir = self.output_dir / series
+                self.build_dir = self.output_dir
             elif charm_build_dir:
                 self.build_dir = path(charm_build_dir)
             elif juju_repo_dir:
