@@ -56,7 +56,7 @@ class OperatorPythonCharmTemplate(CharmTemplate):
             },
             "bug_tracker": {
                 "prompt": "URL where bugs can be filed for this Charm:",
-                "default": "https://launchpad.net/amazing-charm",
+                "default": "https://discourse.juju.is/c/charming",
             }
         })
         return promptlist
