@@ -90,6 +90,7 @@ setup(
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
             'operator-python = charmtools.templates.operator_python:OperatorPythonCharmTemplate',  # noqa: E501
+            'k8s-operator = charmtools.templates.k8s_operator:OperatorPythonCharmTemplate',  # noqa: E501
             'reactive-python = charmtools.templates.reactive_python:ReactivePythonCharmTemplate',  # noqa: E501
             'reactive-bash = charmtools.templates.reactive_bash:ReactiveBashCharmTemplate',  # noqa: E501
             'python-basic = charmtools.templates.python:PythonCharmTemplate',
