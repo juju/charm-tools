@@ -524,12 +524,10 @@ class Builder(object):
         if self.hide_metrics:
             return
         conf_file = path('~/.config/charm-build.conf').expanduser()
-        conf = {}
-        if conf_file.exists():
-            try:
-                conf = yaml.safe_load(conf_file.text()) or {}
-            except yaml.error.YAMLError:
-                pass
+        try:
+            conf = yaml.safe_load(conf_file.text()) or {}
+        except (FileNotFoundError, yaml.error.YAMLError):
+            conf = {}
         if not conf.get('cid'):
             conf_file.parent.makedirs_p()
             conf['cid'] = str(uuid.uuid4())
