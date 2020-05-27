@@ -524,13 +524,17 @@ class Builder(object):
         if self.hide_metrics:
             return
         conf_file = path('~/.config/charm-build.conf').expanduser()
+        conf = {}
         if conf_file.exists():
-            conf = yaml.safe_load(conf_file.text())
-            cid = conf['cid']
-        else:
+            try:
+                conf = yaml.safe_load(conf_file.text()) or {}
+            except yaml.error.YAMLError:
+                pass
+        if not conf.get('cid'):
             conf_file.parent.makedirs_p()
-            cid = str(uuid.uuid4())
-            conf_file.write_text(yaml.dump({'cid': cid}))
+            conf['cid'] = str(uuid.uuid4())
+            conf_file.write_text(yaml.safe_dump(conf))
+        cid = conf['cid']
         try:
             requests.post(self.METRICS_URL, timeout=10, data={
                 'tid': self.METRICS_ID,
