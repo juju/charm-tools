@@ -1036,11 +1036,13 @@ class WheelhouseTactic(ExactMatch, Tactic):
     kind = "dynamic"
     FILENAME = 'wheelhouse.txt'
     removed = []  # has to be class level to affect all tactics during signing
+    per_layer = False
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
         self.tracked = []
         self.previous = []
+        self.lines = None
         self._venv = None
         self.purge_wheels = False
 
@@ -1051,14 +1053,27 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def combine(self, existing):
         ""  # suppress inherited doc
         self.previous = existing.previous + [existing]
+        existing.read()
+        self.read()
+        self.lines = existing.lines + self.lines
         return self
+
+    def read(self):
+        if self.lines is None:
+            src = path(self.entity)
+            if src.exists():
+                self.lines = ['# ' + self.layer.url] + src.lines() + ['']
+            else:
+                self.lines = []
 
     def _add(self, wheelhouse, *reqs):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
             self._pip('download', '--no-binary', ':all:', '-d', temp_dir,
                       *reqs)
+            log.debug('Copying wheels:')
             for wheel in temp_dir.files():
+                log.debug('  ' + wheel.name)
                 dest = wheelhouse / wheel.basename()
                 if dest in self.tracked:
                     return
@@ -1092,21 +1107,40 @@ class WheelhouseTactic(ExactMatch, Tactic):
             utils.Process(
                 ('virtualenv', '--python', 'python3', self._venv)
             ).exit_on_error()()
-        # we are the top layer; process all lower layers first
-        for tactic in self.previous:
-            tactic()
-        # process this layer
-        self._add(wheelhouse, '-r', self.entity)
+        if self.per_layer:
+            self._process_per_layer(wheelhouse)
+        else:
+            self._process_combined(wheelhouse)
         # clean up
         if create_venv:
             self._venv.rmtree_p()
             self._venv = None
 
+    def _process_per_layer(self, wheelhouse):
+        # we are the top layer; process all lower layers first
+        for tactic in self.previous:
+            tactic()
+        # process this layer
+        log.debug('Processing wheelhouse for {}'.format(self.layer.url))
+        self._add(wheelhouse, '-r', self.entity)
+
+    def _process_combined(self, wheelhouse):
+        log.debug('Processing wheelhouse:')
+        for line in self.lines:
+            log.debug('  ' + line.strip())
+        wh_file = self.target.directory / 'wheelhouse.txt'
+        self.read()
+        wh_file.write_lines(self.lines)
+        self._add(wheelhouse, '-r', wh_file)
+
     def sign(self):
         ""  # suppress inherited doc
         sigs = {}
-        for tactic in self.previous:
-            sigs.update(tactic.sign())
+        if self.per_layer:
+            for tactic in self.previous:
+                sigs.update(tactic.sign())
+        else:
+            sigs.update(super().sign())
         for d in self.tracked:
             if d in self.removed:
                 continue
