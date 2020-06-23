@@ -914,7 +914,8 @@ def main(args=None):
                         help="Provide a wheelhouse.txt file with overrides "
                              "for the built wheelhouse")
     parser.add_argument('-W', '--wheelhouse-per-layer', action="store_true",
-                        help="Use old per-layer wheelhouse processing")
+                        help="Deprecated: Use original wheelhouse processing "
+                             "method (see PR juju/charm-tools#569)")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help="Increase output (same as -l DEBUG)")
     parser.add_argument('--debug', action='store_true',
