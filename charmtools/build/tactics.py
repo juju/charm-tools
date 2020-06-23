@@ -1091,9 +1091,11 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def _run_in_venv(self, *args):
         assert self._venv is not None
         # have to use bash to activate the venv properly first
-        return utils.Process(('bash', '-c', ' '.join(
+        res = utils.Process(('bash', '-c', ' '.join(
             ('.', self._venv / 'bin' / 'activate', ';') + args
-        ))).exit_on_error()()
+        )))()
+        if res.exit_code != 0:
+            raise BuildError(res.output)
 
     def _pip(self, *args):
         return self._run_in_venv('pip3', *args)
@@ -1126,12 +1128,14 @@ class WheelhouseTactic(ExactMatch, Tactic):
 
     def _process_combined(self, wheelhouse):
         log.debug('Processing wheelhouse:')
+        self.read()
         for line in self.lines:
             log.debug('  ' + line.strip())
-        wh_file = self.target.directory / 'wheelhouse.txt'
-        self.read()
-        wh_file.write_lines(self.lines)
-        self._add(wheelhouse, '-r', wh_file)
+        with utils.tempdir(chdir=False) as temp_dir:
+            wh_file = temp_dir / 'wheelhouse.txt'
+            wh_file.write_lines(self.lines)
+            self._add(wheelhouse, '-r', wh_file)
+            wh_file.move(self.target.directory / 'wheelhouse.txt')
 
     def sign(self):
         ""  # suppress inherited doc
