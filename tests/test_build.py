@@ -434,6 +434,7 @@ class TestBuild(unittest.TestCase):
         bu.hide_metrics = True
         bu.report = False
         bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
+        Process.return_value.return_value.exit_code = 0
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
