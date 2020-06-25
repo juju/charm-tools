@@ -148,6 +148,7 @@ class Builder(object):
         self._top_layer = None
         self.hide_metrics = os.environ.get('CHARM_HIDE_METRICS', False)
         self.wheelhouse_overrides = None
+        self.wheelhouse_per_layer = False
         self._warned_home = False
 
     @property
@@ -904,11 +905,17 @@ def main(args=None):
                         "from the interface service.")
     parser.add_argument('-n', '--name',
                         help="Build a charm of 'name' from 'charm'")
-    parser.add_argument('-r', '--report', action="store_true",
+    parser.add_argument('-r', '--report', action="store_true", default=True,
                         help="Show post-build report of changes")
+    parser.add_argument('-R', '--no-report', action="store_false",
+                        dest='report', default=True,
+                        help="Don't show post-build report of changes")
     parser.add_argument('-w', '--wheelhouse-overrides', type=path,
                         help="Provide a wheelhouse.txt file with overrides "
                              "for the built wheelhouse")
+    parser.add_argument('-W', '--wheelhouse-per-layer', action="store_true",
+                        help="Deprecated: Use original wheelhouse processing "
+                             "method (see PR juju/charm-tools#569)")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help="Increase output (same as -l DEBUG)")
     parser.add_argument('--debug', action='store_true',
@@ -931,6 +938,8 @@ def main(args=None):
     LayerFetcher.set_layer_indexes(build.interface_service or
                                    build.layer_index)
     LayerFetcher.NO_LOCAL_LAYERS = build.no_local_layers
+
+    WheelhouseTactic.per_layer = build.wheelhouse_per_layer
 
     configLogging(build)
 
