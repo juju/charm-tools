@@ -3,7 +3,7 @@ blessings==1.6
 libcharmstore>=0.0.3
 cheetah3==3.0.0
 colander==1.7.0
-coverage==3.7.1
+coverage
 flake8==1.6.2
 juju-deployer==0.4.3
 jujubundlelib>=0.5.6
@@ -24,4 +24,5 @@ six>=1.11.0
 dict2colander==0.2
 setuptools>=40.8.0,<50.0.0
 vergit>=1.0.0,<2.0.0
+requirements-parser
 git+https://github.com/openstack-charmers/charm-templates-openstack.git#egg=charm_templates_openstack

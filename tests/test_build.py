@@ -423,18 +423,26 @@ class TestBuild(unittest.TestCase):
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
     def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv):
+        build.tactics.WheelhouseTactic.per_layer = False
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
-        bu.name = "foo"
+        bu.name = "whlayer"
         bu.charm = "layers/whlayer"
         bu.hide_metrics = True
         bu.report = False
         bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
-        Process.return_value.return_value.exit_code = 0
+
+        def _store_wheelhouses(args):
+            filename = args[-1].split()[-1]
+            if filename.endswith('.txt'):
+                Process._wheelhouses.append(path(filename).lines(retain=False))
+            return mock.Mock(return_value=mock.Mock(exit_code=0))
+        Process._wheelhouses = []
+        Process.side_effect = _store_wheelhouses
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
@@ -442,16 +450,22 @@ class TestBuild(unittest.TestCase):
             with mock.patch("path.Path.mkdir_p"):
                 with mock.patch("path.Path.files"):
                     bu()
-                    Process.assert_any_call((
-                        'bash', '-c', '. /tmp/bin/activate ;'
-                        ' pip3 download --no-binary :all: '
-                        '-d /tmp -r ' +
-                        self.dirname / 'layers/whlayer/wheelhouse.txt'))
-                    Process.assert_any_call((
-                        'bash', '-c', '. /tmp/bin/activate ;'
-                        ' pip3 download --no-binary :all: '
-                        '-d /tmp -r ' +
-                        self.dirname / 'wh-over.txt'))
+                    self.assertEqual(len(Process._wheelhouses), 1)
+                    self.assertEqual(Process._wheelhouses[0], [
+                        '# layers/whbase',
+                        '# foo==1.0  # overridden by whlayer',
+                        '# bar==1.0  # overridden by whlayer',
+                        '# qux==1.0  # overridden by whlayer',
+                        '',
+                        '# whlayer',
+                        'foo==2.0',
+                        'git+https://github.com/me/bar#egg=bar',
+                        '# qux==2.0  # overridden by --wheelhouse-overrides',
+                        '',
+                        '# --wheelhouse-overrides',
+                        'git+https://github.com/me/qux#egg=qux',
+                        '',
+                    ])
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',

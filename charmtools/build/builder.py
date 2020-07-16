@@ -358,10 +358,13 @@ class Builder(object):
                                        output_files=output_files))
         if self.wheelhouse_overrides:
             existing_tactic = output_files.get('wheelhouse.txt')
+            wh_over_layer = Layer('--wheelhouse-overrides',
+                                  layers["layers"][-1].target_repo.dirname())
+            wh_over_layer.directory = layers["layers"][-1].directory
             output_files['wheelhouse.txt'] = WheelhouseTactic(
-                str(self.wheelhouse_overrides),
+                self.wheelhouse_overrides,
                 self.target,
-                layers["layers"][-1],
+                wh_over_layer,
                 next_config,
             )
             output_files['wheelhouse.txt'].purge_wheels = True

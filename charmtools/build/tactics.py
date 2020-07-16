@@ -6,8 +6,9 @@ import os
 import tempfile
 from inspect import getargspec
 
+import requirements
 from path import Path as path
-from pkg_resources import Requirement
+from requirements.requirement import Requirement
 from ruamel import yaml
 from charmtools import utils
 from charmtools.build.errors import BuildError
@@ -1046,6 +1047,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         self.lines = None
         self._venv = None
         self.purge_wheels = False
+        self._layer_refs = {}
 
     def __str__(self):
         directory = self.target.directory / 'wheelhouse'
@@ -1055,12 +1057,13 @@ class WheelhouseTactic(ExactMatch, Tactic):
         ""  # suppress inherited doc
         self.previous = existing.previous + [existing]
         existing.read()
+        self._layer_refs.update(existing._layer_refs)
         self.read()
         new_pkgs = set()
         for line in self.lines:
             try:
                 req = Requirement.parse(line)
-                new_pkgs.add(req.project_name)
+                new_pkgs.add(req.name)
             except ValueError:
                 pass  # ignore comments, blank lines, etc
         existing_lines = []
@@ -1068,11 +1071,12 @@ class WheelhouseTactic(ExactMatch, Tactic):
             try:
                 req = Requirement.parse(line)
                 # new explicit reqs will override existing ones
-                if req.project_name not in new_pkgs:
+                if req.name not in new_pkgs:
                     existing_lines.append(line)
                 else:
-                    existing_lines.append('# {}  # overridden by {}'.format(
-                        line, self.layer.url))
+                    existing_lines.append('# {}  # overridden by {}'
+                                          ''.format(line,
+                                                    self.layer.url))
             except ValueError:
                 existing_lines.append(line)  # ignore comments, blank lines, &c
         self.lines = existing_lines + self.lines
@@ -1082,6 +1086,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
         if self.lines is None:
             src = path(self.entity)
             if src.exists():
+                for req in requirements.parse(src.text()):
+                    self._layer_refs[req.name] = self.layer.url
                 self.lines = (['# ' + self.layer.url] +
                               src.lines(retain=False) +
                               [''])
@@ -1167,13 +1173,19 @@ class WheelhouseTactic(ExactMatch, Tactic):
             for tactic in self.previous:
                 sigs.update(tactic.sign())
         else:
-            sigs.update(super().sign())
+            sigs['wheelhouse.txt'] = (
+                self.layer.url,
+                "dynamic",
+                utils.sign(self.target.directory / 'wheelhouse.txt'),
+            )
         for d in self.tracked:
             if d in self.removed:
                 continue
             relpath = d.relpath(self.target.directory)
+            pkg_name = d.basename().split('-')[0]
+            layer_url = self._layer_refs.get(pkg_name, '__pip__')
             sigs[relpath] = (
-                self.layer.url, "dynamic", utils.sign(d))
+                layer_url, "dynamic", utils.sign(d))
         return sigs
 
 
