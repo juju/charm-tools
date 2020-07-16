@@ -1,6 +1,24 @@
 Changelog
 =========
 
+charm-tools 2.7.6 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thursday July 16 2020
+
+**charm-tools**
+
+* Switch to requirements-parser for wheelhouse (#572)
+
+charm-tools 2.7.5 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thursday June 25 2020
+
+**charm-tools**
+
+* Process wheelhouse.txt holistically rather than per-layer (#569)
+* Handle invalid config file more gracefully (#567)
+* Default to charming category of the Juju Discourse (#565)
+
 charm-tools 2.7.5 + charmstore-client 2.4.0+git-13-547c6f2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Thursday June 25 2020
