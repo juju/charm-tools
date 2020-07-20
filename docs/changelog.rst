@@ -1,6 +1,14 @@
 Changelog
 =========
 
+charm-tools 2.7.7 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Monday July 20 2020
+
+**charm-tools**
+
+* Fix handling of comments in wheelhouse (#574)
+
 charm-tools 2.7.6 + charmstore-client 2.4.0+git-13-547c6f2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Thursday July 16 2020
