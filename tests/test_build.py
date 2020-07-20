@@ -453,11 +453,13 @@ class TestBuild(unittest.TestCase):
                     self.assertEqual(len(Process._wheelhouses), 1)
                     self.assertEqual(Process._wheelhouses[0], [
                         '# layers/whbase',
+                        '# base-comment',
                         '# foo==1.0  # overridden by whlayer',
                         '# bar==1.0  # overridden by whlayer',
                         '# qux==1.0  # overridden by whlayer',
                         '',
                         '# whlayer',
+                        '# git+https://github.com/me/baz#egg=baz  # comment',
                         'foo==2.0',
                         'git+https://github.com/me/bar#egg=bar',
                         '# qux==2.0  # overridden by --wheelhouse-overrides',

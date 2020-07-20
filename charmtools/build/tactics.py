@@ -8,7 +8,6 @@ from inspect import getargspec
 
 import requirements
 from path import Path as path
-from requirements.requirement import Requirement
 from ruamel import yaml
 from charmtools import utils
 from charmtools.build.errors import BuildError
@@ -1062,14 +1061,14 @@ class WheelhouseTactic(ExactMatch, Tactic):
         new_pkgs = set()
         for line in self.lines:
             try:
-                req = Requirement.parse(line)
+                req = next(requirements.parse(line))
                 new_pkgs.add(req.name)
-            except ValueError:
+            except (StopIteration, ValueError):
                 pass  # ignore comments, blank lines, etc
         existing_lines = []
         for line in existing.lines:
             try:
-                req = Requirement.parse(line)
+                req = next(requirements.parse(line))
                 # new explicit reqs will override existing ones
                 if req.name not in new_pkgs:
                     existing_lines.append(line)
@@ -1077,7 +1076,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
                     existing_lines.append('# {}  # overridden by {}'
                                           ''.format(line,
                                                     self.layer.url))
-            except ValueError:
+            except (StopIteration, ValueError):
                 existing_lines.append(line)  # ignore comments, blank lines, &c
         self.lines = existing_lines + self.lines
         return self
