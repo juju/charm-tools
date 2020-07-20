@@ -8,6 +8,7 @@ from inspect import getargspec
 
 import requirements
 from path import Path as path
+from pkg_resources import safe_name
 from ruamel import yaml
 from charmtools import utils
 from charmtools.build.errors import BuildError
@@ -1062,7 +1063,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         for line in self.lines:
             try:
                 req = next(requirements.parse(line))
-                new_pkgs.add(req.name)
+                new_pkgs.add(safe_name(req.name))
             except (StopIteration, ValueError):
                 pass  # ignore comments, blank lines, etc
         existing_lines = []
@@ -1070,7 +1071,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             try:
                 req = next(requirements.parse(line))
                 # new explicit reqs will override existing ones
-                if req.name not in new_pkgs:
+                if safe_name(req.name) not in new_pkgs:
                     existing_lines.append(line)
                 else:
                     existing_lines.append('# {}  # overridden by {}'
@@ -1086,7 +1087,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             src = path(self.entity)
             if src.exists():
                 for req in requirements.parse(src.text()):
-                    self._layer_refs[req.name] = self.layer.url
+                    self._layer_refs[safe_name(req.name)] = self.layer.url
                 self.lines = (['# ' + self.layer.url] +
                               src.lines(retain=False) +
                               [''])
@@ -1181,7 +1182,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             if d in self.removed:
                 continue
             relpath = d.relpath(self.target.directory)
-            pkg_name = d.basename().split('-')[0]
+            pkg_name = safe_name(d.basename().split('-')[0])
             layer_url = self._layer_refs.get(pkg_name, '__pip__')
             sigs[relpath] = (
                 layer_url, "dynamic", utils.sign(d))
