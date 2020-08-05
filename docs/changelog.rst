@@ -1,6 +1,12 @@
 Changelog
 =========
 
+charm-tools 2.7.8 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tuesday July 21 2020
+
+* Normalize package names when processing wheelhouse (#576)
+
 charm-tools 2.7.7 + charmstore-client 2.4.0+git-13-547c6f2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Monday July 20 2020

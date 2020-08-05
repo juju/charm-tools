@@ -416,13 +416,14 @@ class TestBuild(unittest.TestCase):
 
         self.assertEqual((bu.target_dir / 'version').text(), 'sha2')
 
+    @mock.patch("charmtools.utils.sign")
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("path.Path.rmtree_p")
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
-    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv):
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv, sign):
         build.tactics.WheelhouseTactic.per_layer = False
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
@@ -451,12 +452,16 @@ class TestBuild(unittest.TestCase):
                 with mock.patch("path.Path.files"):
                     bu()
                     self.assertEqual(len(Process._wheelhouses), 1)
+                    # note that setuptools uses both hyphen and underscore, but
+                    # that should be normalized so that they match
                     self.assertEqual(Process._wheelhouses[0], [
                         '# layers/whbase',
                         '# base-comment',
                         '# foo==1.0  # overridden by whlayer',
                         '# bar==1.0  # overridden by whlayer',
                         '# qux==1.0  # overridden by whlayer',
+                        '# setuptools-scm<=1.17.0  # overridden by '
+                        '--wheelhouse-overrides',
                         '',
                         '# whlayer',
                         '# git+https://github.com/me/baz#egg=baz  # comment',
@@ -466,8 +471,26 @@ class TestBuild(unittest.TestCase):
                         '',
                         '# --wheelhouse-overrides',
                         'git+https://github.com/me/qux#egg=qux',
+                        'setuptools_scm>=3.0<=3.4.1',
                         '',
                     ])
+
+        sign.return_value = 'signature'
+        wh = build.tactics.WheelhouseTactic(path('wheelhouse.txt'),
+                                            mock.Mock(directory=path('wh')),
+                                            mock.Mock(url='charm'),
+                                            mock.Mock())
+        # package name gets normalized properly when checking _layer_refs
+        wh._layer_refs['setuptools-scm'] = 'layer:foo'
+        wh.tracked = {path('wh/setuptools_scm-1.17.0.tar.gz')}
+        self.assertEqual(wh.sign(), {
+            'wheelhouse.txt': ('charm',
+                               'dynamic',
+                               'signature'),
+            'setuptools_scm-1.17.0.tar.gz': ('layer:foo',
+                                             'dynamic',
+                                             'signature'),
+        })
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',

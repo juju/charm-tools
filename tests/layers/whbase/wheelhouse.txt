@@ -2,3 +2,4 @@
 foo==1.0
 bar==1.0
 qux==1.0
+setuptools-scm<=1.17.0
