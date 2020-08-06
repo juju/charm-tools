@@ -1087,6 +1087,11 @@ class WheelhouseTactic(ExactMatch, Tactic):
             src = path(self.entity)
             if src.exists():
                 for req in requirements.parse(src.text()):
+                    if req.name is None:
+                        raise BuildError(
+                            'Unable to determine package name for "{}"; '
+                            'did you forget "#egg=..."?'
+                            ''.format(req.line.strip()))
                     self._layer_refs[safe_name(req.name)] = self.layer.url
                 self.lines = (['# ' + self.layer.url] +
                               src.lines(retain=False) +

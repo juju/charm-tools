@@ -492,6 +492,19 @@ class TestBuild(unittest.TestCase):
                                              'signature'),
         })
 
+    @mock.patch.object(build.tactics, 'path')
+    def test_wheelhouse_missing_package_name(self, path):
+        wh = build.tactics.WheelhouseTactic(mock.Mock(name='entity'),
+                                            mock.Mock(name='target'),
+                                            mock.Mock(name='layer', url='foo'),
+                                            mock.Mock(name='next_config'))
+        path().text.return_value = 'https://example.com/my-package'
+        with self.assertRaises(BuildError):
+            wh.read()
+        path().text.return_value = 'https://example.com/my-package#egg=foo'
+        wh.read()
+        self.assertIn('foo', wh._layer_refs.keys())
+
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',
                        lambda s: setattr(s, '_read', True))
