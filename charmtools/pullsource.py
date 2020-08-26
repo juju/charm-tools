@@ -223,6 +223,12 @@ def setup_parser():
         help='Directory in which to place the downloaded source.',
     )
     parser.add_argument(
+        '-b', '--branch',
+        help='Branch to check out after cloning the repo '
+             '(before copying any subdir). If not given, '
+             'the default branch of the repo will be used.'
+    )
+    parser.add_argument(
         '-i', '--layer-index',
         help='One or more index URLs used to look up layers, '
              'separated by commas. Can include the token '
@@ -257,6 +263,7 @@ def main():
 
     fetchers.LayerFetcher.NO_LOCAL_LAYERS = True
     fetchers.LayerFetcher.set_layer_indexes(args.layer_index)
+    fetchers.LayerFetcher.set_branch(args.branch)
 
     return download_item(args)
 
