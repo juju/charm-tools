@@ -204,7 +204,8 @@ def download_item(args):
 
     # Copy download dir to final destination dir
     shutil.copytree(download_dir, final_dest_dir, symlinks=True)
-    print('Downloaded {} to {}'.format(args.item, final_dest_dir))
+    rev = ' (rev: {})'.format(fetcher.revision) if fetcher.revision else ''
+    print('Downloaded {}{} to {}'.format(args.item, rev, final_dest_dir))
 
 
 def setup_parser():
