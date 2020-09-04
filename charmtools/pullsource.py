@@ -57,6 +57,7 @@ import tempfile
 import textwrap
 
 import yaml
+from path import Path as path
 
 from charmtools import utils
 from charmtools.build import fetchers
@@ -205,6 +206,9 @@ def download_item(args):
     # Copy download dir to final destination dir
     shutil.copytree(download_dir, final_dest_dir, symlinks=True)
     rev = ' (rev: {})'.format(fetcher.revision) if fetcher.revision else ''
+    if fetcher.revision:
+        rev_file = path(final_dest_dir) / '.pull-source-rev'
+        rev_file.write_text(fetcher.revision)
     print('Downloaded {}{} to {}'.format(args.item, rev, final_dest_dir))
 
 
