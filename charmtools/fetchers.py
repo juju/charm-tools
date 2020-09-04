@@ -9,6 +9,7 @@ import tempfile
 
 import requests
 import yaml
+from path import Path as path
 
 
 log = logging.getLogger(__name__)
@@ -120,6 +121,9 @@ class Fetcher(object):
                     return rev_info.decode('utf8').strip()
             except FetchError:
                 continue
+        rev_file = path(dir_) / '.pull-source-rev'
+        if rev_file.exists():
+            return rev_file.read_text().strip()
         return self.revision
 
 
