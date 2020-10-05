@@ -1,3 +1,4 @@
+keyring<21.0
 PyYAML>=3.11,<4.3
 blessings==1.6
 libcharmstore>=0.0.3
@@ -16,7 +17,6 @@ responses==0.3.0
 ruamel.yaml<0.16.0
 virtualenv>=1.11.4
 jsonschema==2.5.1
-keyring<21
 secretstorage<2.4
 six>=1.11.0
 dict2colander==0.2

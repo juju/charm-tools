@@ -59,14 +59,20 @@ class Configable(object):
 
 
 class Fetched(Configable):
-    def __init__(self, url, target_repo, name=None):
+    def __init__(self, url, target_repo, name=None, lock=None,
+                 use_branches=False):
         super(Fetched, self).__init__()
         self.url = url
         self.target_repo = target_repo / self.NAMESPACE
         self.directory = None
         self._name = name
         self.fetched = False
+        self.fetched_url = None
+        self.vcs = None
         self.revision = None
+        self.branch = None
+        self.lock = lock
+        self.use_branches = use_branches
 
     @property
     def name(self):
@@ -85,7 +91,15 @@ class Fetched(Configable):
 
     def fetch(self):
         try:
-            fetcher = get_fetcher(self.url)
+            # In order to lock the fetcher we need to adjust the self.url
+            # to get the right thing.  Curiously, self.url is actually
+            # "layer:something" here, and so we can match on that.
+            if self.lock:
+                url = make_url_from_lock_for_layer(
+                    self.lock, self.use_branches)
+            else:
+                url = self.url
+            fetcher = get_fetcher(url)
         except FetchError:
             # We might be passing a local dir path directly
             # which fetchers don't currently  support
@@ -99,7 +113,11 @@ class Fetched(Configable):
                     self.target_repo.makedirs_p()
                 self.directory = path(fetcher.fetch(self.target_repo))
                 self.fetched = True
+                self.fetched_url = getattr(fetcher, "fetched_url", None)
+                self.vcs = getattr(fetcher, "vcs", None)
             self.revision = fetcher.get_revision(self.directory)
+            self.branch = fetcher.get_branch_for_revision(self.directory,
+                                                          self.revision)
 
         if not self.directory.exists():
             raise BuildError(
@@ -150,10 +168,13 @@ class Builder(object):
         self.wheelhouse_overrides = None
         self.wheelhouse_per_layer = False
         self._warned_home = False
+        self.lock_items = []
+        self.with_locks = {}
 
     @property
     def top_layer(self):
         if not self._top_layer:
+            # NOTE: no lock for branches for lop layer.
             self._top_layer = Layer(self.charm, self.cache_dir).fetch()
 
         return self._top_layer
@@ -216,6 +237,10 @@ class Builder(object):
     def manifest(self):
         return self.target_dir / '.build.manifest'
 
+    @property
+    def lock_file(self):
+        return self.source_dir / 'build.lock'
+
     def check_series(self):
         """Make sure this is a either a multi-series charm, or we have a
         build series defined. If not, fall back to a default series.
@@ -250,16 +275,17 @@ class Builder(object):
     @property
     def layers(self):
         layers = []
-        for i in self._layers:
-            layers.append({
-                'url': i.url,
-                'rev': i.revision,
-            })
-        for i in self._interfaces:
-            layers.append({
-                'url': i.url,
-                'rev': i.revision,
-            })
+        for layer in (self._layers, self._interfaces):
+            for i in layer:
+                item = {
+                    'url': i.url,
+                    'rev': i.revision,
+                }
+                for opt in ('branch', 'fetched_url'):
+                    attr = getattr(i, opt, None)
+                    if attr:
+                        item[opt] = attr
+                layers.append(item)
         return layers
 
     def fetch(self):
@@ -268,7 +294,11 @@ class Builder(object):
             log.warn("The top level layer expects a "
                      "valid layer.yaml file")
         # Manually create a layer object for the output
-        self.target = Layer(self.name, self.build_dir)
+        self.target = Layer(self.name, self.build_dir,
+                            lock=self.lock_for(self.name),
+                            use_branches=getattr(self,
+                                                 'use_lock_file_branches',
+                                                 False))
         self.target.directory = self.target_dir
         self.post_metrics('charm', self.name, False)
         return self.fetch_deps(self.top_layer)
@@ -302,19 +332,29 @@ class Builder(object):
             # The order of these commands is important. We only want to
             # fetch something if we haven't already fetched it.
             if base.startswith("interface:"):
-                iface = Interface(base, self.cache_dir)
+                iface = Interface(base, self.cache_dir,
+                                  lock=self.lock_for(base),
+                                  use_branches=getattr(
+                                      self, 'use_lock_file_branches', False))
                 if iface.name in [i.name for i in results['interfaces']]:
                     continue
                 results["interfaces"].append(iface.fetch())
                 self.post_metrics('interface', iface.name, iface.fetched)
             else:
-                base_layer = Layer(base, self.cache_dir)
+                base_layer = Layer(base, self.cache_dir,
+                                   lock=self.lock_for(base),
+                                   use_branches=getattr(
+                                       self, 'use_lock_file_branches', False))
                 if base_layer.name in [i.name for i in results['layers']]:
                     continue
                 base_layer.fetch()
                 self.fetch_dep(base_layer, results)
                 results["layers"].append(base_layer)
                 self.post_metrics('layer', base_layer.name, base_layer.fetched)
+
+    def lock_for(self, base):
+        """Return a lock description for an item 'base' if it exists."""
+        return self.with_locks.get(base, {})
 
     def build_tactics(self, entry, layer, next_config, current_config,
                       output_files):
@@ -356,6 +396,28 @@ class Builder(object):
                                        next_config=next_config,
                                        current_config=current_config,
                                        output_files=output_files))
+        # now we do update the wheelhouse.txt output file with the lock file if
+        # necessary.
+        if not getattr(self, 'ignore_lock_file', False):
+            lines = self.generate_python_modules_from_lock_file()
+            # override any existing lines with the python modules from the lock
+            # file.
+            existing_tactic = output_files.get('wheelhouse.txt')
+            lock_layer = Layer('lockfile-wheelhouse',
+                               layers["layers"][-1].target_repo.dirname())
+            lock_layer.directory = layers["layers"][-1].directory
+            wh_tactic = WheelhouseTactic(
+                "",
+                self.target,
+                lock_layer,
+                next_config,
+            )
+            wh_tactic.lines = lines
+            wh_tactic.purge_wheels = True
+            if existing_tactic is not None:
+                wh_tactic.combine(existing_tactic)
+            output_files["wheelhouse.txt"] = wh_tactic
+
         if self.wheelhouse_overrides:
             existing_tactic = output_files.get('wheelhouse.txt')
             wh_over_layer = Layer('--wheelhouse-overrides',
@@ -571,6 +633,8 @@ class Builder(object):
                     tactic.read()
                 elif phase == "call":
                     tactic()
+                    if hasattr(tactic, "lock_info"):
+                        self.lock_items.extend(tactic.lock_info)
                 elif phase == "sign":
                     sig = tactic.sign()
                     if sig:
@@ -584,6 +648,8 @@ class Builder(object):
         # write out the sigs
         if "sign" in self.PHASES:
             self.write_signatures(signatures, layers)
+        if getattr(self, 'write_lock_file', False):
+            self.write_the_lock_file()
         if self.report:
             self.write_report(new_repo, added, changed, removed)
 
@@ -593,6 +659,99 @@ class Builder(object):
             signatures=signatures,
             layers=layers,
         ), indent=2, sort_keys=True))
+
+    def write_the_lock_file(self):
+        """Using the info in self.layers, write a lock file.
+
+        The lock file can be used to ensure that the same versions (or
+        branches) are used to recreate the charm.
+        """
+        locks = []
+        # look at the layers first for locks
+        for layer in self.layers:
+            branch = layer.get('branch', None)
+            if branch is None or branch == 'refs/heads/master':
+                tag = layer.get('rev', None)
+            else:
+                tag = branch
+            lock_item = {
+                'type': 'layer',
+                'item': layer['url'],
+                'url': layer.get('fetched_url', None),
+                'vcs': layer.get('vcs', None),
+                'branch': branch,
+                'commit': tag
+            }
+            locks.append(lock_item)
+        # now iterate through the other lock items and add them in
+        locks.extend(self.lock_items)
+        self.lock_file.write_text(json.dumps({'locks': locks}, indent=2))
+
+    def maybe_read_lock_file(self):
+        """Read the lock file if it exists.
+
+        The lock file is a list of elements (either layer, interface or python
+        module).  This is then used in the fetcher system to fix the versions
+        that are used when rebuilding the charm.
+        """
+        self.with_locks = {}
+        try:
+            with open(self.lock_file) as f:
+                with_locks = json.load(f)
+        except FileNotFoundError:
+            log.info("The lockfile %s was not found; building using latest "
+                     "versions.", self.lock_file)
+            return
+        except Exception as err:
+            log.error("Problem decoding the lock file: %s\n%s",
+                      self.lock_file, str(err))
+            raise
+        # re-format the lock-file as a dictionary so that the items can be
+        # looked up.  A layer is 'layer:<name>', an interface is
+        # 'interface:<name>', and a python moudle is 'python_module:<name>'
+        for item in with_locks['locks']:
+            if item['type'] == 'python_module':
+                self.with_locks["python_module:{}".format(item['package'])] = \
+                    item
+            elif item['type'] == 'layer':
+                self.with_locks[item['item']] = item
+            else:
+                log.warning("Not sure how to deal with lock item '%s'?", item)
+        log.info("Using lockfile %s for build.", self.lock_file)
+
+    def generate_python_modules_from_lock_file(self):
+        """Using self.with_locks[], generate a list of python module lines.
+
+        This takes the python modules recorded in the lock file, as read into
+        self.with_locks[] and generate a list of python module line in the
+        style of a requiremens.txt file suitable for pip.  These are absolute
+        version locks (or github commit/branch locks).
+
+        :returns: list of python module lines
+        :rtype: List[str]
+        """
+        lines = []
+        for data in self.with_locks.values():
+            if data['type'] != "python_module":
+                continue
+            vcs = data['vcs']
+            if vcs == 'git':
+                if self.use_lock_file_branches:
+                    branch = data.get('branch', '')
+                    if branch.startswith("refs/heads/"):
+                        branch = branch[len("refs/heads/"):]
+                    line = "{}@{}#egg={}".format(
+                        data['url'], branch, data['package'])
+                else:
+                    line = "{}@{}#egg={}".format(
+                        data['url'], data['version'], data['package'])
+            elif vcs is None:
+                line = "{}=={}".format(data['package'], data['version'])
+            else:
+                log.error("Unknown vcs type %s - aborting.", vcs)
+                sys.exit(1)
+            lines.append(line)
+        return lines
 
     def generate(self):
         layers = self.fetch()
@@ -762,6 +921,40 @@ class Builder(object):
         self.cache_dir.rmtree_p()
 
 
+def make_url_from_lock_for_layer(lock_spec, use_branches=False):
+    """Make a url from a lock spec for a layer or interface.
+
+    lock_spec is:
+
+    "layer:basic": {
+      "branch": "refs/heads/master",
+      "commit": "623e69c7b432456fd4364f6e1835424fd6b5425e",
+      "item": "layer:basic",
+      "type": "layer",
+      "url": "https://github.com/juju-solutions/layer-basic.git",
+      "vcs": null
+    }
+
+    It is assumed that the VCS is git.
+
+    TODO: Add other VCS in addition to Git?
+
+    :param lock_spec: the lock specification for the layer
+    :type lock_spec: Dict[str, Dict[str, Optional[str]]]
+    :param use_branches: if True, use the branch, rather than the commit
+    :type use_branches: bool
+    :returns: the url for fetching the layer from the repository
+    :rtype: str
+    """
+    if use_branches:
+        branch = lock_spec["branch"]
+        if branch.startswith("refs/heads/"):
+            branch = branch[len("refs/heads/"):]
+        return "{}@{}".format(lock_spec["url"], branch)
+    else:
+        return "{}@{}".format(lock_spec["url"], lock_spec["commit"])
+
+
 def configLogging(build):
     global log
     logging.captureWarnings(True)
@@ -908,6 +1101,19 @@ def main(args=None):
                         "from the interface service.")
     parser.add_argument('-n', '--name',
                         help="Build a charm of 'name' from 'charm'")
+    parser.add_argument('--write-lock-file', action="store_true",
+                        default=False,
+                        help="Write a lock file for reproducible builds. The "
+                             "file is 'layers.lock' in the root of the layer "
+                             "being build.")
+    parser.add_argument('--use-lock-file-branches', action="store_true",
+                        default=False,
+                        help="Use branch names if not master branch in "
+                             "lockfile. This allows tracking of a stable "
+                             "branch.")
+    parser.add_argument('--ignore-lock-file', action="store_true",
+                        default=False,
+                        help="Ignore the lock file even if it is present.")
     parser.add_argument('-r', '--report', action="store_true", default=True,
                         help="Show post-build report of changes")
     parser.add_argument('-R', '--no-report', action="store_false",
@@ -951,6 +1157,7 @@ def main(args=None):
         build.normalize_build_dir()
         build.normalize_cache_dir()
         build.check_paths()
+        build.maybe_read_lock_file()
 
         build()
 

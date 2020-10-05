@@ -12,4 +12,3 @@ from charmtools.build.builder import (
     Fetched,
     log,
 )
-

@@ -31,6 +31,7 @@ the command-line with:
 
    commands
    tactics
+   reproducible-charms
 
 
 .. toctree::

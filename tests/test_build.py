@@ -82,6 +82,7 @@ class TestBuild(unittest.TestCase):
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     def test_tester_layer(self, pv):
         bu = build.Builder()
+        bu.ignore_lock_file = True
         bu.log_level = "WARNING"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
@@ -238,6 +239,7 @@ class TestBuild(unittest.TestCase):
                       }''',
                       content_type="application/json")
         bu = build.Builder()
+        bu.ignore_lock_file = True
         bu.log_level = "WARNING"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
@@ -279,6 +281,7 @@ class TestBuild(unittest.TestCase):
                       }''',
                       content_type="application/json")
         bu = build.Builder()
+        bu.ignore_lock_file = True
         bu.log_level = "WARNING"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
@@ -309,6 +312,7 @@ class TestBuild(unittest.TestCase):
     @mock.patch("charmtools.utils.Process")
     def test_pypi_installer(self, mcall, ph, pi, pv):
         bu = build.Builder()
+        bu.ignore_lock_file = True
         bu.log_level = "WARN"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
@@ -335,6 +339,7 @@ class TestBuild(unittest.TestCase):
     def test_version_tactic_without_existing_version_file(self, mcall, ph, pi,
                                                           get_sha):
         bu = build.Builder()
+        bu.ignore_lock_file = True
         bu.log_level = "WARN"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
@@ -364,6 +369,7 @@ class TestBuild(unittest.TestCase):
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     def test_version_tactic_missing_cmd(self, ph, pi):
         bu = build.Builder()
+        bu.ignore_lock_file = True
         bu.log_level = "WARN"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
@@ -395,6 +401,7 @@ class TestBuild(unittest.TestCase):
     def test_version_tactic_with_existing_version_file(self, mcall, ph, pi,
                                                        get_sha, read):
         bu = build.Builder()
+        bu.ignore_lock_file = True
         bu.log_level = "WARN"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
@@ -583,6 +590,7 @@ class TestBuild(unittest.TestCase):
                              url=tactics[0])
 
         builder = build.builder.Builder()
+        builder.ignore_lock_file = True
         builder.build_dir = self.build_dir
         builder.cache_dir = builder.build_dir / "_cache"
         builder.charm = 'foo'

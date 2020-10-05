@@ -1,16 +1,20 @@
+from inspect import getargspec
 import errno
 import json
-import jsonschema
 import logging
 import os
+import tarfile
 import tempfile
-from inspect import getargspec
+import zipfile
+
+import jsonschema
 
 import requirements
 from path import Path as path
 from pkg_resources import safe_name
 from ruamel import yaml
 from charmtools import utils
+from charmtools import fetchers
 from charmtools.build.errors import BuildError
 
 log = logging.getLogger(__name__)
@@ -1048,6 +1052,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
         self._venv = None
         self.purge_wheels = False
         self._layer_refs = {}
+        self.modules = {}
+        self.lock_info = []
 
     def __str__(self):
         directory = self.target.directory / 'wheelhouse'
@@ -1064,6 +1070,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             try:
                 req = next(requirements.parse(line))
                 new_pkgs.add(safe_name(req.name))
+                self.modules[req.name] = req
             except (StopIteration, ValueError):
                 pass  # ignore comments, blank lines, etc
         existing_lines = []
@@ -1073,10 +1080,10 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 # new explicit reqs will override existing ones
                 if safe_name(req.name) not in new_pkgs:
                     existing_lines.append(line)
+                    self.modules[req.name] = req
                 else:
                     existing_lines.append('# {}  # overridden by {}'
-                                          ''.format(line,
-                                                    self.layer.url))
+                                          .format(line, self.layer.url))
             except (StopIteration, ValueError):
                 existing_lines.append(line)  # ignore comments, blank lines, &c
         self.lines = existing_lines + self.lines
@@ -1091,7 +1098,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
                         raise BuildError(
                             'Unable to determine package name for "{}"; '
                             'did you forget "#egg=..."?'
-                            ''.format(req.line.strip()))
+                            .format(req.line.strip()))
                     self._layer_refs[safe_name(req.name)] = self.layer.url
                 self.lines = (['# ' + self.layer.url] +
                               src.lines(retain=False) +
@@ -1118,8 +1125,78 @@ class WheelhouseTactic(ExactMatch, Tactic):
                             self.removed.append(old_wheel)
                 else:
                     dest.remove_p()
+                # extract the version from the wheelhouse name
+                name = None
+                if wheel.name.endswith(".zip"):
+                    name = wheel.name[:-4]
+                elif wheel.name.endswith(".tar.gz"):
+                    name = wheel.name[:-7]
+                if name is not None:
+                    ns = name.split('-')
+                    version = ns[-1]
+                    package = '-'.join(ns[:-1])
+                    log.debug("Version extracted is: %s version %s",
+                              package, version)
+                    # we also need to determine if it was a git repo and
+                    # extract the branch/commit
+                    if package in self.modules:
+                        req = self.modules[package]
+                        log.debug("module: %s - is vcs: %s", package, req.vcs)
+                        if req.vcs:
+                            (branch, version) = self._extract_pkg_vcs(wheel,
+                                                                      req)
+                            log.debug("branch: %s, version=%s",
+                                      branch, version)
+                            self.lock_info.append({
+                                "type": "python_module",
+                                "package": package,
+                                "url": req.uri,
+                                "branch": branch,
+                                "version": version,
+                                "vcs": req.vcs
+                            })
+                        else:
+                            # keep the python module and version we build
+                            log.debug("not a vcs, therefore %s==%s",
+                                      package, version)
+                            self.lock_info.append({
+                                "type": "python_module",
+                                "package": package,
+                                "vcs": None,
+                                "version": version,
+                            })
+                    else:
+                        # keep the python module and version we build
+                        log.debug("Just keeping %s==%s", package, version)
+                        self.lock_info.append({
+                            "type": "python_module",
+                            "package": package,
+                            "vcs": None,
+                            "version": version,
+                        })
                 wheel.move(wheelhouse)
                 self.tracked.append(dest)
+
+    @staticmethod
+    def _extract_pkg_vcs(wheel, req):
+        with utils.tempdir(chdir=False) as temp_dir:
+            dst_file = temp_dir / wheel.name
+            dst_dir = temp_dir / 'unarchive'
+            wheel.copy(dst_file)
+            if dst_file.endswith('.zip'):
+                with zipfile.ZipFile(dst_file, 'r') as zip_ref:
+                    zip_ref.extractall(dst_dir)
+            elif dst_file.endswith('.tar.gz'):
+                with tarfile.open(dst_file, 'r') as archive:
+                    archive.extractall(path=dst_dir)
+            else:
+                raise RuntimeError("Can only handle zips or tar.gz?")
+            # now use Fetcher to extract the branch and revision
+            vcs_dir = dst_dir / req.name
+            fetcher = fetchers.Fetcher(vcs_dir)
+            revision = fetcher.get_revision(vcs_dir)
+            branch = fetcher.get_branch_for_revision(vcs_dir, revision)
+            return (branch, revision)
 
     def _run_in_venv(self, *args):
         assert self._venv is not None
