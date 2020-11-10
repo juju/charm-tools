@@ -1,9 +1,29 @@
 Changelog
 =========
 
+charm-tools 2.8.0 + charmstore-client 2.5.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tuesday November 10 2020
+
+**charm-tools**
+
+* Fix snap build for updated charmstore-client (#587)
+* Store rev when pull-source on a subdir layer (#583)
+* Add revision info to output of pull-source (#582)
+* Add --branch option to pull-source (#581)
+* Raise more useful BuildError on missing pkg name (#579)
+* Deprecate Operator charm template (#578)
+
+**charmstore-client**
+
+* Update dependencies
+* Make charm-push support archives
+
 charm-tools 2.7.8 + charmstore-client 2.4.0+git-13-547c6f2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Tuesday July 21 2020
+
+**charm-tools**
 
 * Normalize package names when processing wheelhouse (#576)
 
