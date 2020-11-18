@@ -6,7 +6,9 @@ import os
 import tempfile
 from inspect import getargspec
 
+import requirements
 from path import Path as path
+from pkg_resources import safe_name
 from ruamel import yaml
 from charmtools import utils
 from charmtools.build.errors import BuildError
@@ -1036,13 +1038,16 @@ class WheelhouseTactic(ExactMatch, Tactic):
     kind = "dynamic"
     FILENAME = 'wheelhouse.txt'
     removed = []  # has to be class level to affect all tactics during signing
+    per_layer = False
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
         self.tracked = []
         self.previous = []
+        self.lines = None
         self._venv = None
         self.purge_wheels = False
+        self._layer_refs = {}
 
     def __str__(self):
         directory = self.target.directory / 'wheelhouse'
@@ -1051,14 +1056,57 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def combine(self, existing):
         ""  # suppress inherited doc
         self.previous = existing.previous + [existing]
+        existing.read()
+        self._layer_refs.update(existing._layer_refs)
+        self.read()
+        new_pkgs = set()
+        for line in self.lines:
+            try:
+                req = next(requirements.parse(line))
+                new_pkgs.add(safe_name(req.name))
+            except (StopIteration, ValueError):
+                pass  # ignore comments, blank lines, etc
+        existing_lines = []
+        for line in existing.lines:
+            try:
+                req = next(requirements.parse(line))
+                # new explicit reqs will override existing ones
+                if safe_name(req.name) not in new_pkgs:
+                    existing_lines.append(line)
+                else:
+                    existing_lines.append('# {}  # overridden by {}'
+                                          ''.format(line,
+                                                    self.layer.url))
+            except (StopIteration, ValueError):
+                existing_lines.append(line)  # ignore comments, blank lines, &c
+        self.lines = existing_lines + self.lines
         return self
+
+    def read(self):
+        if self.lines is None:
+            src = path(self.entity)
+            if src.exists():
+                for req in requirements.parse(src.text()):
+                    if req.name is None:
+                        raise BuildError(
+                            'Unable to determine package name for "{}"; '
+                            'did you forget "#egg=..."?'
+                            ''.format(req.line.strip()))
+                    self._layer_refs[safe_name(req.name)] = self.layer.url
+                self.lines = (['# ' + self.layer.url] +
+                              src.lines(retain=False) +
+                              [''])
+            else:
+                self.lines = []
 
     def _add(self, wheelhouse, *reqs):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
             self._pip('download', '--no-binary', ':all:', '-d', temp_dir,
                       *reqs)
+            log.debug('Copying wheels:')
             for wheel in temp_dir.files():
+                log.debug('  ' + wheel.name)
                 dest = wheelhouse / wheel.basename()
                 if dest in self.tracked:
                     return
@@ -1076,9 +1124,12 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def _run_in_venv(self, *args):
         assert self._venv is not None
         # have to use bash to activate the venv properly first
-        return utils.Process(('bash', '-c', ' '.join(
+        res = utils.Process(('bash', '-c', ' '.join(
             ('.', self._venv / 'bin' / 'activate', ';') + args
-        ))).exit_on_error()()
+        )))()
+        if res.exit_code != 0:
+            raise BuildError(res.output)
+        return res
 
     def _pip(self, *args):
         return self._run_in_venv('pip3', *args)
@@ -1092,27 +1143,54 @@ class WheelhouseTactic(ExactMatch, Tactic):
             utils.Process(
                 ('virtualenv', '--python', 'python3', self._venv)
             ).exit_on_error()()
-        # we are the top layer; process all lower layers first
-        for tactic in self.previous:
-            tactic()
-        # process this layer
-        self._add(wheelhouse, '-r', self.entity)
+        if self.per_layer:
+            self._process_per_layer(wheelhouse)
+        else:
+            self._process_combined(wheelhouse)
         # clean up
         if create_venv:
             self._venv.rmtree_p()
             self._venv = None
 
+    def _process_per_layer(self, wheelhouse):
+        # we are the top layer; process all lower layers first
+        for tactic in self.previous:
+            tactic()
+        # process this layer
+        log.debug('Processing wheelhouse for {}'.format(self.layer.url))
+        self._add(wheelhouse, '-r', self.entity)
+
+    def _process_combined(self, wheelhouse):
+        log.debug('Processing wheelhouse:')
+        self.read()
+        for line in self.lines:
+            log.debug('  ' + line.strip())
+        with utils.tempdir(chdir=False) as temp_dir:
+            wh_file = temp_dir / 'wheelhouse.txt'
+            wh_file.write_lines(self.lines)
+            self._add(wheelhouse, '-r', wh_file)
+            wh_file.move(self.target.directory / 'wheelhouse.txt')
+
     def sign(self):
         ""  # suppress inherited doc
         sigs = {}
-        for tactic in self.previous:
-            sigs.update(tactic.sign())
+        if self.per_layer:
+            for tactic in self.previous:
+                sigs.update(tactic.sign())
+        else:
+            sigs['wheelhouse.txt'] = (
+                self.layer.url,
+                "dynamic",
+                utils.sign(self.target.directory / 'wheelhouse.txt'),
+            )
         for d in self.tracked:
             if d in self.removed:
                 continue
             relpath = d.relpath(self.target.directory)
+            pkg_name = safe_name(d.basename().split('-')[0])
+            layer_url = self._layer_refs.get(pkg_name, '__pip__')
             sigs[relpath] = (
-                self.layer.url, "dynamic", utils.sign(d))
+                layer_url, "dynamic", utils.sign(d))
         return sigs
 
 

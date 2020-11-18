@@ -57,6 +57,7 @@ import tempfile
 import textwrap
 
 import yaml
+from path import Path as path
 
 from charmtools import utils
 from charmtools.build import fetchers
@@ -204,7 +205,11 @@ def download_item(args):
 
     # Copy download dir to final destination dir
     shutil.copytree(download_dir, final_dest_dir, symlinks=True)
-    print('Downloaded {} to {}'.format(args.item, final_dest_dir))
+    rev = ' (rev: {})'.format(fetcher.revision) if fetcher.revision else ''
+    if fetcher.revision:
+        rev_file = path(final_dest_dir) / '.pull-source-rev'
+        rev_file.write_text(fetcher.revision)
+    print('Downloaded {}{} to {}'.format(args.item, rev, final_dest_dir))
 
 
 def setup_parser():
@@ -221,6 +226,12 @@ def setup_parser():
     parser.add_argument(
         'dir', nargs='?',
         help='Directory in which to place the downloaded source.',
+    )
+    parser.add_argument(
+        '-b', '--branch',
+        help='Branch to check out after cloning the repo '
+             '(before copying any subdir). If not given, '
+             'the default branch of the repo will be used.'
     )
     parser.add_argument(
         '-i', '--layer-index',
@@ -257,6 +268,7 @@ def main():
 
     fetchers.LayerFetcher.NO_LOCAL_LAYERS = True
     fetchers.LayerFetcher.set_layer_indexes(args.layer_index)
+    fetchers.LayerFetcher.set_branch(args.branch)
 
     return download_item(args)
 

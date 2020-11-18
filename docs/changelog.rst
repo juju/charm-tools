@@ -1,6 +1,67 @@
 Changelog
 =========
 
+charm-tools 2.8.0 + charmstore-client 2.5.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tuesday November 10 2020
+
+**charm-tools**
+
+* Fix snap build for updated charmstore-client (#587)
+* Store rev when pull-source on a subdir layer (#583)
+* Add revision info to output of pull-source (#582)
+* Add --branch option to pull-source (#581)
+* Raise more useful BuildError on missing pkg name (#579)
+* Deprecate Operator charm template (#578)
+
+**charmstore-client**
+
+* Update dependencies
+* Make charm-push support archives
+
+charm-tools 2.7.8 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tuesday July 21 2020
+
+**charm-tools**
+
+* Normalize package names when processing wheelhouse (#576)
+
+charm-tools 2.7.7 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Monday July 20 2020
+
+**charm-tools**
+
+* Fix handling of comments in wheelhouse (#574)
+
+charm-tools 2.7.6 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thursday July 16 2020
+
+**charm-tools**
+
+* Switch to requirements-parser for wheelhouse (#572)
+
+charm-tools 2.7.5 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thursday June 25 2020
+
+**charm-tools**
+
+* Process wheelhouse.txt holistically rather than per-layer (#569)
+* Handle invalid config file more gracefully (#567)
+* Default to charming category of the Juju Discourse (#565)
+
+charm-tools 2.7.5 + charmstore-client 2.4.0+git-13-547c6f2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thursday June 25 2020
+
+**charm-tools**
+
+* Process wheelhouse.txt holistically rather than per-layer (#569)
+* Handle invalid config file more gracefully (#567)
+* Default to charming category of the Juju Discourse (#565)
 
 charm-tools 2.7.4 + charmstore-client 2.4.0+git-13-547c6f2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

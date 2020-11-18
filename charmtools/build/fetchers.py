@@ -42,6 +42,8 @@ class LayerFetcher(fetchers.LocalFetcher):
     OLD_ENVIRON = "LAYER_PATH"
     OPTIONAL_PREFIX = "juju-layer-"
     ENDPOINT = "layers"
+    _DEFAULT_BRANCH = None
+    BRANCH = _DEFAULT_BRANCH
 
     @classmethod
     def set_layer_indexes(cls, layer_indexes):
@@ -60,6 +62,16 @@ class LayerFetcher(fetchers.LocalFetcher):
     @classmethod
     def restore_layer_indexes(cls):
         cls.LAYER_INDEXES = cls._DEFAULT_LAYER_INDEXES
+
+    @classmethod
+    def set_branch(cls, branch):
+        if not branch:
+            return
+        cls.BRANCH = branch
+
+    @classmethod
+    def restore_branch(cls):
+        cls.BRANCH = cls._DEFAULT_BRANCH
 
     @classmethod
     def can_fetch(cls, url):
@@ -145,9 +157,14 @@ class LayerFetcher(fetchers.LocalFetcher):
 
     def fetch(self, dir_):
         if hasattr(self, "path"):
+            log.debug('Using fetcher: {}'.format(super(LayerFetcher, self)))
             return super(LayerFetcher, self).fetch(dir_)
         elif hasattr(self, "repo"):
             f, target = self._get_repo_fetcher_and_target(self.repo, dir_)
+            log.debug('Using fetcher: {}'.format(f))
+            if self.BRANCH is not None:
+                log.debug('Adding branch: %s', self.BRANCH)
+                f.revision = self.BRANCH
             orig_res = res = f.fetch(dir_)
             # make sure we save the revision of the actual repo, before we
             # start traversing subdirectories and moving contents around

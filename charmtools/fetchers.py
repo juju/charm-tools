@@ -9,6 +9,7 @@ import tempfile
 
 import requests
 import yaml
+from path import Path as path
 
 
 log = logging.getLogger(__name__)
@@ -107,8 +108,6 @@ class Fetcher(object):
         return match.groupdict() if match else {}
 
     def get_revision(self, dir_):
-        if self.revision:
-            return self.revision
         for cmd in ("git rev-parse HEAD",
                     "bzr revision-info",
                     "hg log -l 1 --template '{node}\n' -r ."):
@@ -122,7 +121,10 @@ class Fetcher(object):
                     return rev_info.decode('utf8').strip()
             except FetchError:
                 continue
-        return None
+        rev_file = path(dir_) / '.pull-source-rev'
+        if rev_file.exists():
+            return rev_file.read_text().strip()
+        return self.revision
 
 
 class BzrFetcher(Fetcher):
@@ -141,6 +143,7 @@ class BzrFetcher(Fetcher):
         url = 'lp:' + self.repo
         cmd = 'branch --use-existing-dir {} {}'.format(url, dir_)
         if self.revision:
+            log.debug('Switching to revision: {}'.format(self.revision))
             cmd = '{} -r {}'.format(cmd, self.revision)
         bzr(cmd)
         return rename(dir_)
@@ -176,6 +179,7 @@ class LaunchpadGitFetcher(Fetcher):
         url = 'https://git.launchpad.net/' + self.repo
         git('clone {} {}'.format(url, dir_))
         if self.revision:
+            log.debug('Switching to revision: {}'.format(self.revision))
             git('checkout {}'.format(self.revision), cwd=dir_)
         return rename(dir_)
 
@@ -191,6 +195,7 @@ class GithubFetcher(Fetcher):
         url = 'https://github.com/' + self.repo
         git('clone {} {}'.format(url, dir_))
         if self.revision:
+            log.debug('Switching to revision: {}'.format(self.revision))
             git('checkout {}'.format(self.revision), cwd=dir_)
         return rename(dir_)
 
@@ -206,6 +211,7 @@ class OpendevFetcher(Fetcher):
         url = 'https://opendev.org/' + self.repo
         git('clone {} {}'.format(url, dir_))
         if self.revision:
+            log.debug('Switching to revision: {}'.format(self.revision))
             git('checkout {}'.format(self.revision), cwd=dir_)
         return rename(dir_)
 
@@ -223,6 +229,9 @@ class GitFetcher(Fetcher):
     def fetch(self, dir_):
         dir_ = tempfile.mkdtemp(dir=dir_)
         git('clone {} {}'.format(self.repo, dir_))
+        if self.revision:
+            log.debug('Switching to revision: {}'.format(self.revision))
+            git('checkout {}'.format(self.revision), cwd=dir_)
         return rename(dir_)
 
 
@@ -242,12 +251,14 @@ class BitbucketFetcher(Fetcher):
     def _fetch_git(self, url, dir_):
         git('clone {} {}'.format(url, dir_))
         if self.revision:
+            log.debug('Switching to revision: {}'.format(self.revision))
             git('checkout {}'.format(self.revision), cwd=dir_)
         return rename(dir_)
 
     def _fetch_hg(self, url, dir_):
         cmd = 'clone {} {}'.format(url, dir_)
         if self.revision:
+            log.debug('Switching to revision: {}'.format(self.revision))
             cmd = '{} -u {}'.format(cmd, self.revision)
         hg(cmd)
         return rename(dir_)

@@ -416,24 +416,34 @@ class TestBuild(unittest.TestCase):
 
         self.assertEqual((bu.target_dir / 'version').text(), 'sha2')
 
+    @mock.patch("charmtools.utils.sign")
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
     @mock.patch("charmtools.build.builder.Builder.plan_hooks")
     @mock.patch("path.Path.rmtree_p")
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
-    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv):
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv, sign):
+        build.tactics.WheelhouseTactic.per_layer = False
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
         bu.log_level = "WARN"
         bu.build_dir = self.build_dir
         bu.cache_dir = bu.build_dir / "_cache"
         bu.series = "trusty"
-        bu.name = "foo"
+        bu.name = "whlayer"
         bu.charm = "layers/whlayer"
         bu.hide_metrics = True
         bu.report = False
         bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
+
+        def _store_wheelhouses(args):
+            filename = args[-1].split()[-1]
+            if filename.endswith('.txt'):
+                Process._wheelhouses.append(path(filename).lines(retain=False))
+            return mock.Mock(return_value=mock.Mock(exit_code=0))
+        Process._wheelhouses = []
+        Process.side_effect = _store_wheelhouses
 
         # remove the sign phase
         bu.PHASES = bu.PHASES[:-2]
@@ -441,16 +451,59 @@ class TestBuild(unittest.TestCase):
             with mock.patch("path.Path.mkdir_p"):
                 with mock.patch("path.Path.files"):
                     bu()
-                    Process.assert_any_call((
-                        'bash', '-c', '. /tmp/bin/activate ;'
-                        ' pip3 download --no-binary :all: '
-                        '-d /tmp -r ' +
-                        self.dirname / 'layers/whlayer/wheelhouse.txt'))
-                    Process.assert_any_call((
-                        'bash', '-c', '. /tmp/bin/activate ;'
-                        ' pip3 download --no-binary :all: '
-                        '-d /tmp -r ' +
-                        self.dirname / 'wh-over.txt'))
+                    self.assertEqual(len(Process._wheelhouses), 1)
+                    # note that setuptools uses both hyphen and underscore, but
+                    # that should be normalized so that they match
+                    self.assertEqual(Process._wheelhouses[0], [
+                        '# layers/whbase',
+                        '# base-comment',
+                        '# foo==1.0  # overridden by whlayer',
+                        '# bar==1.0  # overridden by whlayer',
+                        '# qux==1.0  # overridden by whlayer',
+                        '# setuptools-scm<=1.17.0  # overridden by '
+                        '--wheelhouse-overrides',
+                        '',
+                        '# whlayer',
+                        '# git+https://github.com/me/baz#egg=baz  # comment',
+                        'foo==2.0',
+                        'git+https://github.com/me/bar#egg=bar',
+                        '# qux==2.0  # overridden by --wheelhouse-overrides',
+                        '',
+                        '# --wheelhouse-overrides',
+                        'git+https://github.com/me/qux#egg=qux',
+                        'setuptools_scm>=3.0<=3.4.1',
+                        '',
+                    ])
+
+        sign.return_value = 'signature'
+        wh = build.tactics.WheelhouseTactic(path('wheelhouse.txt'),
+                                            mock.Mock(directory=path('wh')),
+                                            mock.Mock(url='charm'),
+                                            mock.Mock())
+        # package name gets normalized properly when checking _layer_refs
+        wh._layer_refs['setuptools-scm'] = 'layer:foo'
+        wh.tracked = {path('wh/setuptools_scm-1.17.0.tar.gz')}
+        self.assertEqual(wh.sign(), {
+            'wheelhouse.txt': ('charm',
+                               'dynamic',
+                               'signature'),
+            'setuptools_scm-1.17.0.tar.gz': ('layer:foo',
+                                             'dynamic',
+                                             'signature'),
+        })
+
+    @mock.patch.object(build.tactics, 'path')
+    def test_wheelhouse_missing_package_name(self, path):
+        wh = build.tactics.WheelhouseTactic(mock.Mock(name='entity'),
+                                            mock.Mock(name='target'),
+                                            mock.Mock(name='layer', url='foo'),
+                                            mock.Mock(name='next_config'))
+        path().text.return_value = 'https://example.com/my-package'
+        with self.assertRaises(BuildError):
+            wh.read()
+        path().text.return_value = 'https://example.com/my-package#egg=foo'
+        wh.read()
+        self.assertIn('foo', wh._layer_refs.keys())
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',

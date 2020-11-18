@@ -61,6 +61,7 @@ setup(
         'secretstorage<2.4',
         'dict2colander==0.2',
         'vergit>=1.0.0,<2.0.0',
+        'requirements-parser',
     ],
     include_package_data=True,
     maintainer='Cory Johns',
@@ -89,7 +90,6 @@ setup(
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
-            'operator-python = charmtools.templates.operator_python:OperatorPythonCharmTemplate',  # noqa: E501
             'reactive-python = charmtools.templates.reactive_python:ReactivePythonCharmTemplate',  # noqa: E501
             'reactive-bash = charmtools.templates.reactive_bash:ReactiveBashCharmTemplate',  # noqa: E501
             'python-basic = charmtools.templates.python:PythonCharmTemplate',
