@@ -800,8 +800,8 @@ def validate_min_juju_version(charm, linter):
     if 'min-juju-version' not in charm:
         return
 
-    pattern = r'^(\d{1,9})\.(\d{1,9})(\.|-(\w+))(\d{1,9})(\.\d{1,9})?$'
-    match = re.match(pattern, charm['min-juju-version'])
+    pattern = r'(\d{1,9})\.(\d{1,9})(?:\.|-([a-z]+))(\d{1,9})(\.\d{1,9})?'
+    match = re.match(pattern, str(charm['min-juju-version']))
     if not match:
         linter.err('min-juju-version: invalid format, try X.Y.Z')
         return
