@@ -58,6 +58,7 @@ setup(
         'virtualenv>=1.11.4',
         'colander<=1.7.0',
         'jsonschema<=2.5.1',
+        'keyring<21',
         'secretstorage<2.4',
         'dict2colander==0.2',
         'vergit>=1.0.0,<2.0.0',
