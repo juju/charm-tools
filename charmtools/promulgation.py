@@ -77,9 +77,10 @@ def promulgate():
                             promulgated_id, '--format=json'],
                            stdout=PIPE, stderr=PIPE)
     if promulgated_show.returncode == 0:
-        promulgated_info = json.loads(promulgated_show.decode('utf8'))
+        promulgated_info = json.loads(promulgated_show.stdout.decode('utf8'))
         owner = promulgated_info['owner']['User']
-        _fail(f'{promulgated_id} is already owned by {owner}')
+        _fail(f'{promulgated_id} is already owned by {owner}; '
+              f'you will need to unpromulgate first to change owner')
 
     res = run([_bin('bhttp'), 'put', '-j', _url(charm_id),
                'Promulgated:=true'])
