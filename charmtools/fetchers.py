@@ -126,6 +126,21 @@ class Fetcher(object):
             return rev_file.read_text().strip()
         return self.revision
 
+    def get_branch_for_revision(self, dir_, revision=None):
+        """Returns None if the revision doesn't match the actual branch name"""
+        if revision is None:
+            revision = self.revision
+        if not revision:
+            return None
+        for cmd in ("git branch --contains {} --format=\"%(refname)\""
+                    .format(revision), ):
+            try:
+                branch = check_output(cmd, cwd=dir_).decode('UTF-8').strip()
+                return branch
+            except FetchError:
+                continue
+        return None
+
 
 class BzrFetcher(Fetcher):
     MATCH = re.compile(r"""
@@ -141,6 +156,8 @@ class BzrFetcher(Fetcher):
     def fetch(self, dir_):
         dir_ = tempfile.mkdtemp(dir=dir_)
         url = 'lp:' + self.repo
+        self.fetched_url = url
+        self.vcs = "bzr"
         cmd = 'branch --use-existing-dir {} {}'.format(url, dir_)
         if self.revision:
             log.debug('Switching to revision: {}'.format(self.revision))
@@ -159,6 +176,8 @@ class BzrMergeProposalFetcher(BzrFetcher):
         dir_ = tempfile.mkdtemp(dir=dir_)
         api_base = 'https://api.launchpad.net/devel/'
         url = api_base + self.repo
+        self.fetched_url = url
+        self.vcs = "bzr"
         merge_data = get(url).json()
         target = 'lp:' + merge_data['target_branch_link'][len(api_base):]
         source = 'lp:' + merge_data['source_branch_link'][len(api_base):]
@@ -177,6 +196,8 @@ class LaunchpadGitFetcher(Fetcher):
     def fetch(self, dir_):
         dir_ = tempfile.mkdtemp(dir=dir_)
         url = 'https://git.launchpad.net/' + self.repo
+        self.fetched_url = url
+        self.vcs = "git"
         git('clone {} {}'.format(url, dir_))
         if self.revision:
             log.debug('Switching to revision: {}'.format(self.revision))
@@ -193,6 +214,8 @@ class GithubFetcher(Fetcher):
     def fetch(self, dir_):
         dir_ = tempfile.mkdtemp(dir=dir_)
         url = 'https://github.com/' + self.repo
+        self.fetched_url = url
+        self.vcs = "git"
         git('clone {} {}'.format(url, dir_))
         if self.revision:
             log.debug('Switching to revision: {}'.format(self.revision))
@@ -209,6 +232,8 @@ class OpendevFetcher(Fetcher):
     def fetch(self, dir_):
         dir_ = tempfile.mkdtemp(dir=dir_)
         url = 'https://opendev.org/' + self.repo
+        self.fetched_url = url
+        self.vcs = "git"
         git('clone {} {}'.format(url, dir_))
         if self.revision:
             log.debug('Switching to revision: {}'.format(self.revision))
@@ -228,6 +253,8 @@ class GitFetcher(Fetcher):
 
     def fetch(self, dir_):
         dir_ = tempfile.mkdtemp(dir=dir_)
+        self.fetched_url = self.repo
+        self.vcs = "git"
         git('clone {} {}'.format(self.repo, dir_))
         if self.revision:
             log.debug('Switching to revision: {}'.format(self.revision))
@@ -244,8 +271,11 @@ class BitbucketFetcher(Fetcher):
     def fetch(self, dir_):
         dir_ = tempfile.mkdtemp(dir=dir_)
         url = 'https://bitbucket.org/' + self.repo
+        self.fetched_url = url
         if url.endswith('.git'):
+            self.vcs = "git"
             return self._fetch_git(url, dir_)
+        self.vcs = "hg"
         return self._fetch_hg(url, dir_)
 
     def _fetch_git(self, url, dir_):
@@ -296,6 +326,8 @@ class CharmstoreDownloader(Fetcher):
 
     def fetch(self, dir_):
         url = self.ARCHIVE_URL.format(self.entity)
+        self.fetched_url = url
+        self.vcs = "charmstore"
         archive = download_file(url, dir_)
         entity_dir = extract_archive(archive, dir_)
         return rename(entity_dir)

@@ -157,7 +157,6 @@ class LayerFetcher(fetchers.LocalFetcher):
 
     def fetch(self, dir_):
         if hasattr(self, "path"):
-            log.debug('Using fetcher: {}'.format(super(LayerFetcher, self)))
             return super(LayerFetcher, self).fetch(dir_)
         elif hasattr(self, "repo"):
             f, target = self._get_repo_fetcher_and_target(self.repo, dir_)
@@ -166,6 +165,10 @@ class LayerFetcher(fetchers.LocalFetcher):
                 log.debug('Adding branch: %s', self.BRANCH)
                 f.revision = self.BRANCH
             orig_res = res = f.fetch(dir_)
+            log.debug("url fetched (for lockfile): %s",
+                      getattr(f, 'fetched_url'))
+            self.fetched_url = getattr(f, 'fetched_url', None)
+            self.vcs = getattr(f, 'vcs', None)
             # make sure we save the revision of the actual repo, before we
             # start traversing subdirectories and moving contents around
             self.revision = self.get_revision(res)
