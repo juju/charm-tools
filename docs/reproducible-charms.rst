@@ -65,7 +65,8 @@ If a lock file (``build.lock``) is available in the top layer, then it will be
 used to control the versions of the layers and modules *by default*.  i.e. the
 presence of the lock file controls the build.
 
-Two options are available to control the build when a lock file is present:
+Three options are available which can influence the build when a lock file is
+present:
 
  * ``--ignore-lock-file``
  * ``--use-lock-file-branches``
