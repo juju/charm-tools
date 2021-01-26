@@ -304,13 +304,7 @@ class Charm(object):
                 # not all charms have a layer.yaml
                 pass
 
-            for key in charm.keys():
-                if key not in KNOWN_METADATA_KEYS:
-                    lint.warn("Unknown root metadata field (%s)" % key)
-
-            for key in REQUIRED_METADATA_KEYS:
-                if key not in charm:
-                    lint.err("Missing required metadata field (%s)" % key)
+            validate_metadata_keys(charm, lint)
 
             charm_basename = os.path.basename(charm_path)
             if charm.get('name') != charm_basename:
@@ -1049,3 +1043,20 @@ def validate_categories_and_tags(charm, linter):
             'Categories are being deprecated in favor of tags. '
             'Please rename the "categories" field to "tags".'
         )
+
+
+def validate_metadata_keys(charm, linter):
+    """Validate keys in metadata.yaml.
+
+    :param charm: dict of charm metadata parsed from metadata.yaml
+    :param linter: :class:`CharmLinter` object to which info/warning/error
+        messages will be written
+
+    """
+    for key in charm.keys():
+        if key not in KNOWN_METADATA_KEYS:
+            linter.warn("Unknown root metadata field (%s)" % key)
+
+    for key in REQUIRED_METADATA_KEYS:
+        if key not in charm:
+            linter.err("Missing required metadata field (%s)" % key)
