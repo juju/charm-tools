@@ -21,6 +21,7 @@ KNOWN_METADATA_KEYS = (
     'name',
     'display-name',
     'summary',
+    'docs',
     'maintainer',
     'maintainers',
     'min-juju-version',
@@ -305,7 +306,7 @@ class Charm(object):
 
             for key in charm.keys():
                 if key not in KNOWN_METADATA_KEYS:
-                    lint.err("Unknown root metadata field (%s)" % key)
+                    lint.warn("Unknown root metadata field (%s)" % key)
 
             for key in REQUIRED_METADATA_KEYS:
                 if key not in charm:
