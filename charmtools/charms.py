@@ -1055,7 +1055,7 @@ def validate_metadata_keys(charm, linter):
     """
     for key in charm.keys():
         if key not in KNOWN_METADATA_KEYS:
-            linter.warn("Unknown root metadata field (%s)" % key)
+            linter.info("Unknown root metadata field (%s)" % key)
 
     for key in REQUIRED_METADATA_KEYS:
         if key not in charm:

@@ -445,7 +445,7 @@ class TestCharmProof(TestCase):
         with open(join(self.charm_dir, 'metadata.yaml'), 'rb') as metadata_yaml:
             charm = yaml.safe_load(metadata_yaml)
         validate_metadata_keys(charm, self.linter)
-        self.assertEqual(["W: Unknown root metadata field (fake)"], self.linter.lint)
+        self.assertEqual(["I: Unknown root metadata field (fake)"], self.linter.lint)
 
 
 class CategoriesTagsValidationTest(TestCase):
