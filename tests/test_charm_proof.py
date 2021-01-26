@@ -16,6 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import yaml
 
 from os.path import abspath, dirname, join
 from shutil import rmtree
@@ -45,6 +46,7 @@ from charmtools.charms import validate_functions  # noqa
 from charmtools.charms import validate_terms  # noqa
 from charmtools.charms import validate_resources  # noqa
 from charmtools.charms import validate_deployment  # noqa
+from charmtools.charms import validate_metadata_keys  # noqa
 
 
 class TestCharmProof(TestCase):
@@ -57,6 +59,10 @@ class TestCharmProof(TestCase):
 
     def write_config(self, text):
         with open(join(self.charm_dir, 'config.yaml'), 'w') as f:
+            f.write(dedent(text))
+
+    def write_metadata(self, text):
+        with open(join(self.charm_dir, 'metadata.yaml'), 'w') as f:
             f.write(dedent(text))
 
     def test_config_yaml_missing(self):
@@ -356,8 +362,7 @@ class TestCharmProof(TestCase):
         self.assertTrue(self.linter.lint[0].startswith(expected))
 
     def test_valid_layer_yaml(self):
-        with open(join(self.charm_dir, 'metadata.yaml'), 'w') as f:
-            f.write("{}")
+        self.write_metadata("{}")
         with open(join(self.charm_dir, 'layer.yaml'), 'w') as f:
             f.write("valid: {}")
         with patch.object(Charm, 'is_charm'):
@@ -368,8 +373,7 @@ class TestCharmProof(TestCase):
                        for msg in self.linter.lint)
 
     def test_invalid_layer_yaml(self):
-        with open(join(self.charm_dir, 'metadata.yaml'), 'w') as f:
-            f.write("{}")
+        self.write_metadata("{}")
         with open(join(self.charm_dir, 'layer.yaml'), 'w') as f:
             f.write("invalid: {")
         Charm(self.charm_dir, self.linter).proof()
@@ -388,8 +392,7 @@ class TestCharmProof(TestCase):
             patcher = patch('charmtools.charms.{}'.format(validator))
             mocks[validator] = patcher.start()
             self.addCleanup(patcher.stop)
-        with open(join(self.charm_dir, 'metadata.yaml'), 'w') as f:
-            f.write("{}")
+        self.write_metadata("{}")
         with open(join(self.charm_dir, 'layer.yaml'), 'w') as f:
             f.write(dedent("""
                            proof:
@@ -413,6 +416,36 @@ class TestCharmProof(TestCase):
                                          self.linter,
                                          [{'name': 'ext',
                                            'type': 'Boolean'}])
+
+    def test_metadata_clean(self):
+        self.write_metadata("""
+            name: test
+            summary: test charm
+            """)
+        with open(join(self.charm_dir, 'metadata.yaml'), 'rb') as metadata_yaml:
+            charm = yaml.safe_load(metadata_yaml)
+        validate_metadata_keys(charm, self.linter)
+        self.assertEqual([], self.linter.lint)
+
+    def test_metadata_missing_key(self):
+        self.write_metadata("""
+            name: test
+            """)
+        with open(join(self.charm_dir, 'metadata.yaml'), 'rb') as metadata_yaml:
+            charm = yaml.safe_load(metadata_yaml)
+        validate_metadata_keys(charm, self.linter)
+        self.assertEqual(["E: Missing required metadata field (summary)"], self.linter.lint)
+
+    def test_metadata_unknown_key(self):
+        self.write_metadata("""
+            name: test
+            summary: test charm
+            fake: this should warn
+            """)
+        with open(join(self.charm_dir, 'metadata.yaml'), 'rb') as metadata_yaml:
+            charm = yaml.safe_load(metadata_yaml)
+        validate_metadata_keys(charm, self.linter)
+        self.assertEqual(["I: Unknown root metadata field (fake)"], self.linter.lint)
 
 
 class CategoriesTagsValidationTest(TestCase):
