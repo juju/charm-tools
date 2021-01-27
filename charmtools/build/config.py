@@ -15,6 +15,7 @@ DEFAULT_IGNORES = [
     ".tox",
     "*.swp",
     ".pull-source-rev",
+    "*.charm",
 ]
 
 

@@ -4,6 +4,7 @@ import json
 import unittest
 import logging
 import pkg_resources
+import zipfile
 from path import Path as path, TempDir
 
 
@@ -73,6 +74,7 @@ class TestBuild(unittest.TestCase):
     def test_failed_proof(self, mBuilder, mproof, mparse_args):
         # Test that charm-proof failures get a BuildError exception.
         mproof.proof.return_value = ([], 200)
+        mBuilder().charm_file = False
         try:
             build.builder.main()
             self.fail('Expected Builder to throw an exception on proof error')
@@ -91,9 +93,12 @@ class TestBuild(unittest.TestCase):
         bu.charm = "layers/tester"
         bu.hide_metrics = True
         bu.report = False
+        bu.charm_file = True
         remove_layer_file = self.dirname / 'layers/tester/to_remove'
         remove_layer_file.touch()
+        charm_file = self.dirname / 'foo.charm'
         self.addCleanup(remove_layer_file.remove_p)
+        self.addCleanup(charm_file.remove_p)
         with self.dirname:
             with mock.patch.object(build.builder, 'log') as log:
                 with mock.patch.object(build.builder, 'repofinder') as rf:
@@ -110,6 +115,9 @@ class TestBuild(unittest.TestCase):
                         'e.g. repo: myrepo')
         base = bu.target_dir
         self.assertTrue(base.exists())
+        self.assertTrue(charm_file.exists())
+        with zipfile.ZipFile(charm_file, 'r') as zip:
+            assert 'metadata.yaml' in zip.namelist()
 
         # Confirm that copyright file of lower layers gets renamed
         # and copyright file of top layer doesn't get renamed
