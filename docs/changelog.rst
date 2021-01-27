@@ -1,6 +1,20 @@
 Changelog
 =========
 
+charm-tools 2.8.1 + charmstore-client 2.5.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Wednesday January 27 2021
+
+**charm-tools**
+
+* Add option to create .charm file (#592)
+* Add 'docs' to known metadata fields (#591)
+* Add reproducible charm build feature (#585)
+* Fix exception rendering "already promulgated" error (#590)
+* Align setup.py to requirements.txt (#589)
+* Fix TypeError from linter on X.Y min-juju-version (#588)
+* Make output_dir the same as build_dir (#564)
+
 charm-tools 2.8.0 + charmstore-client 2.5.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Tuesday November 10 2020
