@@ -30,6 +30,7 @@ from charmtools.build.fetchers import (
     RepoFetcher,
 )
 from charmtools.version import cached_charm_tools_version, format_version
+from zipfile import ZipFile, ZIP_DEFLATED
 
 log = logging.getLogger("build")
 
@@ -806,12 +807,20 @@ class Builder(object):
                 msg += ', with a url from which your layer can be cloned.'
             log.warn(msg)
 
+    def create_charm_file(self):
+        dst_name = '{}.charm'.format(self.name)
+        with ZipFile(dst_name, 'w', ZIP_DEFLATED) as zip:
+            for src_path in self.target_dir.walkfiles():
+                zip.write(src_path, src_path.relpath(self.target_dir))
+
     def __call__(self):
         log.debug(json.dumps(
             self.status(), indent=2, sort_keys=True, default=str))
         self.validate()
         self.find_or_create_target()
         self.generate()
+        if self.charm_file:
+            self.create_charm_file()
         self.cleanup()
 
     def inspect(self):
@@ -1131,6 +1140,8 @@ def main(args=None):
                         help='Same as --log-level=DEBUG')
     parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
+    parser.add_argument('--charm-file', '-F', action="store_true",
+                        help="Create a .charm file in the current directory")
     parser.add_argument('charm', nargs="?", default=".", type=path,
                         help='Source directory for charm layer to build '
                              '(default: .)')
