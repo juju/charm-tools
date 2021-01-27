@@ -1140,8 +1140,8 @@ def main(args=None):
                         help='Same as --log-level=DEBUG')
     parser.add_argument('-c', '--force-color', action="store_true",
                         help="Force raw output (color)")
-    parser.add_argument('--charm-file', '-F', action="store_true",
-                        help="Create a .charm file in the current directory")
+    parser.add_argument('--charm-file', '-F', action='store_true',
+                        help='Create a .charm file in the current directory')
     parser.add_argument('charm', nargs="?", default=".", type=path,
                         help='Source directory for charm layer to build '
                              '(default: .)')
