@@ -171,6 +171,7 @@ class Builder(object):
         self._warned_home = False
         self.lock_items = []
         self.with_locks = {}
+        self.charm_file = False
 
     @property
     def top_layer(self):
