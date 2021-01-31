@@ -408,7 +408,11 @@ class Builder(object):
                 lock_layer = Layer('lockfile-wheelhouse',
                                    layers["layers"][-1].target_repo.dirname())
                 lock_layer.directory = layers["layers"][-1].directory
-                wh_tactic = WheelhouseTactic(
+                if existing_tactic is not None:
+                    wheelhousetactic_class = existing_tactic.__class__
+                else:
+                    wheelhousetactic_class = WheelhouseTactic
+                wh_tactic = wheelhousetactic_class(
                     "",
                     self.target,
                     lock_layer,
@@ -425,7 +429,11 @@ class Builder(object):
             wh_over_layer = Layer('--wheelhouse-overrides',
                                   layers["layers"][-1].target_repo.dirname())
             wh_over_layer.directory = layers["layers"][-1].directory
-            output_files['wheelhouse.txt'] = WheelhouseTactic(
+            if existing_tactic is not None:
+                wheelhousetactic_class = existing_tactic.__class__
+            else:
+                wheelhousetactic_class = WheelhouseTactic
+            output_files['wheelhouse.txt'] = wheelhousetactic_class(
                 self.wheelhouse_overrides,
                 self.target,
                 wh_over_layer,
