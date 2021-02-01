@@ -1,6 +1,14 @@
 Changelog
 =========
 
+charm-tools 2.8.2 + charmstore-client 2.5.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Monday February 1 2021
+
+**charm-tools**
+
+* Fix reproducible charms issues (#598)
+
 charm-tools 2.8.1 + charmstore-client 2.5.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Wednesday January 27 2021
