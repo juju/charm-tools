@@ -16,6 +16,7 @@ DEFAULT_IGNORES = [
     "*.swp",
     ".pull-source-rev",
     "*.charm",
+    "build.lock",
 ]
 
 
