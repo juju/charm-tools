@@ -77,7 +77,13 @@ class LayerFetcher(fetchers.LocalFetcher):
     def can_fetch(cls, url):
         # Search local path first, then the interface webservice
         if url.startswith("{}:".format(cls.NAMESPACE)):
-            name = url[len(cls.NAMESPACE) + 1:]
+            remaining = url[len(cls.NAMESPACE) + 1:]
+            parts = remaining.split("@", 2)
+            name = parts[0]
+            try:
+                revision = parts[1]
+            except IndexError:
+                revision = None
 
             if not cls.NO_LOCAL_LAYERS:
                 prefixed_name = '{}-{}'.format(cls.NAMESPACE, name)
@@ -116,6 +122,8 @@ class LayerFetcher(fetchers.LocalFetcher):
                         if not result.get('repo'):
                             continue
                         log.debug('Found repo: {}'.format(result['repo']))
+                        if revision:
+                            result.update(revision=revision)
                         return result
                     try:
                         result = requests.get(uri)
@@ -125,6 +133,8 @@ class LayerFetcher(fetchers.LocalFetcher):
                         result = result.json()
                         if result.get("repo"):
                             log.debug('Found repo: {}'.format(result['repo']))
+                            if revision:
+                                result.update(revision=revision)
                             return result
             return {}
 
@@ -152,7 +162,12 @@ class LayerFetcher(fetchers.LocalFetcher):
 
         """
         u = self.url[len(self.NAMESPACE) + 1:]
-        f = get_fetcher(repo)
+        if '@' in u:
+            u = u.split('@')[0]
+        if getattr(self, 'revision', ''):
+            f = get_fetcher("{}@{}".format(repo, self.revision))
+        else:
+            f = get_fetcher(repo)
         return f, path(dir_) / u
 
     def fetch(self, dir_):

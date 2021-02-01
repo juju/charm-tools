@@ -80,7 +80,7 @@ class Fetched(Configable):
         if self._name:
             return self._name
         if self.url.startswith(self.NAMESPACE + ':'):
-            return self.url[len(self.NAMESPACE)+1:]
+            return self.url[len(self.NAMESPACE) + 1:]
         return self.url.rsplit('/', 1)[-1]
 
     def __repr__(self):
@@ -171,6 +171,7 @@ class Builder(object):
         self._warned_home = False
         self.lock_items = []
         self.with_locks = {}
+        self.charm_file = False
 
     @property
     def top_layer(self):
@@ -401,30 +402,39 @@ class Builder(object):
         # necessary.
         if not getattr(self, 'ignore_lock_file', False):
             lines = self.generate_python_modules_from_lock_file()
-            # override any existing lines with the python modules from the lock
-            # file.
-            existing_tactic = output_files.get('wheelhouse.txt')
-            lock_layer = Layer('lockfile-wheelhouse',
-                               layers["layers"][-1].target_repo.dirname())
-            lock_layer.directory = layers["layers"][-1].directory
-            wh_tactic = WheelhouseTactic(
-                "",
-                self.target,
-                lock_layer,
-                next_config,
-            )
-            wh_tactic.lines = lines
-            wh_tactic.purge_wheels = True
-            if existing_tactic is not None:
-                wh_tactic.combine(existing_tactic)
-            output_files["wheelhouse.txt"] = wh_tactic
+            if lines:
+                # override any existing lines with the python modules from the
+                # lock file.
+                existing_tactic = output_files.get('wheelhouse.txt')
+                lock_layer = Layer('lockfile-wheelhouse',
+                                   layers["layers"][-1].target_repo.dirname())
+                lock_layer.directory = layers["layers"][-1].directory
+                if existing_tactic is not None:
+                    wheelhousetactic_class = existing_tactic.__class__
+                else:
+                    wheelhousetactic_class = WheelhouseTactic
+                wh_tactic = wheelhousetactic_class(
+                    "",
+                    self.target,
+                    lock_layer,
+                    next_config,
+                )
+                wh_tactic.lines = lines
+                wh_tactic.purge_wheels = False
+                if existing_tactic is not None:
+                    wh_tactic.combine(existing_tactic)
+                output_files["wheelhouse.txt"] = wh_tactic
 
         if self.wheelhouse_overrides:
             existing_tactic = output_files.get('wheelhouse.txt')
             wh_over_layer = Layer('--wheelhouse-overrides',
                                   layers["layers"][-1].target_repo.dirname())
             wh_over_layer.directory = layers["layers"][-1].directory
-            output_files['wheelhouse.txt'] = WheelhouseTactic(
+            if existing_tactic is not None:
+                wheelhousetactic_class = existing_tactic.__class__
+            else:
+                wheelhousetactic_class = WheelhouseTactic
+            output_files['wheelhouse.txt'] = wheelhousetactic_class(
                 self.wheelhouse_overrides,
                 self.target,
                 wh_over_layer,
@@ -696,6 +706,9 @@ class Builder(object):
         that are used when rebuilding the charm.
         """
         self.with_locks = {}
+        if (getattr(self, 'ignore_lock_file', False) or
+                getattr(self, 'write_lock_file', False)):
+            return
         try:
             with open(self.lock_file) as f:
                 with_locks = json.load(f)
@@ -944,9 +957,13 @@ def make_url_from_lock_for_layer(lock_spec, use_branches=False):
       "vcs": null
     }
 
-    It is assumed that the VCS is git.
+    If the 'item' is present, then use that, so that the correct LayerFetcher
+    or InterfaceFetcher will be used.  Otherwise, It is assumed that the VCS is
+    git.
 
-    TODO: Add other VCS in addition to Git?
+    The result will be in the form <item>@<branch|commit> or
+    <url>@<branch|item> depending on whether the item is present and the
+    use_branches is True.
 
     :param lock_spec: the lock specification for the layer
     :type lock_spec: Dict[str, Dict[str, Optional[str]]]
@@ -955,13 +972,17 @@ def make_url_from_lock_for_layer(lock_spec, use_branches=False):
     :returns: the url for fetching the layer from the repository
     :rtype: str
     """
+    try:
+        url = lock_spec["item"]
+    except KeyError:
+        url = lock_spec["url"]
     if use_branches:
         branch = lock_spec["branch"]
         if branch.startswith("refs/heads/"):
             branch = branch[len("refs/heads/"):]
-        return "{}@{}".format(lock_spec["url"], branch)
+        return "{}@{}".format(url, branch)
     else:
-        return "{}@{}".format(lock_spec["url"], lock_spec["commit"])
+        return "{}@{}".format(url, lock_spec["commit"])
 
 
 def configLogging(build):
