@@ -1,5 +1,5 @@
 keyring<21.0
-PyYAML>=3.11,<4.3
+PyYAML>=5.0,<6
 blessings==1.6
 libcharmstore>=0.0.3
 cheetah3==3.0.0
