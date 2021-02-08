@@ -1,6 +1,14 @@
 Changelog
 =========
 
+charm-tools 2.8.3 + charmstore-client 2.5.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Monday February 8 2021
+
+**charm-tools**
+
+* Update pinned version of PyYAML (#600)
+
 charm-tools 2.8.2 + charmstore-client 2.5.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Monday February 1 2021
