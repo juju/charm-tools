@@ -515,6 +515,7 @@ class InterfaceBind(DynamicHookBind):
     relation hooks needed by this charm.
     """
     HOOKS = [
+        '{}-relation-created',
         '{}-relation-joined',
         '{}-relation-changed',
         '{}-relation-broken',
