@@ -978,7 +978,6 @@ def make_url_from_lock_for_layer(lock_spec, use_branches=False):
     :returns: the url for fetching the layer from the repository
     :rtype: str
     """
-    print("make_url_from_lock_for_layer:", lock_spec, use_branches)
     try:
         url = lock_spec["item"]
     except KeyError:
