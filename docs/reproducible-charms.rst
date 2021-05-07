@@ -75,12 +75,11 @@ present:
 If the ``--ignore-lock-file`` option is used, then the charm is built as though
 there is no lock file.
 
-If the ``--use-lock-file-branches`` is used, then, for VCS items (layers,
-interfaces, and Python modules specified using a VCS string), then the branch
-(if there was one) will be used, rather than the commit version.  This can be
-used to track a branch in a layer or Python module.
+If the ``--use-lock-file-branches`` is used, then, for Python modules specified
+using a VCS string), the branch (if there was one) will be used, rather than
+the commit version.  This can be used to track a branch in a Python module.
 
-Note that as a individual commit be in multiple branches it's not possible to
+Note: as an individual commit be in multiple branches it's not possible to
 detect the branch for a layer.  Thus, this must be overriden manuall in the
 ``build.lock`` file after it has been generated.
 
