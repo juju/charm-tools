@@ -554,7 +554,7 @@ def add_plugin_description(parser):
     parser.add_argument('--description', action=Description)
 
 
-class OrderedSet(collections.MutableSet):
+class OrderedSet(collections.abc.MutableSet):
     def __init__(self, iterable=None):
         self.end = end = []
         end += [None, end, end]
