@@ -1,6 +1,15 @@
 Changelog
 =========
 
+charm-tools 2.8.4 + charmstore-client 2.5.0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Monday July 18 2022
+
+**charm-tools**
+
+* Fixes for Python 3.10 compatibility
+* Add support for relation-created hooks
+
 charm-tools 2.8.3 + charmstore-client 2.5.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Monday February 8 2021
