@@ -1256,31 +1256,12 @@ class FunctionsValidationTest(TestCase):
 
 
 class SeriesValidationTest(TestCase):
-    def test_series_not_list(self):
-        """Charm has a series key, but the value is not a list."""
+    def test_series(self):
+        """Charm does have a series key."""
         linter = Mock()
-        charm = {
-            'series': 'trusty',
-        }
+        charm = {"series": []}
         validate_series(charm, linter)
-        linter.err.assert_called_once_with(
-                'series: must be a list of series names')
-
-    def test_series_list(self):
-        """Charm has a series key that is a list."""
-        linter = Mock()
-        charm = {
-            'series': ['trusty'],
-        }
-        validate_series(charm, linter)
-        self.assertFalse(linter.err.called)
-
-    def test_no_series(self):
-        """Charm does not have a series key."""
-        linter = Mock()
-        charm = {}
-        validate_series(charm, linter)
-        self.assertTrue(linter.err.called)
+        self.assertTrue(linter.warn.called)
 
 
 class TermsValidationTest(TestCase):

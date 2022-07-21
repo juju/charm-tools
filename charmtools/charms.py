@@ -807,22 +807,20 @@ def validate_min_juju_version(charm, linter):
 
 
 def validate_series(charm, linter):
-    """Validate supported series list in charm metadata.
+    """Validate series list in charm metadata.
 
-    We don't validate the actual series names because:
-
-    1. `charm push` does that anyway
-    2. our list of valid series would be constantly falling out-of-date
+    The `series` parameter is deprecated because charmcraft ignores it and
+    uses `bases` from `charmcraft.yaml`. This function checks if the series
+    is in metadata.yaml and displays a warning message if so.
 
     :param charm: dict of charm metadata parsed from metadata.yaml
     :param linter: :class:`CharmLinter` object to which info/warning/error
         messages will be written
 
     """
-    if 'series' not in charm:
-        linter.err('missing series: must be a list of series names')
-    elif not isinstance(charm['series'], list):
-        linter.err('series: must be a list of series names')
+    if 'series' in charm:
+        linter.warn('DEPRECATED: series parameter is ignored by charmcraft,'
+                    'use bases in charmcraft.yaml')
 
 
 def validate_storage(charm, linter, proof_extensions=None):
