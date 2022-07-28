@@ -1261,7 +1261,7 @@ class SeriesValidationTest(TestCase):
         linter = Mock()
         charm = {"series": []}
         validate_series(charm, linter)
-        self.assertTrue(linter.warn.called)
+        self.assertTrue(linter.info.called)
 
 
 class TermsValidationTest(TestCase):
