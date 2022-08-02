@@ -811,7 +811,9 @@ def validate_series(charm, linter):
 
     The `series` parameter is deprecated because charmcraft ignores it and
     uses `bases` from `charmcraft.yaml`. This function checks if the series
-    is in metadata.yaml and displays a warning message if so.
+    is in metadata.yaml and displays an info message if so. Note that it is not
+    a warning as that causes an error in the charm proof which isn't what is
+    wanted.
 
     :param charm: dict of charm metadata parsed from metadata.yaml
     :param linter: :class:`CharmLinter` object to which info/warning/error
@@ -819,7 +821,7 @@ def validate_series(charm, linter):
 
     """
     if 'series' in charm:
-        linter.warn('DEPRECATED: series parameter is ignored by charmcraft,'
+        linter.info('DEPRECATED: series parameter is ignored by charmcraft,'
                     'use bases in charmcraft.yaml')
 
 
