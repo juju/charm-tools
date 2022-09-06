@@ -1044,6 +1044,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
     FILENAME = 'wheelhouse.txt'
     removed = []  # has to be class level to affect all tactics during signing
     per_layer = False
+    binary_build = False
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
@@ -1110,8 +1111,11 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def _add(self, wheelhouse, *reqs):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
-            self._pip('download', '--no-binary', ':all:', '-d', temp_dir,
-                      *reqs)
+            if self.binary_build:
+                self._pip('wheel', '-w', temp_dir, *reqs)
+            else:
+                self._pip('download', '--no-binary', ':all:',
+                          '-d', temp_dir, *reqs)
             log.debug('Copying wheels:')
             for wheel in temp_dir.files():
                 log.debug('  ' + wheel.name)
