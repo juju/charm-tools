@@ -1163,6 +1163,18 @@ def main(args=None):
                         help="Force raw output (color)")
     parser.add_argument('--charm-file', '-F', action='store_true',
                         help='Create a .charm file in the current directory')
+    parser.add_argument('--binary-wheels', action='store_true',
+                        help='Populate the charm wheelhouse with binary '
+                             'wheels that matches the Python version and '
+                             'architecture the charm is built on. Note that '
+                             'to use this option you must ensure that you '
+                             'have a series/architecture aware build and '
+                             'distribution infrastructure configured for '
+                             'your charm (such as Launchpad and Charmhub).')
+    parser.add_argument('--binary-wheels-from-source', action='store_true',
+                        help='Same as --binary-wheels but build all the '
+                             'wheels from source code, even if a binary '
+                             'distribution is available on PyPi.')
     parser.add_argument('charm', nargs="?", default=".", type=path,
                         help='Source directory for charm layer to build '
                              '(default: .)')
@@ -1181,6 +1193,8 @@ def main(args=None):
     LayerFetcher.NO_LOCAL_LAYERS = build.no_local_layers
 
     WheelhouseTactic.per_layer = build.wheelhouse_per_layer
+    WheelhouseTactic.binary_build = build.binary_wheels
+    WheelhouseTactic.binary_build_from_source = build.binary_wheels_from_source
 
     configLogging(build)
 
