@@ -10,6 +10,8 @@ apps:
     command: bin/wrappers/charm
 parts:
   charmstore-client:
+    after:
+      - bhttp
     build-attributes: ['no-patchelf']
     source: https://github.com/juju/charmstore-client.git
     source-branch: master
@@ -19,17 +21,18 @@ parts:
     build-packages:
       - bzr
       - python3-pip
+    stage-snaps:
+      - bhttp
     override-build: |
       snapcraftctl build
       pip3 install vergit
       vergit --format=json > $SNAPCRAFT_PART_INSTALL/charmstore-client-version
   bhttp:
-    plugin: godeps
-    build-attributes: ['no-patchelf']
-    source: https://github.com/rogpeppe/bhttp
-    source-branch: master
-    source-type: git
-    go-importpath: github.com/rogpeppe/bhttp
+    plugin: nil
+    stage-snaps:
+      - bhttp
+    stage:
+      - bin/bhttp
   charm-tools:
     source: .
     plugin: python
