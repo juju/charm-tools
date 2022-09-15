@@ -7,4 +7,77 @@ export PREFIX=$SNAP
 export GIT_EXEC_PATH=$SNAP/usr/lib/git-core
 export LC_ALL=C.UTF-8
 
-exec "$SNAP/bin/charm" "$@"
+program=$(basename $0)
+
+usage() {
+    cat << EOF >&2
+Usage: $program <command> ...
+
+Summary:
+tools for building reactive charms
+
+commands:
+    build               - build a charm from layers and interfaces.
+    create              - create a new charm.
+    help                - Show help on a command or other topic.
+    layers              - inspect the layers of a built charm.
+    proof               - perform static analysis on a charm or bundle.
+    version             - display tooling version information.
+EOF
+}
+
+option_ignored() {
+    echo "$program: WARNING option $@ ignored." >&2
+}
+
+# We accept and ignore all the options that the old charm-store client would to
+# retain compatibility.
+while true; do
+    case "$1" in
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      -q | --quiet)
+        option_ignored $1
+        shift
+        ;;
+      -v | --verbose)
+        option_ignored $1
+        shift
+        ;;
+      --log-file)
+        option_ignored $1 $2
+        shift 2
+        ;;
+      --logging-config)
+        option_ignored $1 $2
+        shift 2
+        ;;
+      --show-log)
+        option_ignored $1
+        shift
+        ;;
+      help)
+        # When help is the only command we should provide usage
+        if [ "$#" -lt 2 ]; then
+          usage
+          exit 0
+        fi
+        # When help has arguments we should forward to the appropriate
+        # entrypoint
+        exec charm-$2 $1
+        # NOT REACHED
+	;;
+      *)
+        break
+        ;;
+    esac
+done
+
+if [ "$#" -lt 1 ]; then
+    usage
+    exit 64
+fi
+
+charm-$@
