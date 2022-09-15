@@ -4,31 +4,78 @@ summary: charm and charm-tools
 description: charmstore-client and charm-tools
 confinement: classic
 grade: stable
-base: core18
+base: core22
 apps:
   charm:
     command: bin/wrappers/charm
+environment:
+  # To enable execution of binaries from snap, and the host operating system,
+  # we patch all ELF binaries shipped with the snap in the 'patchelf' part
+  # instead of using the LD_LIBRARY_PATH environment variable.
+  #
+  # This is required because both libc and other standard libraries hard code
+  # the path to /bin/sh, and uses that to execute other binaries.  The path to
+  # /bin/sh is part of POSIX, so we can't really blame them.  Any attempt to
+  # execute /bin/sh from host operating system with LD_LIBRARY_PATH pointing
+  # to the snap will make the execution abort or fault.
+  LD_LIBRARY_PATH: ""
+  PATH: $SNAP/usr/local/bin:$PATH
+  PYTHONHOME: $SNAP
+  PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.10/site-packages:$SNAP/usr/lib/python3.10:$SNAP/usr/lib/python3.10/lib-dynload:$SNAP/usr/local/lib/python3.10/dist-packages
 parts:
   charm-tools:
     source: .
-    plugin: python
-    python-version: python3
+    # the core22 python plugin does not work for classic snaps.
+    # a side effect of this is that we do patchelf manually as a separate part.
+    plugin: nil
+    # Note that we cannot use any -dev type packages here, as that would pull
+    # in the libc6 package.  The libc6 package contains absolute symlinks
+    # pointing at /, which is not allowed in a core22 classic snap.
     stage-packages:
       - git-core
-      - libssl-dev
-      - libffi-dev
-      - libpython3-dev
+      - libpython3.10
+      - libpython3.10-minimal
+      - libpython3.10-stdlib
+      - python3-minimal
+      - python3.10-minimal
+      - python3-pip
+      - python3-setuptools
+      - python3-distutils
+      - python3-pkg-resources
+      - python3-py
+      - python3-pbr
+      - python3-yaml
+      - python3-flake8
+    build-environment:
+      - PATH: $CRAFT_PART_INSTALL/usr/bin:$PATH
+      - PYTHONHOME: $CRAFT_PART_INSTALL
+      - PYTHONPATH: $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages
     override-build: |
-      snapcraftctl build
-      pip3 install https://github.com/openstack-charmers/charm-templates-openstack/archive/master.zip#egg=charm_templates_openstack
-      sed -i "$SNAPCRAFT_PART_INSTALL/usr/lib/python3.6/site.py" -e 's/^ENABLE_USER_SITE = None$/ENABLE_USER_SITE = False/'
-      vergit --format=json > $SNAPCRAFT_PART_INSTALL/charm-tools-version
-      snapcraftctl set-version $(vergit)
-      # ensure we don't accidentally pick up system py2
-      ln -s python3 $SNAPCRAFT_PART_INSTALL/usr/bin/python || true
-      # copy our wrappers into the right place; note: we cannot use organize,
-      # because it will break things (see forum link below)
-      cp -R helpers/snap-wrappers $SNAPCRAFT_PART_INSTALL/bin/wrappers
+      # Avoid binary install problems with vergit
+      pip install \
+          --no-binary :all: \
+          --prefix $CRAFT_PART_INSTALL/usr \
+          vergit
+      pip install \
+          --prefix $CRAFT_PART_INSTALL/usr \
+          .
+
+      # This package has lists charm-tools as a requirement, so we need to
+      # pass `--no-deps`, otherwise it will overwrite the charm-tools we just
+      # installed above!
+      pip install \
+          --no-deps \
+          --prefix $CRAFT_PART_INSTALL/usr \
+          https://github.com/openstack-charmers/charm-templates-openstack/archive/master.zip#egg=charm_templates_openstack
+      sed -i "$CRAFT_PART_INSTALL/usr/lib/python3.10/site.py" -e 's/^ENABLE_USER_SITE = None$/ENABLE_USER_SITE = False/'
+      vergit --format=json > $CRAFT_PART_INSTALL/charm-tools-version
+      mkdir -p $CRAFT_PART_INSTALL/bin/wrappers
+      cp helpers/snap-wrappers/charm $CRAFT_PART_INSTALL/bin/wrappers/
+      craftctl set version=$(vergit)
+    override-stage: |
+      find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
+      find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python3$/#\!\/usr\/bin\/env python3/'
+      craftctl default
     stage:
       # IMPORTANT! Only specify excludes here! Includes will break things!
       # See: https://forum.snapcraft.io/t/python-classic-snap-confusion-frustration-core18-entry-point-scripts-organize-stage-prime-override-build/10317
@@ -41,10 +88,43 @@ parts:
       - -usr/share/pixmaps
       # exclude the embedded pip, so we can replace it
       - -lib/python*/site-packages/virtualenv_support/pip-*.whl
+  patchelf:
+    after:
+      - charm-tools
+    plugin: nil
+    build-packages:
+      - patchelf
+      - file
     override-prime: |
-      snapcraftctl prime
-      # Work around python plugin forcibly excluding pip bins, even if they're
-      # explicitly added to stage.  Also forcibly update the pip embedded in
-      # virtualenv to get the lsb_release fix that was released with pip 10.
-      cp $SNAPCRAFT_PART_INSTALL/bin/pip* bin/
-      python3 -m pip download pip -d lib/python*/site-packages/virtualenv_support/
+      # patchelf
+      #
+      # To allow for a classic snap that works across multiple operating system
+      # runtime environments, we need to ensure all shipped binaries consume
+      # libraries from the core or shipped snap.  We accomplish this by
+      # patching RPATH or interpreter into dynamically linked binaries.
+      #
+      # /snap/core22/current/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      # /snap/core22/current/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
+      # /snap/core22/current/lib/powerpc64le-linux-gnu/ld64.so.2
+      # /snap/core22/current/lib/s390x-linux-gnu/ld64.so.1
+      interp_prefix=/snap/core22/current/lib/$CRAFT_ARCH_TRIPLET
+      ld_arch=$(echo $CRAFT_TARGET_ARCH | sed -e 's,amd64,x86-64,' -e 's,arm64,aarch64,')
+      for interp in "ld-linux-${ld_arch}.so.?" "ld64.so.?" "/dev/null"; do
+          if [ -e ${interp_prefix}/${interp} ]; then
+              break
+          fi
+      done
+      if [ $interp = /dev/null ]; then
+          echo "Unable to determine name of shared library interpreter."
+          exit 1
+      fi
+
+      for binary in \
+        $(find . -exec file {} \; | awk -F\: '/ELF.*dynamic/{print$1}'); do
+          patchelf \
+              --force-rpath \
+              --set-rpath /snap/core22/current/usr/lib/$CRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/lib:/snap/$CRAFT_PROJECT_NAME/current/lib/$SNAPCRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/usr/lib:/snap/$CRAFT_PROJECT_NAME/current/usr/lib/$SNAPCRAFT_ARCH_TRIPLET \
+              $binary
+
+          patchelf --set-interpreter $interp_prefix/$interp $binary || true
+      done
