@@ -1185,6 +1185,10 @@ def main(args=None):
                         help='Same as --binary-wheels but build all the '
                              'wheels from source code, even if a binary '
                              'distribution is available on PyPi.')
+    parser.add_argument('--use-python-from-snap', action='store_true',
+                        default=False,
+                        help='Use Python and associated tools from the snap '
+                             'when building the wheelhouse.')
     parser.add_argument('charm', nargs="?", default=".", type=path,
                         help='Source directory for charm layer to build '
                              '(default: .)')
@@ -1205,6 +1209,7 @@ def main(args=None):
     WheelhouseTactic.per_layer = build.wheelhouse_per_layer
     WheelhouseTactic.binary_build = build.binary_wheels
     WheelhouseTactic.binary_build_from_source = build.binary_wheels_from_source
+    WheelhouseTactic.use_python_from_snap = build.use_python_from_snap
 
     configLogging(build)
 

@@ -452,7 +452,7 @@ class TestBuild(unittest.TestCase):
         bu.report = False
         bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
 
-        def _store_wheelhouses(args):
+        def _store_wheelhouses(args, **kwargs):
             filename = args[-1].split()[-1]
             if filename.endswith('.txt'):
                 Process._wheelhouses.append(path(filename).lines(retain=False))

@@ -1046,6 +1046,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
     per_layer = False
     binary_build = False
     binary_build_from_source = False
+    use_python_from_snap = False
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
@@ -1061,6 +1062,25 @@ class WheelhouseTactic(ExactMatch, Tactic):
     def __str__(self):
         directory = self.target.directory / 'wheelhouse'
         return "Building wheelhouse in {}".format(directory)
+
+    def _get_env(self):
+        """Get environment appropriate for executing external commands.
+
+        :returns: Dictionary with environment variables
+        :rtype: Dict[str,str]
+        """
+        if self.use_python_from_snap:
+            return os.environ.copy()
+
+        env = os.environ.copy()
+        for key in ('PREFIX', 'PYTHONHOME', 'PYTHONPATH'):
+            if key in env:
+                del(env[key])
+        env['PATH'] = ':'.join([
+            element
+            for element in env['PATH'].split(':')
+            if not element.startswith('/snap/charm/')])
+        return env
 
     def combine(self, existing):
         ""  # suppress inherited doc
@@ -1213,7 +1233,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
         # have to use bash to activate the venv properly first
         res = utils.Process(('bash', '-c', ' '.join(
             ('.', self._venv / 'bin' / 'activate', ';') + args
-        )))()
+        )), env=self._get_env())()
         if res.exit_code != 0:
             raise BuildError(res.output)
         return res
@@ -1228,7 +1248,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
         wheelhouse.mkdir_p()
         if create_venv:
             utils.Process(
-                ('virtualenv', '--python', 'python3', self._venv)
+                ('virtualenv', '--python', 'python3', self._venv),
+                env=self._get_env()
             ).exit_on_error()()
         if self.per_layer:
             self._process_per_layer(wheelhouse)
