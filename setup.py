@@ -42,11 +42,9 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
-        'launchpadlib<1.11',
         'cheetah3>=3.0.0',
         'pyyaml>=5.0,<6.0',
         'requests>=2.0.0,<3.0.0',
-        'libcharmstore',
         'blessings',
         'ruamel.yaml<0.16.0;python_version < "3.7"',
         'pathspec<=0.3.4;python_version < "3.7"',
@@ -79,16 +77,12 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'charm-add = charmtools.generate:main',
             'charm-build = charmtools.build.builder:main',
             'charm-create = charmtools.create:main',
             'charm-help = charmtools.cli:usage',
             'charm-layers = charmtools.build.builder:inspect',
             'charm-proof = charmtools.proof:main',
-            'charm-pull-source = charmtools.pullsource:main',
             'charm-version = charmtools.version:main',
-            'charm-promulgate = charmtools.promulgation:promulgate',
-            'charm-unpromulgate = charmtools.promulgation:unpromulgate',
         ],
         'charmtools.templates': [
             'bash = charmtools.templates.bash:BashCharmTemplate',
