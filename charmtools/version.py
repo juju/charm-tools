@@ -33,31 +33,6 @@ def _add_snap_rev(version_info):
     return version_info
 
 
-def cached_charmstore_client_version():
-    if 'SNAP' in os.environ:
-        cscv = os.path.join(os.environ['SNAP'], 'charmstore-client-version')
-        if not os.path.exists(cscv):
-            return {'version': 'unavailable', 'git': ''}
-        with open(cscv) as f:
-            res_string = f.read().strip()
-        return _add_snap_rev(json.loads(res_string))
-    try:
-        from apt.cache import Cache
-        charm_vers = Cache()['charm'].versions
-        for v in charm_vers:
-            if v.is_installed:
-                charm_ver = v.version
-                break
-        else:
-            charm_ver = 'unavailable'
-    except ImportError:
-        charm_ver = 'unavailable'
-    except:
-        charm_ver = 'error'
-
-    return _add_snap_rev({'version': charm_ver})
-
-
 def cached_charm_tools_version():
     ctv = os.path.join(os.environ.get('SNAP', ''), 'charm-tools-version')
     if os.path.exists(ctv):
@@ -89,12 +64,13 @@ def main():
 
     if args.format == 'json':
         print(json.dumps({
-            'charmstore-client': cached_charmstore_client_version(),
             'charm-tools': cached_charm_tools_version(),
         }))
     else:
-        print("charmstore-client {}".format(
-            format_version(cached_charmstore_client_version(), args.format)))
+        # ensure compatibility with anyone parsing this output expecting the
+        # charm-tools version on the second line ref:
+        # https://github.com/canonical/charmcraft/blob/dbf82a0fb/charmcraft/reactive_plugin.py#L65
+        print("")
         print("charm-tools {}".format(
             format_version(cached_charm_tools_version(), args.format)))
 
