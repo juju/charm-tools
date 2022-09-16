@@ -1152,8 +1152,10 @@ class WheelhouseTactic(ExactMatch, Tactic):
                         req = self.modules[package]
                         log.debug("module: %s - is vcs: %s", package, req.vcs)
                         if req.vcs:
-                            (branch, version) = self._extract_pkg_vcs(wheel,
-                                                                      req)
+                            version = self._extract_pkg_vcs(wheel, req)
+                            # Workaround bug:#603 and ensure that branch is
+                            # revision if none is named for the python module
+                            branch = req.revision if req.revision else version
                             log.debug("branch: %s, version=%s",
                                       branch, version)
                             self.lock_info.append({
@@ -1204,8 +1206,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             vcs_dir = dst_dir / req.name
             fetcher = fetchers.Fetcher(vcs_dir)
             revision = fetcher.get_revision(vcs_dir)
-            branch = fetcher.get_branch_for_revision(vcs_dir, revision)
-            return (branch, revision)
+            return revision
 
     def _run_in_venv(self, *args):
         assert self._venv is not None

@@ -137,7 +137,8 @@ class Fetcher(object):
             try:
                 branch = check_output(cmd, cwd=dir_).decode('UTF-8').strip()
                 return branch
-            except FetchError:
+            except FetchError as e:
+                log.debug("get_branch_for_revision: got error: ", e)
                 continue
         return None
 

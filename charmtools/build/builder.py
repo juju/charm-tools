@@ -117,8 +117,14 @@ class Fetched(Configable):
                 self.fetched_url = getattr(fetcher, "fetched_url", None)
                 self.vcs = getattr(fetcher, "vcs", None)
             self.revision = fetcher.get_revision(self.directory)
-            self.branch = fetcher.get_branch_for_revision(self.directory,
-                                                          self.revision)
+            # NOTE(ajkavanagh): Due to bug:#606 there isn't a good way to
+            # determine the branch for a revision as there isn't a one-to-one
+            # correspondence.  For the moment, work-around the bug by just
+            # using the revision as the branch so that things do at least
+            # build.
+            self.branch = self.revision
+            # self.branch = fetcher.get_branch_for_revision(self.directory,
+                                                          # self.revision)
 
         if not self.directory.exists():
             raise BuildError(
@@ -750,8 +756,8 @@ class Builder(object):
                 continue
             vcs = data['vcs']
             if vcs == 'git':
-                if self.use_lock_file_branches:
-                    branch = data.get('branch', '')
+                branch = data.get('branch', '')
+                if self.use_lock_file_branches and branch:
                     if branch.startswith("refs/heads/"):
                         branch = branch[len("refs/heads/"):]
                     line = "{}@{}#egg={}".format(
@@ -978,11 +984,15 @@ def make_url_from_lock_for_layer(lock_spec, use_branches=False):
         url = lock_spec["url"]
     if use_branches:
         branch = lock_spec["branch"]
-        if branch.startswith("refs/heads/"):
-            branch = branch[len("refs/heads/"):]
-        return "{}@{}".format(url, branch)
-    else:
-        return "{}@{}".format(url, lock_spec["commit"])
+        # BUG: #603 - only format a branch if the branch is recorded.
+        if branch:
+            if branch.startswith("refs/heads/"):
+                branch = branch[len("refs/heads/"):]
+            # BUG: #605 - if branch is master or main, use the commit hash
+            # instead.
+            if branch not in ['master', 'main']:
+                return "{}@{}".format(url, branch)
+    return "{}@{}".format(url, lock_spec["commit"])
 
 
 def configLogging(build):
