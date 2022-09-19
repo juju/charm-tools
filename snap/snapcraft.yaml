@@ -28,6 +28,10 @@ parts:
     # the core22 python plugin does not work for classic snaps.
     # a side effect of this is that we do patchelf manually as a separate part.
     plugin: nil
+    build-packages:
+      - libffi-dev
+      - libpython3.10-dev
+      - python3-pip
     # Note that we cannot use any -dev type packages here, as that would pull
     # in the libc6 package.  The libc6 package contains absolute symlinks
     # pointing at /, which is not allowed in a core22 classic snap.
@@ -38,25 +42,31 @@ parts:
       - libpython3.10-stdlib
       - python3-minimal
       - python3.10-minimal
+      - python3-cryptography
       - python3-pip
       - python3-setuptools
       - python3-distutils
       - python3-pkg-resources
-      - python3-py
-      - python3-pbr
+      - python3-virtualenv
+      - python3-requests
       - python3-yaml
-      - python3-flake8
+      - python3-cheetah
+      - python3-blessings
+      - python3-ruamel.yaml
+      - python3-pathspec
+      - python3-path
+      - python3-jsonschema
+      - python3-keyring
+      - python3-secretstorage
+      - python3-translationstring
+      - python3-iso8601
+      - python3-parse
     build-environment:
-      - PATH: $CRAFT_PART_INSTALL/usr/bin:$PATH
-      - PYTHONHOME: $CRAFT_PART_INSTALL
-      - PYTHONPATH: $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages
+      - MAKEFLAGS: -j$(nproc)
+      - CFLAGS: -I/usr/include/python3.10
     override-build: |
-      # Avoid binary install problems with vergit
       pip install \
           --no-binary :all: \
-          --prefix $CRAFT_PART_INSTALL/usr \
-          vergit
-      pip install \
           --prefix $CRAFT_PART_INSTALL/usr \
           .
 
@@ -68,10 +78,17 @@ parts:
           --prefix $CRAFT_PART_INSTALL/usr \
           https://github.com/openstack-charmers/charm-templates-openstack/archive/master.zip#egg=charm_templates_openstack
       sed -i "$CRAFT_PART_INSTALL/usr/lib/python3.10/site.py" -e 's/^ENABLE_USER_SITE = None$/ENABLE_USER_SITE = False/'
-      vergit --format=json > $CRAFT_PART_INSTALL/charm-tools-version
+
       mkdir -p $CRAFT_PART_INSTALL/bin/wrappers
       cp helpers/snap-wrappers/charm $CRAFT_PART_INSTALL/bin/wrappers/
-      craftctl set version=$(vergit)
+
+      PYTHONHOME=$CRAFT_PART_INSTALL \
+          PYTHONPATH=$CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages \
+          vergit --format=json > $CRAFT_PART_INSTALL/charm-tools-version
+      version=$(PYTHONHOME=$CRAFT_PART_INSTALL \
+                PYTHONPATH=$CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages \
+                vergit)
+      craftctl set version=$version
     override-stage: |
       find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
       find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python3$/#\!\/usr\/bin\/env python3/'
