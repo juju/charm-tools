@@ -104,8 +104,8 @@ def download_item(args):
         # Download the item
         fetcher = fetchers.get_fetcher(args.item)
         download_dir = fetcher.fetch(tempdir)
-    except fetchers.FetchError:
-        print("Can't find source for {}".format(args.item))
+    except fetchers.FetchError as e:
+        print("Can't find source for {} ({})".format(args.item, e))
         return 1
 
     # Copy download dir to final destination dir
