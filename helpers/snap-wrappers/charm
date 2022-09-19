@@ -22,6 +22,7 @@ commands:
     help                - Show help on a command or other topic.
     layers              - inspect the layers of a built charm.
     proof               - perform static analysis on a charm or bundle.
+    pull-source         - pull a charm source to the local machine
     version             - display tooling version information.
 EOF
 }
