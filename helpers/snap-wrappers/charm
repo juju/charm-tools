@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export PATH=$SNAP/bin:$SNAP/usr/bin:$SNAP/libexec/git-core:$PATH
-export GIT_TEMPLATE_DIR=$SNAP/share/git-core/templates
+export GIT_TEMPLATE_DIR=$SNAP/usr/share/git-core/templates
 export UNIXCONFDIR=$SNAP/etc
 export PREFIX=$SNAP
 export GIT_EXEC_PATH=$SNAP/usr/lib/git-core
