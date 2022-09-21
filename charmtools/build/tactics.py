@@ -1073,7 +1073,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
             return os.environ.copy()
 
         env = os.environ.copy()
-        for key in ('PREFIX', 'PYTHONHOME', 'PYTHONPATH'):
+        for key in ('PREFIX', 'PYTHONHOME', 'PYTHONPATH',
+                    'GIT_TEMPLATE_DIR', 'GIT_EXEC_PATH'):
             if key in env:
                 del(env[key])
         env['PATH'] = ':'.join([
