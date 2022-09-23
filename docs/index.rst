@@ -6,10 +6,16 @@
 Charm Tools documentation
 =========================
 
-The `charm` command includes several subcommands used to build, maintain,
-and release `Juju Charms`_, which are Open Source encapsulated operations
-logic for managing software in the cloud or bare-metal servers using
-cloud-like APIs.
+The `charm` command includes several subcommands used to build and maintain,
+`Juju Charms`_ written in the `reactive framework`_, which are Open Source
+encapsulated operations logic for managing software in the cloud or bare-metal
+servers using cloud-like APIs.
+
+To ensure charms are built in a clean environment and with Python wheels
+compatible with the target series for the cherm, we recommend the use of the
+`charmcraft`_ tool and the `reactive plugin`_.
+
+**NOTE** For new charms the preferred approach is to use the `ops framework`_.
 
 Installation is easy with snaps:
 
@@ -53,3 +59,8 @@ Indices and tables
 
 
 .. _Juju Charms: https://docs.jujucharms.com/
+.. _reactive framework: https://charmsreactive.readthedocs.io/en/latest/
+.. _charmcraft: https://juju.is/docs/sdk/charmcraft
+.. _reactive plugin:
+   https://juju.is/docs/sdk/pack-your-reactive-based-charm-with-charmcraft
+.. _ops framework: https://juju.is/docs/sdk/ops
