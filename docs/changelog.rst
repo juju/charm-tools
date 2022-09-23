@@ -1,6 +1,37 @@
 Changelog
 =========
 
+charm-tools 3.0.0
+^^^^^^^^^^^^^^^^^
+Monday September 26 2022
+
+* Drop support for charm store (#626)
+
+  * The charm store has been decommissioned and replaced by Charmhub.
+  * This tool is still useful for building reactive charms, but store
+    management should be done with tools such as canonical/charmcraft.
+
+* snap: Update base to core22 (#626)
+
+* Prune snap path when building wheelhouse (#626)
+
+  * Previously, when running charm-tools from a snap, the default was
+    to use Python and associated tools from the snap when building a
+    charm's wheelhouse etc.
+  * This is normally not what you would want as the Python version in
+    the snap does not necessarily match the Python version of the
+    target system.
+  * Moving forward the build environment is expected to already
+    contain build-packages such as Python, pip and git.
+  * To restore the old behavior the `--use-python-from-snap` option
+    may be used.
+
+* Fixes for reproducible charms (#607)
+
+* Add option to build charm with binary wheels (#620)
+
+* Log info message when series is mentioned in `metadata.yaml` (#618)
+
 charm-tools 2.8.4 + charmstore-client 2.5.0
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Monday July 18 2022
