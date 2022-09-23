@@ -20,7 +20,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'Charm Tools'
-copyright = '2019, Cory Johns, Marco Ceppi, Kapil Thangavelu'
+copyright = '2019, Cory Johns, Marco Ceppi, Kapil Thangavelu, 2022 Canonical'
 author = 'Cory Johns, Marco Ceppi, Kapil Thangavelu'
 
 # The short X.Y version

@@ -1,18 +1,3 @@
-Due to changes in the charm command, if this is an issue with one of the following, please report it against https://github.com/juju/charmstore-client/issues
-
-- `charm grant` or `charm revoke`
-- `charm list` or `charm list-resources`
-- `charm login` or `charm logout`
-- `charm publish`
-- `charm pull`
-- `charm push`
-- `charm set`
-- `charm show`
-- `charm terms`
-- `charm whoami`
-
-Otherwise, if you have a feature request or issue with any other charm command please delete the above and continue below
-
 ## Checklist
 
  - [X] Confirmed this is an issue with charm-tools, not charmstore-client
