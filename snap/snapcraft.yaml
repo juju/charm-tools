@@ -5,6 +5,8 @@ description: charmstore-client and charm-tools
 confinement: classic
 grade: stable
 base: core18
+architectures:
+  - amd64
 apps:
   charm:
     command: bin/wrappers/charm
