@@ -1,7 +1,9 @@
 name: charm
 adopt-info: charm-tools
-summary: charm and charm-tools
-description: charmstore-client and charm-tools
+summary: charm-tools
+description: |
+  Tools for building and maintaining reactive charms.
+license: GPL-3.0
 confinement: classic
 grade: stable
 base: core22
