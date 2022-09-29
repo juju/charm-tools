@@ -70,7 +70,7 @@ def main():
         # ensure compatibility with anyone parsing this output expecting the
         # charm-tools version on the second line ref:
         # https://github.com/canonical/charmcraft/blob/dbf82a0fb/charmcraft/reactive_plugin.py#L65
-        print("")
+        print("-")
         print("charm-tools {}".format(
             format_version(cached_charm_tools_version(), args.format)))
 
