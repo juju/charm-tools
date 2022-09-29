@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import requests
+import subprocess
 import sys
 import uuid
 import yaml
@@ -773,6 +774,20 @@ class Builder(object):
             lines.append(line)
         return lines
 
+    def workaround_charmcraft_maybe_ensure_build_packages(self):
+        """Workaround for missing build packages when in charmcraft build.
+
+        The charmcraft reactive plugin ought to provide the bare minimum
+        of build package dependencies, however until it does let's help
+        here under the right circumstances.
+        """
+        if (os.geteuid() == 0
+                and (os.environ.get('CRAFT_PART_NAME', None)
+                     or os.environ.get('CHARMCRAFT_PART_NAME', None))):
+            log.warning('Probably running as root in charmcraft, proactively '
+                        'installing the `git` and `virutalenv` packages.')
+            subprocess.run(('apt', '-y', 'install', 'git', 'virtualenv'), check=True)
+
     def generate(self):
         layers = self.fetch()
         self.formulate_plan(layers)
@@ -1219,6 +1234,7 @@ def main(args=None):
         build.normalize_cache_dir()
         build.check_paths()
         build.maybe_read_lock_file()
+        build.workaround_charmcraft_maybe_ensure_build_packages()
 
         build()
 
