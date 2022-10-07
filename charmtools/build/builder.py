@@ -786,7 +786,7 @@ class Builder(object):
                      or os.environ.get('CHARMCRAFT_PART_NAME', None))):
             log.warning('Probably running as root in charmcraft, proactively '
                         'installing the `git` and `virutalenv` packages.')
-            subprocess.run(('apt', '-y', 'install', 'git', 'virtualenv'), check=True)
+            subprocess.run(('apt', '-y', 'install', 'git', 'virtualenv'), check=True, env={})
 
     def generate(self):
         layers = self.fetch()
