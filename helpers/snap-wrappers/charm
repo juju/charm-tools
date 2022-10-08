@@ -18,7 +18,7 @@ tools for building reactive charms
 
 commands:
     build               - build a charm from layers and interfaces.
-    create              - create a new charm.
+    create              - (DEPRECATED) create a new charm.
     help                - Show help on a command or other topic.
     layers              - inspect the layers of a built charm.
     proof               - perform static analysis on a charm or bundle.

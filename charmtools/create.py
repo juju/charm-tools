@@ -84,6 +84,14 @@ def main():
             level=logging.INFO,
         )
 
+    log.warning('The `charm create` command is DEPRECATED and will be\n'
+                'removed in the 3.1 release of charm-tools.\n'
+                '\n'
+                'Please refer to the following resources for\n'
+                'information on creating new charms:\n'
+                'https://juju.is/docs/sdk/charmcraft-init\n'
+                'https://juju.is/docs/sdk/ops\n')
+
     if not args.template:
         log.info(
             "Using default charm template (%s). To select a different "
