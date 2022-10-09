@@ -38,6 +38,7 @@ parts:
     # in the libc6 package.  The libc6 package contains absolute symlinks
     # pointing at /, which is not allowed in a core22 classic snap.
     stage-packages:
+      - libbrotli1
       - git-core
       - libpython3.10
       - libpython3.10-minimal
