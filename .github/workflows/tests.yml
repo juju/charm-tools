@@ -1,0 +1,121 @@
+name: Test Suite
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10']
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Tox
+      run: pip install tox
+    - name: Run tests
+      run: tox -e py
+
+  build:
+    name: Build snap
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Add fake tag to make vergit happy
+      run: git tag v0.0.0
+    - uses: snapcore/action-build@v1
+      id: snap-build
+    - uses: actions/upload-artifact@v1
+      with:
+        name: charm-snap
+        path: ${{ steps.snap-build.outputs.snap }}
+
+  integration:
+    name: Integration test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Init LXD
+      run: |
+        set -euxo pipefail
+        sudo lxd init --auto
+        # This is a throw-away CI environment, do not do this at home
+        sudo chmod 666 /var/snap/lxd/common/lxd/unix.socket
+    - name: Checkout layer-basic
+      uses: actions/checkout@v2
+      with:
+        repository: juju-solutions/layer-basic
+
+    - name: Fixup wheelhouse
+      run: |
+        set -euxo pipefail
+        cat << EOF | tee -a tests/charm-minimal/wheelhouse.txt
+        # https://github.com/pallets/jinja/issues/1496
+        #
+        # We ought to teach charm-tools to seed the virtualenv used to build
+        # wheels with newer versions of pip and setuptools.
+        Jinja2<3
+        EOF
+
+    - name: Download built charm snap
+      uses: actions/download-artifact@v3
+      with:
+        name: charm-snap
+        path: tests/charm-minimal/charm-snap
+
+    - name: Build reactive charm with charmcraft
+      run: |
+        set -euxo pipefail
+        sudo snap install --classic --channel latest/edge charmcraft
+        cat << EOF | tee tests/charm-minimal/charmcraft.yaml
+        type: charm
+        parts:
+          charm-tools:
+            plugin: nil
+            override-build: |
+              snap install --dangerous --classic \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap/*.snap
+              rm -rf \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap
+          charm:
+            after: [charm-tools]
+            source: .
+            plugin: reactive
+            reactive-charm-build-arguments:
+              - -v
+              - --binary-wheels-from-source
+            build-packages:
+              - python3-dev
+              - libpq-dev
+        bases:
+          - name: ubuntu
+            channel: "18.04"
+            architectures: [amd64]
+          - name: ubuntu
+            channel: "20.04"
+            architectures: [amd64]
+          - name: ubuntu
+            channel: "22.04"
+            architectures: [amd64]
+        EOF
+        charmcraft pack -p tests/charm-minimal -v
+    - name: Upload charmcraft execution logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: charmcraft execution logs
+        path: ~/snap/charmcraft/common/cache/charmcraft/log/*.log
+    - name: Upload built charms
+      uses: actions/upload-artifact@v3
+      with:
+        name: Built charms
+        path: |
+          minimal_ubuntu-18.04-amd64.charm
+          minimal_ubuntu-20.04-amd64.charm
+          minimal_ubuntu-22.04-amd64.charm
