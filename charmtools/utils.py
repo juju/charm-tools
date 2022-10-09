@@ -633,3 +633,21 @@ def validate_display_name(entity, linter):
         linter.err('display-name: not in valid format. '
                    'Only letters, numbers, dashes, and hyphens are permitted.')
         return
+
+
+def host_env():
+    """Get environment appropriate for executing commands outside snap context.
+
+    :returns: Dictionary with environment variables
+    :rtype: Dict[str,str]
+    """
+    env = os.environ.copy()
+    for key in ('PREFIX', 'PYTHONHOME', 'PYTHONPATH',
+                'GIT_TEMPLATE_DIR', 'GIT_EXEC_PATH'):
+        if key in env:
+            del(env[key])
+    env['PATH'] = ':'.join([
+        element
+        for element in env['PATH'].split(':')
+        if not element.startswith('/snap/charm/')])
+    return env

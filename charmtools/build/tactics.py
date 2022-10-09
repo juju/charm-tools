@@ -1064,24 +1064,14 @@ class WheelhouseTactic(ExactMatch, Tactic):
         return "Building wheelhouse in {}".format(directory)
 
     def _get_env(self):
-        """Get environment appropriate for executing external commands.
+        """Get environment for executing commands outside snap context.
 
         :returns: Dictionary with environment variables
         :rtype: Dict[str,str]
         """
         if self.use_python_from_snap:
             return os.environ.copy()
-
-        env = os.environ.copy()
-        for key in ('PREFIX', 'PYTHONHOME', 'PYTHONPATH',
-                    'GIT_TEMPLATE_DIR', 'GIT_EXEC_PATH'):
-            if key in env:
-                del(env[key])
-        env['PATH'] = ':'.join([
-            element
-            for element in env['PATH'].split(':')
-            if not element.startswith('/snap/charm/')])
-        return env
+        return utils.host_env()
 
     def combine(self, existing):
         ""  # suppress inherited doc
