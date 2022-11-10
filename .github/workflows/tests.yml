@@ -54,17 +54,6 @@ jobs:
       with:
         repository: juju-solutions/layer-basic
 
-    - name: Fixup wheelhouse
-      run: |
-        set -euxo pipefail
-        cat << EOF | tee -a tests/charm-minimal/wheelhouse.txt
-        # https://github.com/pallets/jinja/issues/1496
-        #
-        # We ought to teach charm-tools to seed the virtualenv used to build
-        # wheels with newer versions of pip and setuptools.
-        Jinja2<3
-        EOF
-
     - name: Download built charm snap
       uses: actions/download-artifact@v3
       with:
@@ -90,6 +79,7 @@ jobs:
             reactive-charm-build-arguments:
               - -v
               - --binary-wheels-from-source
+              - --upgrade-buildvenv-core-deps
             build-packages:
               - python3-dev
               - libpq-dev
