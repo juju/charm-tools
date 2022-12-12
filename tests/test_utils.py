@@ -60,3 +60,23 @@ class TestUtils(TestCase):
         self.assertDictEqual(
             {'SOME_OTHER_KEY': 'fake-some-other-key', 'PATH': '/usr/bin:/bin'},
             utils.host_env())
+
+    @unittest.mock.patch.object(utils, "Process")
+    def test_upgrade_venv_core_packages(self, mock_Process):
+        utils.upgrade_venv_core_packages('/some/dir', env={'some': 'envvar'})
+        mock_Process.assert_called_once_with(
+            ('/some/dir/bin/pip', 'install', '-U', 'pip', 'setuptools'),
+            env={'some': 'envvar'})
+
+    @unittest.mock.patch("sys.exit")
+    @unittest.mock.patch.object(utils, "Process")
+    def test_get_venv_package_list(self, mock_Process, mock_sys_exit):
+        mock_Process().return_value = utils.ProcessResult('fakecmd', 0, '', '')
+        utils.get_venv_package_list('/some/dir', env={'some': 'envvar'})
+        mock_Process.assert_called_with(
+            ('/some/dir/bin/pip', 'list'),
+            env={'some': 'envvar'})
+        self.assertFalse(mock_sys_exit.called)
+        mock_Process().return_value = utils.ProcessResult('fakecmd', 1, '', '')
+        utils.get_venv_package_list('/some/dir', env={'some': 'envvar'})
+        mock_sys_exit.assert_called_once_with(1)

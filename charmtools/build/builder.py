@@ -1205,6 +1205,11 @@ def main(args=None):
                         default=False,
                         help='Use Python and associated tools from the snap '
                              'when building the wheelhouse.')
+    parser.add_argument('--upgrade-buildvenv-core-deps', action='store_true',
+                        default=False,
+                        help='Upgrade core dependencies in virtualenv used to '
+                        'build/download wheels: pip setuptools to the latest '
+                        'version in PyPI.')
     parser.add_argument('charm', nargs="?", default=".", type=path,
                         help='Source directory for charm layer to build '
                              '(default: .)')
@@ -1226,6 +1231,7 @@ def main(args=None):
     WheelhouseTactic.binary_build = build.binary_wheels
     WheelhouseTactic.binary_build_from_source = build.binary_wheels_from_source
     WheelhouseTactic.use_python_from_snap = build.use_python_from_snap
+    WheelhouseTactic.upgrade_deps = build.upgrade_buildvenv_core_deps
 
     configLogging(build)
 

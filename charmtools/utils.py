@@ -651,3 +651,36 @@ def host_env():
         for element in env['PATH'].split(':')
         if not element.startswith('/snap/charm/')])
     return env
+
+
+def upgrade_venv_core_packages(venv_dir, env=None):
+    """Upgrade core dependencies in venv.
+
+    :param venv_dir: Full path to virtualenv in which packages will be upgraded
+    :type venv_dir: str
+    :param env: Environment to use when executing command
+    :type env: Optional[Dict[str,str]]
+    :returns: This function is called for its side effect
+    """
+    log.debug('Upgrade pip and setuptools in virtualenv "{}"'.format(venv_dir))
+    # We can replace this with a call to `python3 -m venv --upgrade-deps` once
+    # support for bionic and focal has been removed.
+    Process((os.path.join(venv_dir, 'bin/pip'),
+             'install', '-U', 'pip', 'setuptools'),
+            env=env).exit_on_error()()
+
+
+def get_venv_package_list(venv_dir, env=None):
+    """Get list of packages and their version in virtualenv.
+
+    :param venv_dir: Full path to virtualenv in which packages will be listed
+    :type venv_dir: str
+    :param env: Environment to use when executing command
+    :type env: Optional[Dict[str,str]]
+    :returns: List of packages with their versions
+    :rtype: str
+    """
+    result = Process((os.path.join(venv_dir, 'bin/pip'), 'list'), env=env)()
+    if result:
+        return result.output
+    result.exit_on_error()

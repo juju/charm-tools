@@ -1047,6 +1047,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
     binary_build = False
     binary_build_from_source = False
     use_python_from_snap = False
+    upgrade_deps = False
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
@@ -1124,13 +1125,20 @@ class WheelhouseTactic(ExactMatch, Tactic):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
             _no_binary_opts = ('--no-binary', ':all:')
-            if self.binary_build_from_source or self.binary_build:
-                self._pip('wheel',
-                          *_no_binary_opts
-                          if self.binary_build_from_source else tuple(),
-                          '-w', temp_dir, *reqs)
-            else:
-                self._pip('download', *_no_binary_opts, '-d', temp_dir, *reqs)
+            try:
+                if self.binary_build_from_source or self.binary_build:
+                    self._pip('wheel',
+                              *_no_binary_opts
+                              if self.binary_build_from_source else tuple(),
+                              '-w', temp_dir, *reqs)
+                else:
+                    self._pip('download', *_no_binary_opts, '-d', temp_dir, *reqs)
+            except BuildError:
+                log.info('Build failed. If you are building on Focal and have '
+                         'Jinja2 or MarkupSafe as part of your dependencies, '
+                         'try passing the `--upgrade-buildvenv-core-deps` '
+                         'argument.')
+                raise
             log.debug('Copying wheels:')
             for wheel in temp_dir.files():
                 log.debug('  ' + wheel.name)
@@ -1242,6 +1250,13 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 ('virtualenv', '--python', 'python3', self._venv),
                 env=self._get_env()
             ).exit_on_error()()
+        if self.upgrade_deps:
+            utils.upgrade_venv_core_packages(self._venv, env=self._get_env())
+        log.debug(
+            'Packages in buildvenv:\n{}'
+            .format(
+                utils.get_venv_package_list(self._venv,
+                                            env=self._get_env())))
         if self.per_layer:
             self._process_per_layer(wheelhouse)
         else:
