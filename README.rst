@@ -51,25 +51,57 @@ to build a reactive charm suitable for uploading to the
         build-snaps:
           - charm/3.x/stable
         build-environment:
-          - CHARM_INTERFACES_DIR: /root/project/interfaces/
-          - CHARM_LAYERS_DIR: /root/project/layers/
+          - CHARM_INTERFACES_DIR: $CRAFT_PROJECT_DIR/interfaces/
+          - CHARM_LAYERS_DIR: $CRAFT_PROJECT_DIR/layers/
 
     bases:
       - build-on:
           - name: ubuntu
             channel: "22.04"
-            architectures:
-              - amd64
+            architectures: [amd64]
         run-on:
           - name: ubuntu
             channel: "22.04"
-            architectures: [amd64, s390x, ppc64el, arm64]
+            architectures: [amd64]
+      - build-on:
           - name: ubuntu
-            channel: "22.10"
-            architectures: [amd64, s390x, ppc64el, arm64]
+            channel: "22.04"
+            architectures: [arm64]
+        run-on:
+          - name: ubuntu
+            channel: "22.04"
+            architectures: [arm64]
+      - build-on:
+          - name: ubuntu
+            channel: "22.04"
+            architectures: [ppc64el]
+        run-on:
+          - name: ubuntu
+            channel: "22.04"
+            architectures: [ppc64el]
+      - build-on:
+          - name: ubuntu
+            channel: "22.04"
+            architectures: [s390x]
+        run-on:
+          - name: ubuntu
+            channel: "22.04"
+            architectures: [s390x]
 
 Note that this ``charmcraft.yaml`` specifies the 3.x track for charm-tools, as
 it's building on the 22.04 base (jammy) which is Python 3.10.
+
+Binary builds
+-------------
+
+To help with reducing the installation dependencies of python modules on the
+runtime systems, binary wheels may be built.  These are architecture-dependent
+and so the 'build-on/run-on' bases specification (as shown above) **must** be
+used if the charm must support multiple architectures. An example of when a
+binary wheel is preferable is for the cryptography module, which, for recent
+releases, requires a rust compiler installed on the target system to build the
+module if a binary wheel is not used.  Use the ``--binary-wheels`` option when
+using ``charm build``.
 
 Snap Tracks/Version
 -------------------
@@ -77,8 +109,12 @@ Snap Tracks/Version
 Due to the complexity of building reactive charms across multiple Python
 versions, the tool has been split into two tracks:
 
-1. For charms targetting Ubuntu focal (20.04) or earlier: 2.x
-2. For charms targetting Ubuntu jammy (22.04) or later: 3.x
+1. The 2.x track is hard coded to build using Python 3.6, which is the
+   equivalent of using Ubuntu 18.04 (Bionic) as a base.
+2. The 3.x track uses the Python version from the build environement.  This
+   means that it is useful for building charms from 20.04 onwards, but does
+   mean that a separate build (as indicated above) may need to be used for each
+   base the the charm should run on.
 
 Other charms.reactive projects
 ------------------------------
