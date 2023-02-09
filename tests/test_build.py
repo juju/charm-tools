@@ -486,7 +486,7 @@ class TestBuild(unittest.TestCase):
                         '',
                         '# --wheelhouse-overrides',
                         'git+https://github.com/me/qux#egg=qux',
-                        'setuptools_scm>=3.0<=3.4.1',
+                        'setuptools_scm>=3.0,<=3.4.1',
                         '',
                     ])
 
