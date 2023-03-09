@@ -1252,6 +1252,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
             ).exit_on_error()()
         if self.upgrade_deps:
             utils.upgrade_venv_core_packages(self._venv, env=self._get_env())
+        else:
+            utils.pin_setuptools_for_pep440(self._venv, env=self._get_env())
         log.debug(
             'Packages in buildvenv:\n{}'
             .format(

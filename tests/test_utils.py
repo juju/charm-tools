@@ -68,6 +68,14 @@ class TestUtils(TestCase):
             ('/some/dir/bin/pip', 'install', '-U', 'pip', 'setuptools'),
             env={'some': 'envvar'})
 
+    @unittest.mock.patch.object(utils, "Process")
+    def test_pin_setuptools_for_pep440(self, mock_Process):
+        utils.pin_setuptools_for_pep440('/some/dir', env={'some': 'envvar'})
+        mock_Process.assert_called_once_with(
+            ('/some/dir/bin/pip', 'install', '-U', 'pip<23.1',
+             'setuptools<67'),
+            env={'some': 'envvar'})
+
     @unittest.mock.patch("sys.exit")
     @unittest.mock.patch.object(utils, "Process")
     def test_get_venv_package_list(self, mock_Process, mock_sys_exit):
