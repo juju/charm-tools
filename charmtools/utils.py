@@ -670,6 +670,24 @@ def upgrade_venv_core_packages(venv_dir, env=None):
             env=env).exit_on_error()()
 
 
+def pin_setuptools_for_pep440(venv_dir, env=None):
+    """Pin setuptools so that pep440 non-compliant packages can be installed.
+
+    Also pins pip as it's a combination that definitely works.
+
+    :param venv_dir: Full path to virtualenv in which packages will be upgraded
+    :type venv_dir: str
+    :param env: Environment to use when executing command
+    :type env: Optional[Dict[str,str]]
+    :returns: This function is called for its side effect
+    """
+    log.debug('Pinning setuptools < 67 for pep440 non compliant packages "{}"'
+              .format(venv_dir))
+    Process((os.path.join(venv_dir, 'bin/pip'),
+             'install', '-U', 'pip<23.1', 'setuptools<67'),
+            env=env).exit_on_error()()
+
+
 def get_venv_package_list(venv_dir, env=None):
     """Get list of packages and their version in virtualenv.
 
