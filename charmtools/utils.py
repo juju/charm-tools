@@ -633,3 +633,36 @@ def validate_display_name(entity, linter):
         linter.err('display-name: not in valid format. '
                    'Only letters, numbers, dashes, and hyphens are permitted.')
         return
+
+
+def host_env():
+    """Get environment appropriate for executing commands outside snap context.
+    :returns: Dictionary with environment variables
+    :rtype: Dict[str,str]
+    """
+    env = os.environ.copy()
+    for key in ('PREFIX', 'PYTHONHOME', 'PYTHONPATH',
+                'GIT_TEMPLATE_DIR', 'GIT_EXEC_PATH'):
+        if key in env:
+            del(env[key])
+    env['PATH'] = ':'.join([
+        element
+        for element in env['PATH'].split(':')
+        if not element.startswith('/snap/charm/')])
+    return env
+
+
+def pin_setuptools_for_pep440(venv_dir, env=None):
+    """Pin setuptools so that pep440 non-compliant packages can be installed.
+    Also pins pip as it's a combination that definitely works.
+    :param venv_dir: Full path to virtualenv in which packages will be upgraded
+    :type venv_dir: str
+    :param env: Environment to use when executing command
+    :type env: Optional[Dict[str,str]]
+    :returns: This function is called for its side effect
+    """
+    log.debug('Pinning setuptools < 67 for pep440 non compliant packages "{}"'
+              .format(venv_dir))
+    Process((os.path.join(venv_dir, 'bin/pip'),
+             'install', '-U', 'pip<23.1', 'setuptools<67'),
+            env=env).exit_on_error()()

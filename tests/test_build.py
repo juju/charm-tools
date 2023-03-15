@@ -431,6 +431,7 @@ class TestBuild(unittest.TestCase):
 
         self.assertEqual((bu.target_dir / 'version').text(), 'sha2')
 
+    @mock.patch("charmtools.utils.pin_setuptools_for_pep440")
     @mock.patch("charmtools.utils.sign")
     @mock.patch("charmtools.build.builder.Builder.plan_version")
     @mock.patch("charmtools.build.builder.Builder.plan_interfaces")
@@ -438,7 +439,8 @@ class TestBuild(unittest.TestCase):
     @mock.patch("path.Path.rmtree_p")
     @mock.patch("tempfile.mkdtemp")
     @mock.patch("charmtools.utils.Process")
-    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv, sign):
+    def test_wheelhouse(self, Process, mkdtemp, rmtree_p, ph, pi, pv, sign,
+                        pin_setuptools_for_pep440):
         build.tactics.WheelhouseTactic.per_layer = False
         mkdtemp.return_value = '/tmp'
         bu = build.Builder()
@@ -486,7 +488,7 @@ class TestBuild(unittest.TestCase):
                         '',
                         '# --wheelhouse-overrides',
                         'git+https://github.com/me/qux#egg=qux',
-                        'setuptools_scm>=3.0<=3.4.1',
+                        'setuptools_scm>=3.0,<=3.4.1',
                         '',
                     ])
 
