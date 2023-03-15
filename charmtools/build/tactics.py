@@ -1230,6 +1230,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             utils.Process(
                 ('virtualenv', '--python', 'python3', self._venv)
             ).exit_on_error()()
+        utils.pin_setuptools_for_pep440(self._venv, env=utils.host_env())
         if self.per_layer:
             self._process_per_layer(wheelhouse)
         else:
