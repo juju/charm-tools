@@ -1,12 +1,10 @@
 Juju Charm Tools
 ================
 
-|travis| |build|
+|build|
 
-.. |travis| image:: https://travis-ci.org/juju/charm-tools.svg
-    :target: https://travis-ci.org/juju/charm-tools
-.. |build| image:: https://build.snapcraft.io/badge/juju/charm-tools.svg
-    :target: https://build.snapcraft.io/user/juju/charm-tools
+.. |build| image:: https://snapcraft.io/charm/badge.svg
+    :target: https://snapcraft.io/charm
 
 This is a collection of tools to make writing Juju charms easier. See Juju's
 home page for more information.
