@@ -43,7 +43,7 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
         'cheetah3>=3.0.0,<4.0',
-        'pyyaml>=5.0,<6.0',
+        'pyyaml>=6.0.1,<7',
         'requests>=2.0.0,<3.0.0',
         'blessings<2.0',
         'ruamel.yaml<0.16.0;python_version < "3.7"',
