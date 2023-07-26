@@ -3,7 +3,7 @@ Reproducible Charms
 
 When building charms, multiple layers are brought together in an ordered,
 depth-first recursive fashion.  The individual files of each layer are merged,
-and then python modules are brought in according to ``wheelhouse.txt`` files
+and then Python modules are brought in according to ``wheelhouse.txt`` files
 that may exist in each layer.
 
 Layers (and Interfaces) are typically Git repositories, and by default the
@@ -24,7 +24,7 @@ modules, and their versions.  This can then, for subsequent builds, be used to
 fetch the same layer versions and Python modules to re-create the charm.
 
 As the lock file is a ``JSON`` file, it can be manually edited to change a
-layer version if a new version of a stable charm is needed, or a python module
+layer version if a new version of a stable charm is needed, or a Python module
 can be changed.
 
 Additionally, it is possible to track a branch in the repository for a layer so
@@ -47,7 +47,7 @@ file, and rebuilds the charm using the latest versions of the layers and the
 versions of the modules as determined in the various ``wheelhouse.txt`` files.
 
 Python module versions are also recorded.  If a VCS repository is used for the
-python module, then any branch specified is also recorded, along with the
+Python module, then any branch specified is also recorded, along with the
 commit.
 
 At the end of the build, the lock file is written with all of the layer and
