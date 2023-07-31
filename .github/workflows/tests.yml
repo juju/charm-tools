@@ -49,6 +49,10 @@ jobs:
         sudo lxd init --auto
         # This is a throw-away CI environment, do not do this at home
         sudo chmod 666 /var/snap/lxd/common/lxd/unix.socket
+        # Fixup iptables forwarding issues from LXD containers with a flush and
+        # re-create of rules.
+        sudo iptables -F FORWARD
+        sudo iptables -P FORWARD ACCEPT
     - name: Checkout layer-basic
       uses: actions/checkout@v2
       with:
