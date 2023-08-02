@@ -43,7 +43,7 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
         'cheetah3>=3.0.0,<4.0',
-        'pyyaml>=5.0,<6.0',
+        'pyyaml>=5.0,!=5.4.0,!=5.4.1,<6.0',
         'requests>=2.0.0,<3.0.0',
         'blessings<2.0',
         'ruamel.yaml<0.16.0;python_version < "3.7"',
@@ -56,7 +56,7 @@ setup(
         'jujubundlelib<0.6',
         'virtualenv>=1.11.4,<21',
         'colander<1.9',
-        'jsonschema<5.0',
+        'jsonschema<4.18.0',
         'keyring<24',
         'secretstorage<3.4',
         'dict2colander==0.2',
