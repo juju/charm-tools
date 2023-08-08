@@ -44,7 +44,7 @@ setup(
     install_requires=[
         'launchpadlib<1.11',
         'cheetah3>=3.0.0',
-        'pyyaml>=5.0,<6.0',
+        'pyyaml>=5.0,!=5.4.0,!=5.4.1,<6.0',
         'requests>=2.0.0,<3.0.0',
         'libcharmstore',
         'blessings',
