@@ -1132,7 +1132,8 @@ class WheelhouseTactic(ExactMatch, Tactic):
                               if self.binary_build_from_source else tuple(),
                               '-w', temp_dir, *reqs)
                 else:
-                    self._pip('download', *_no_binary_opts, '-d', temp_dir, *reqs)
+                    self._pip(
+                        'download', *_no_binary_opts, '-d', temp_dir, *reqs)
             except BuildError:
                 log.info('Build failed. If you are building on Focal and have '
                          'Jinja2 or MarkupSafe as part of your dependencies, '

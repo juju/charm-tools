@@ -124,8 +124,6 @@ class Fetched(Configable):
             # using the revision as the branch so that things do at least
             # build.
             self.branch = self.revision
-            # self.branch = fetcher.get_branch_for_revision(self.directory,
-                                                          # self.revision)
 
         if not self.directory.exists():
             raise BuildError(
