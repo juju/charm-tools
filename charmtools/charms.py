@@ -129,7 +129,7 @@ class CharmLinter(Linter):
         for r in relations.items():
             if r[0].startswith('juju-'):
                 self.info('juju-* is a reserved relation name')
-            if type(r[1]) != dict:
+            if not isinstance(r[1], dict):
                 self.err("relation %s is not a map" % (r[0]))
             else:
                 if 'scope' in r[1]:
@@ -379,14 +379,14 @@ class Charm(object):
                             with open(readme_path) as r:
                                 readme_content = r.read()
                                 lc = 0
-                                for l in bad_lines:
-                                    if not len(l):
+                                for bl in bad_lines:
+                                    if not len(bl):
                                         continue
                                     lc += 1
-                                    if l in readme_content:
+                                    if bl in readme_content:
                                         err_msg = ('%s includes boilerplate: '
                                                    '%s')
-                                        lint.warn(err_msg % (readme, l))
+                                        lint.warn(err_msg % (readme, bl))
                 except IOError as e:
                     lint.warn(
                         "Error while opening %s (%s)" %
@@ -395,7 +395,7 @@ class Charm(object):
                 lint.warn("no README file")
 
             subordinate = charm.get('subordinate', False)
-            if type(subordinate) != bool:
+            if type(subordinate) is not bool:
                 lint.err("subordinate must be a boolean value")
 
             # All charms should provide at least one thing
@@ -977,9 +977,11 @@ def validate_functions(functions, function_hooks, linter):
             continue
         h = os.path.join(function_hooks, k)
         if not os.path.isfile(h):
-            linter.warn('functions.{0}: functions/{0} does not exist'.format(k))
+            linter.warn('functions.{0}: functions/{0} does not exist'
+                        .format(k))
         elif not os.access(h, os.X_OK):
-            linter.err('functions.{0}: functions/{0} is not executable'.format(k))
+            linter.err('functions.{0}: functions/{0} is not executable'
+                       .format(k))
 
 
 def validate_maintainer(charm, linter):
@@ -1027,12 +1029,12 @@ def validate_categories_and_tags(charm, linter):
 
     if 'tags' in charm:
         tags = charm['tags']
-        if type(tags) != list or tags == []:
+        if not isinstance(tags, list) or tags == []:
             linter.warn('Metadata field "tags" must be a non-empty list')
 
     if 'categories' in charm:
         categories = charm['categories']
-        if type(categories) != list or categories == []:
+        if not isinstance(categories, list) or categories == []:
             # The category names are not validated because they may
             # change.
             linter.warn(
