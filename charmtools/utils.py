@@ -644,7 +644,7 @@ def host_env():
     for key in ('PREFIX', 'PYTHONHOME', 'PYTHONPATH',
                 'GIT_TEMPLATE_DIR', 'GIT_EXEC_PATH'):
         if key in env:
-            del(env[key])
+            del env[key]
     env['PATH'] = ':'.join([
         element
         for element in env['PATH'].split(':')

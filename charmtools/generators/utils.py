@@ -49,7 +49,7 @@ def apt_fill(package):
         v['summary'] = p.summary
         v['description'] = textwrap.fill(p.description, width=72,
                                          subsequent_indent='  ')
-    except:
+    except Exception:
         log.info(
             "No %s in apt cache; creating an empty charm instead.", package)
         v['summary'] = '<Fill in summary here>'
@@ -69,7 +69,7 @@ def portable_get_maintainer():
 
             if not len(name):
                 name = pwd.getpwuid(os.getuid())[0]
-        except:
+        except Exception:
             name = 'Your Name'
 
     if not len(name):
