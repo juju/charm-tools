@@ -52,7 +52,7 @@ def cached_charmstore_client_version():
             charm_ver = 'unavailable'
     except ImportError:
         charm_ver = 'unavailable'
-    except:
+    except Exception:
         charm_ver = 'error'
 
     return _add_snap_rev({'version': charm_ver})

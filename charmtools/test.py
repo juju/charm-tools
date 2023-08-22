@@ -112,7 +112,7 @@ class Conductor(object):
             try:
                 t = Orchestra(self, test)
                 t.perform()
-            except:
+            except Exception:
                 self.fails += 1
                 if self.args.set_e:
                     self.log.info('Breaking here as requested by --set-e')
@@ -127,7 +127,7 @@ class Conductor(object):
                 time.sleep(2)
                 try:
                     self.destroy(self.juju_env)
-                except:
+                except Exception:
                     continue
 
         return self.errors, self.fails, self.passes
@@ -163,7 +163,7 @@ class Conductor(object):
         except IOError:
             raise  # Do something more clever here?
 
-        if not juju_env in env_yaml['environments']:
+        if juju_env not in env_yaml['environments']:
             raise KeyError('%s does not exist in %s/environments.yaml' %
                            (juju_env, juju_home))
 
@@ -193,7 +193,7 @@ class Conductor(object):
         except TimeoutError:
             try:
                 self.destroy(self.juju_env)
-            except:
+            except Exception:
                 pass
 
             raise BootstrapUnreliable('Bootstrap timeout after %ss' % wait_for)
@@ -229,7 +229,7 @@ class Conductor(object):
         self.log.debug('Running the following: %s' % ' '.join(cmd))
         try:
             output = subprocess.check_output(cmd, env=self.env)
-        except:
+        except Exception:
             self.log.debug('Status command failed, returning nothing')
             return None
 
@@ -327,7 +327,7 @@ class Orchestra(object):
 
         try:
             self.rsync(0, logs[0], os.path.join(logdir, 'bootstrap', ''))
-        except:
+        except Exception:
             self.log.warn('Failed to fetch logs for bootstrap node')
 
         for service in services:
@@ -337,7 +337,7 @@ class Orchestra(object):
                     try:
                         self.rsync(machine, log, os.path.join(logdir, service,
                                                               ''))
-                    except:
+                    except Exception:
                         self.log.warn('Failed to grab logs for %s' % unit)
 
     def print_status(self, exit_code):
@@ -360,7 +360,7 @@ class Orchestra(object):
             else:
                 return timeout_status
 
-        if not exit_code in TEST_RESERVED_EXITS.keys():
+        if exit_code not in TEST_RESERVED_EXITS.keys():
             return 'fail'
 
         if exit_code == 100 and self.conductor.args.fail_on_skip:
@@ -447,7 +447,7 @@ def get_juju_version():
     try:
         version = subprocess.check_output(cmd)
         version = version.split('-')[0]
-    except:
+    except Exception:
         cmd[1] = '--version'
         version = subprocess.check_output(cmd)
         version = version.split()[1]
@@ -455,7 +455,7 @@ def get_juju_version():
     for i, ver in enumerate(version.split('.')):
         try:
             setattr(jv, jv.mapping[i], int(ver))
-        except:
+        except Exception:
             break  # List out of range? Versions not semantic? Not my problem.
 
     return jv
@@ -516,7 +516,7 @@ class SubstrateFilter(object):
         creation.
         """
         if isinstance(substrates, str):
-            substrates = [s.strip() for s in re.split('[,\s]', substrates)]
+            substrates = [s.strip() for s in re.split(r'[,\s]', substrates)]
 
         # Apply the rules to the list of substrates returning anything that
         # matches
@@ -646,7 +646,6 @@ output:
     parser.add_argument('-e', '--environment', metavar='JUJU_ENV',
                         default=os.environ.get('JUJU_ENV'),
                         dest='juju_env',
-                        #required=True,
                         help="juju environment to operate in")
     parser.add_argument('--upload-tools', default=False, action="store_true",
                         help="upload juju tools (available for juju > 1.x)")
@@ -664,6 +663,7 @@ output:
 # http://stackoverflow.com/a/11784984/196832
 def status(self, message, *args, **kws):
     self._log(TEST_RESULT_LEVELV_NUM, message, args, **kws)
+
 
 logging.addLevelName(TEST_RESULT_LEVELV_NUM, "RESULT")
 logging.Logger.status = status
@@ -711,8 +711,6 @@ def main():
     except Exception as e:
         logger.critical(str(e))
         sys.exit(1)
-    except:
-        raise
 
     logger.info('Results: %s passed, %s failed, %s errored' %
                 (passes, failures, errors))

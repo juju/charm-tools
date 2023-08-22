@@ -85,7 +85,9 @@ class Bundle(object):
     def is_v4(self, data=None):
         if data is None:
             data = self.bundle_file()
-        v4_keys = {'applications', 'services', 'relations', 'machines', 'series'}
+        v4_keys = {
+            'applications', 'services', 'relations', 'machines', 'series'
+        }
         bundle_keys = set(data.keys())
         return bool(v4_keys & bundle_keys)
 
