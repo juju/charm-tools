@@ -68,6 +68,12 @@ parts:
       - MAKEFLAGS: -j$(nproc)
       - CFLAGS: -I/usr/include/python3.10
     override-build: |
+      # Upgrading setuptools helps to fix:
+      #
+      #   ERROR: setuptools==59.6.0 is used in combination with setuptools_scm>=8.x
+      #   Your build configuration is incomplete and previously worked by accident!
+      #   setuptools_scm requires setuptools>=61
+      pip install --upgrade setuptools
       pip install \
           --no-binary :all: \
           --prefix $CRAFT_PART_INSTALL/usr \
@@ -87,10 +93,10 @@ parts:
 
       PYTHONHOME=$CRAFT_PART_INSTALL \
           PYTHONPATH=$CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages \
-          vergit --format=json > $CRAFT_PART_INSTALL/charm-tools-version
+          $CRAFT_PART_INSTALL/usr/local/bin/vergit --format=json > $CRAFT_PART_INSTALL/charm-tools-version
       version=$(PYTHONHOME=$CRAFT_PART_INSTALL \
                 PYTHONPATH=$CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages \
-                vergit)
+                $CRAFT_PART_INSTALL/usr/local/bin/vergit)
       craftctl set version=$version
     override-stage: |
       find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
