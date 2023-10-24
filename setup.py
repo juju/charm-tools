@@ -50,7 +50,7 @@ setup(
         'blessings',
         'ruamel.yaml<0.16.0;python_version < "3.7"',
         'pathspec<=0.3.4;python_version < "3.7"',
-        'ruamel.yaml;python_version >= "3.7"',
+        'ruamel.yaml<0.18;python_version >= "3.7"',
         'pathspec;python_version >= "3.7"',
         'otherstuf<=1.1.0',
         'path.py>=10.5',
