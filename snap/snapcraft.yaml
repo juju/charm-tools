@@ -5,8 +5,6 @@ description: charmstore-client and charm-tools
 confinement: classic
 grade: stable
 base: core18
-architectures:
-  - amd64
 apps:
   charm:
     command: bin/wrappers/charm
@@ -24,7 +22,7 @@ parts:
       - bzr
       - python3-pip
     stage-snaps:
-      - bhttp
+      - bhttp/latest/edge
     override-build: |
       snapcraftctl build
       pip3 install vergit
@@ -32,7 +30,7 @@ parts:
   bhttp:
     plugin: nil
     stage-snaps:
-      - bhttp
+      - bhttp/latest/edge
     stage:
       - bin/bhttp
   charm-tools:
