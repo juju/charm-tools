@@ -47,6 +47,13 @@ setup(
         'pyyaml>=5.0,!=5.4.0,!=5.4.1,<6.0',
         'requests>=2.0.0,<3.0.0',
         'libcharmstore',
+        # macaroonbakery is pulled in by libcharmstore->theblues, v1.3.4 added
+        # a constraint of protobuf>=3.20.0[0] which makes it incompatible with
+        # python 3.6 while v1.3.3 was released in a broken state[1]
+        #
+        # [0] https://github.com/go-macaroon-bakery/py-macaroon-bakery/commit/7f1fe6a2adb2f80db12bccfb81f629d66d106e03  # noqa
+        # [1] https://github.com/go-macaroon-bakery/py-macaroon-bakery/pull/92
+        'macaroonbakery < 1.3.3;python_version < "3.7"',
         'blessings',
         'ruamel.yaml<0.16.0;python_version < "3.7"',
         'pathspec<=0.3.4;python_version < "3.7"',
