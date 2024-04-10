@@ -588,9 +588,9 @@ class TestBuild(unittest.TestCase):
             },
         })
 
-    @mock.patch('charmtools.build.tactics.getargspec')
+    @mock.patch('charmtools.build.tactics.getfullargspec')
     @mock.patch('charmtools.utils.walk')
-    def test_custom_tactics(self, mwalk, mgetargspec):
+    def test_custom_tactics(self, mwalk, mgetfullargspec):
         def _layer(tactics):
             return mock.Mock(config=build.builder.BuildConfig({'tactics':
                                                                tactics}),
@@ -617,7 +617,7 @@ class TestBuild(unittest.TestCase):
             ['third', 'second', 'first'],
         ])
 
-        mgetargspec.return_value = mock.Mock(args=[1, 2, 3, 4])
+        mgetfullargspec.return_value = mock.Mock(args=[1, 2, 3, 4])
         current_config = mock.Mock(tactics=[
             mock.Mock(name='1', **{'trigger.return_value': False}),
             mock.Mock(name='2', **{'trigger.return_value': False}),

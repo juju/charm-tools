@@ -1,4 +1,4 @@
-from inspect import getargspec
+from inspect import getfullargspec
 import errno
 import json
 import logging
@@ -43,7 +43,7 @@ class Tactic(object):
         given entity.
         """
         for candidate in current_config.tactics + DEFAULT_TACTICS:
-            argspec = getargspec(candidate.trigger)
+            argspec = getfullargspec(candidate.trigger)
             if len(argspec.args) == 2:
                 # old calling convention
                 name = candidate.__name__
