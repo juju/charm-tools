@@ -179,10 +179,10 @@ class TestBuild(unittest.TestCase):
         cyaml = base / "layer.yaml"
         self.assertTrue(cyaml.exists())
         cyaml_data = yaml.safe_load(cyaml.open())
-        self.assertEquals(cyaml_data['includes'], ['layers/test-base',
+        self.assertEqual(cyaml_data['includes'], ['layers/test-base',
                                                    'layers/mysql'])
-        self.assertEquals(cyaml_data['is'], 'foo')
-        self.assertEquals(cyaml_data['options']['mysql']['qux'], 'one')
+        self.assertEqual(cyaml_data['is'], 'foo')
+        self.assertEqual(cyaml_data['options']['mysql']['qux'], 'one')
 
         self.assertTrue((base / "hooks/config-changed").exists())
 
@@ -205,13 +205,13 @@ class TestBuild(unittest.TestCase):
         sigs = base / ".build.manifest"
         self.assertTrue(sigs.exists())
         data = json.load(sigs.open())
-        self.assertEquals(data['signatures']["README.md"], [
+        self.assertEqual(data['signatures']["README.md"], [
             u'foo',
             "static",
             u'cfac20374288c097975e9f25a0d7c81783acdbc81'
             '24302ff4a731a4aea10de99'])
 
-        self.assertEquals(data["signatures"]['metadata.yaml'], [
+        self.assertEqual(data["signatures"]['metadata.yaml'], [
             u'foo',
             "dynamic",
             u'12c1f6fc865da0660f6dc044cca03b0244e883d9a99fdbdfab6ef6fc2fed63b7'
@@ -611,7 +611,7 @@ class TestBuild(unittest.TestCase):
         builder.plan_layers(layers, {})
         calls = [call[1]['current_config'].tactics
                  for call in mwalk.call_args_list]
-        self.assertEquals(calls, [
+        self.assertEqual(calls, [
             ['first'],
             ['second', 'first'],
             ['third', 'second', 'first'],
@@ -629,9 +629,9 @@ class TestBuild(unittest.TestCase):
                                  mock.Mock(),
                                  current_config,
                                  mock.Mock())
-        self.assertEquals([t.trigger.called for t in current_config.tactics],
+        self.assertEqual([t.trigger.called for t in current_config.tactics],
                           [True, True, True])
-        self.assertEquals([t.called for t in current_config.tactics],
+        self.assertEqual([t.called for t in current_config.tactics],
                           [False, False, True])
 
 
