@@ -88,3 +88,12 @@ class TestUtils(TestCase):
         mock_Process().return_value = utils.ProcessResult('fakecmd', 1, '', '')
         utils.get_venv_package_list('/some/dir', env={'some': 'envvar'})
         mock_sys_exit.assert_called_once_with(1)
+
+    @unittest.mock.patch.object(utils, "Process")
+    def test_get_oython_version(self, process_klass):
+        process_klass().return_value = utils.ProcessResult(
+            ['python3', '--version'], 0, b'Python 3.12.4', b'')
+        self.assertEqual(
+            utils.get_python_version('/some/dir', env={'some': 'envvar'}),
+            (3, 12, 4)
+        )
