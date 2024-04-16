@@ -42,6 +42,11 @@ jobs:
         path: ${{ steps.snap-build.outputs.snap }}
 
   integration:
+    strategy:
+      matrix:
+        charmcraft_channel:
+          - "2.x/stable"
+          - "3.x/beta"
     name: Integration test
     needs: build
     runs-on: ubuntu-latest
@@ -70,7 +75,7 @@ jobs:
     - name: Build reactive charm with charmcraft
       run: |
         set -euxo pipefail
-        sudo snap install --classic --channel latest/edge charmcraft
+        sudo snap install --classic --channel ${{ matrix.charmcraft_channel }} charmcraft
         cat << EOF | tee tests/charm-minimal/charmcraft.yaml
         type: charm
         parts:
