@@ -108,6 +108,10 @@ jobs:
             architectures: [amd64]
         EOF
         charmcraft pack -p tests/charm-minimal -v
+    ## action to interactively debug CI failures.
+    # - name: Setup upterm session
+    #   if: failure()
+    #   uses: lhotari/action-upterm@v1
     - name: Upload charmcraft execution logs
       if: always()
       uses: actions/upload-artifact@v3
