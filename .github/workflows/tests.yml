@@ -82,6 +82,7 @@ jobs:
           charm-tools:
             plugin: nil
             override-build: |
+              ls -lR \$CRAFT_PROJECT_DIR/
               snap install --dangerous --classic \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap/*.snap
               rm -rf \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap
           charm:
