@@ -10,7 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version:
+          - '3.8'   # focal
+          - '3.10'  # jammy
+          - '3.12'  # noble
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -39,6 +42,11 @@ jobs:
         path: ${{ steps.snap-build.outputs.snap }}
 
   integration:
+    strategy:
+      matrix:
+        charmcraft_channel:
+          - "2.x/stable"
+          - "3.x/beta"
     name: Integration test
     needs: build
     runs-on: ubuntu-latest
@@ -64,17 +72,19 @@ jobs:
         name: charm-snap
         path: tests/charm-minimal/charm-snap
 
-    - name: Build reactive charm with charmcraft
+    - name: Build reactive charm with charmcraft-2.x
+      if: ${{ matrix.charmcraft_channel == '2.x/stable' }}
       run: |
         set -euxo pipefail
-        sudo snap install --classic --channel latest/edge charmcraft
+        sudo snap install --classic --channel ${{ matrix.charmcraft_channel }} charmcraft
         cat << EOF | tee tests/charm-minimal/charmcraft.yaml
         type: charm
         parts:
           charm-tools:
             plugin: nil
             override-build: |
-              snap install --dangerous --classic \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap/*.snap
+              ls -lR \$CRAFT_PROJECT_DIR/
+              snap install --dangerous --classic /root/project/charm-snap/charm_0.0.0_amd64.snap
               rm -rf \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap
           charm:
             after: [charm-tools]
@@ -99,6 +109,41 @@ jobs:
             architectures: [amd64]
         EOF
         charmcraft pack -p tests/charm-minimal -v
+    - name: Build reactive charm with charmcraft-3.x
+      if: ${{ matrix.charmcraft_channel == '3.x/beta' }}
+      run: |
+        set -euxo pipefail
+        sudo snap install --classic --channel ${{ matrix.charmcraft_channel }} charmcraft
+        cat << EOF | tee tests/charm-minimal/charmcraft.yaml
+        type: charm
+        parts:
+          charm-tools:
+            plugin: nil
+            override-build: |
+              ls -lR \$CRAFT_PROJECT_DIR/
+              snap install --dangerous --classic /root/project/charm-snap/charm_0.0.0_amd64.snap
+              rm -rf \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap
+          charm:
+            after: [charm-tools]
+            source: .
+            plugin: reactive
+            reactive-charm-build-arguments:
+              - -v
+              - --binary-wheels-from-source
+              - --upgrade-buildvenv-core-deps
+            build-packages:
+              - python3-dev
+              - libpq-dev
+        base: ubuntu@24.04
+        platforms:
+          amd64:
+        EOF
+        charmcraft pack -p tests/charm-minimal -v
+        mv minimal_amd64.charm minimal_ubuntu-24.04-amd64.charm
+    ## action to interactively debug CI failures.
+    # - name: Setup upterm session
+    #   if: failure()
+    #   uses: lhotari/action-upterm@v1
     - name: Upload charmcraft execution logs
       if: always()
       uses: actions/upload-artifact@v3
@@ -113,3 +158,4 @@ jobs:
           minimal_ubuntu-18.04-amd64.charm
           minimal_ubuntu-20.04-amd64.charm
           minimal_ubuntu-22.04-amd64.charm
+          minimal_ubuntu-24.04-amd64.charm

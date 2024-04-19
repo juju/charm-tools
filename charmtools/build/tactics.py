@@ -1,4 +1,4 @@
-from inspect import getargspec
+from inspect import getfullargspec
 import errno
 import json
 import logging
@@ -43,7 +43,7 @@ class Tactic(object):
         given entity.
         """
         for candidate in current_config.tactics + DEFAULT_TACTICS:
-            argspec = getargspec(candidate.trigger)
+            argspec = getfullargspec(candidate.trigger)
             if len(argspec.args) == 2:
                 # old calling convention
                 name = candidate.__name__
@@ -1253,6 +1253,9 @@ class WheelhouseTactic(ExactMatch, Tactic):
             ).exit_on_error()()
         if self.upgrade_deps:
             utils.upgrade_venv_core_packages(self._venv, env=self._get_env())
+        elif utils.get_python_version(self._venv,
+                                      env=self._get_env()) >= utils.PY312:
+            log.debug('Skip pinning of setuptools, because Python>=3.12')
         else:
             utils.pin_setuptools_for_pep440(self._venv, env=self._get_env())
         log.debug(

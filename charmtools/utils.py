@@ -20,6 +20,7 @@ import pathspec
 from path import Path as path
 
 log = logging.getLogger('utils')
+PY312 = (3, 12, 0)
 
 
 @contextmanager
@@ -681,8 +682,8 @@ def pin_setuptools_for_pep440(venv_dir, env=None):
     :type env: Optional[Dict[str,str]]
     :returns: This function is called for its side effect
     """
-    log.debug('Pinning setuptools < 67 for pep440 non compliant packages "{}"'
-              .format(venv_dir))
+    log.info('Pinning setuptools < 67 for pep440 non compliant packages "{}"'
+             .format(venv_dir))
     Process((os.path.join(venv_dir, 'bin/pip'),
              'install', '-U', 'pip<23.1', 'setuptools<67'),
             env=env).exit_on_error()()
@@ -702,3 +703,24 @@ def get_venv_package_list(venv_dir, env=None):
     if result:
         return result.output
     result.exit_on_error()
+
+
+def get_python_version(venv_dir, env=None):
+    """Get the Python interpreter version in the virtualenv.
+
+    :param venv_dir: Full path to virtualenv in which packages will be listed
+    :type venv_dir: str
+    :param env: Environment to use when executing command
+    :type env: Optional[Dict[str,str]]
+    :returns: Tuple with major, minor and microversion
+    :rtype: Tuple[str]
+    """
+    result = Process((os.path.join(venv_dir, 'bin/python3'), '--version'),
+                     env=env)()
+    m = re.match(r'^Python[ ]+(\d+)\.(\d+)\.(\d+).*', result.output)
+    if not m:
+        raise ValueError('Cannot identify the python version: %s' % result)
+
+    return (int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)))
