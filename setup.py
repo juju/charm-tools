@@ -51,7 +51,7 @@ setup(
         'ruamel.yaml<0.18;python_version >= "3.7"',
         'pathspec<0.11;python_version >= "3.7"',
         'otherstuf<=1.1.0',
-        'path.py>=10.5,<13',
+        'path<17',
         'pip>=1.5.4',
         'jujubundlelib<0.6',
         'virtualenv>=1.11.4,<21',
