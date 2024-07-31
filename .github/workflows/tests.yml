@@ -16,9 +16,9 @@ jobs:
           - '3.12'  # noble
     steps:
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Tox
@@ -31,12 +31,12 @@ jobs:
     needs: unit
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Add fake tag to make vergit happy
       run: git tag v0.0.0
     - uses: snapcore/action-build@v1
       id: snap-build
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v4
       with:
         name: charm-snap
         path: ${{ steps.snap-build.outputs.snap }}
@@ -62,12 +62,12 @@ jobs:
         sudo iptables -F FORWARD
         sudo iptables -P FORWARD ACCEPT
     - name: Checkout layer-basic
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: juju-solutions/layer-basic
 
     - name: Download built charm snap
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: charm-snap
         path: tests/charm-minimal/charm-snap
@@ -106,6 +106,9 @@ jobs:
             architectures: [amd64]
           - name: ubuntu
             channel: "22.04"
+            architectures: [amd64]
+          - name: ubuntu
+            channel: "24.04"
             architectures: [amd64]
         EOF
         charmcraft pack -p tests/charm-minimal -v
@@ -146,12 +149,12 @@ jobs:
     #   uses: lhotari/action-upterm@v1
     - name: Upload charmcraft execution logs
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: charmcraft execution logs
         path: ~/snap/charmcraft/common/cache/charmcraft/log/*.log
     - name: Upload built charms
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Built charms
         path: |
