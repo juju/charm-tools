@@ -156,9 +156,5 @@ jobs:
     - name: Upload built charms
       uses: actions/upload-artifact@v4
       with:
-        name: Built charms
-        path: |
-          minimal_ubuntu-18.04-amd64.charm
-          minimal_ubuntu-20.04-amd64.charm
-          minimal_ubuntu-22.04-amd64.charm
-          minimal_ubuntu-24.04-amd64.charm
+        name: ${{matrix.charmcraft_channel}} built charms
+        path: minimal_ubuntu-*-amd64.charm
