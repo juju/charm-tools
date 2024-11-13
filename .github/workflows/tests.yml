@@ -36,7 +36,7 @@ jobs:
       run: git tag v0.0.0
     - uses: snapcore/action-build@v1
       id: snap-build
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v4
       with:
         name: charm-snap
         path: ${{ steps.snap-build.outputs.snap }}
@@ -67,7 +67,7 @@ jobs:
         repository: juju-solutions/layer-basic
 
     - name: Download built charm snap
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: charm-snap
         path: tests/charm-minimal/charm-snap
