@@ -39,7 +39,7 @@ parts:
     python-version: python3
     build-packages:
       - libffi-dev
-      - libpython3.10-dev
+      - libpython3.6-dev
       - python3-pip
       - rustc
       - cargo
