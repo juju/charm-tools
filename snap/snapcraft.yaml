@@ -37,6 +37,13 @@ parts:
     source: .
     plugin: python
     python-version: python3
+    build-packages:
+      - libffi-dev
+      - libpython3.10-dev
+      - python3-pip
+      - rustc
+      - cargo
+      - pkg-config
     stage-packages:
       - git-core
       - libssl-dev
