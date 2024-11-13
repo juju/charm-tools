@@ -19,6 +19,8 @@ jobs:
     - uses: actions/checkout@v2
     - uses: snapcore/action-build@v1
       id: snapcraft
+      with:
+        snapcraft-channel: "7.x"
     - uses: actions/upload-artifact@v4
       with:
         name: charm.snap
