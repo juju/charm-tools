@@ -34,6 +34,9 @@ parts:
       - libffi-dev
       - libpython3.10-dev
       - python3-pip
+      - rustc
+      - cargo
+      - pkg-config
     # Note that we cannot use any -dev type packages here, as that would pull
     # in the libc6 package.  The libc6 package contains absolute symlinks
     # pointing at /, which is not allowed in a core22 classic snap.
