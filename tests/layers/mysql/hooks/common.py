@@ -96,7 +96,7 @@ def migrate_to_mount(new_path):
         raise RuntimeError('Persistent storage contains old data. '
                            'Please investigate and migrate data manually '
                            'to: {}'.format(new_path))
-    os.chmod(new_path, 0700)
+    os.chmod(new_path, 0o0700)
     if os.path.isdir('/etc/apparmor.d/local'):
         render('apparmor.j2', '/etc/apparmor.d/local/usr.sbin.mysqld',
                context={'path': os.path.join(new_path, '')})

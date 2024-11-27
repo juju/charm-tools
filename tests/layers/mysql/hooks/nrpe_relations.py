@@ -22,7 +22,7 @@ def nagios_password():
         password = str(uuid.uuid4())
         with open(PASSFILE, 'w') as f:
             f.write(password)
-        os.chmod(PASSFILE, 0600)
+        os.chmod(PASSFILE, 0o0600)
     else:
         with open(PASSFILE, 'r') as rpw:
             password = rpw.read()
