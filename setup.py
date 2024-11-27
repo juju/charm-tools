@@ -42,7 +42,7 @@ setup(
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
-        'cheetah3>=3.0.0,<4.0',
+        'ct3>=3.0.0,<4.0',
         'pyyaml>=5.0,!=5.4.0,!=5.4.1,!=6.0,<7.0',
         'requests>=2.0.0,<3.0.0',
         'blessings<2.0',
