@@ -1,0 +1,63 @@
+[project]
+name = "charm-tools"
+description = "Tools for building and maintaining Juju charms"
+readme = "README.rst"
+maintainers = [{ name = "Cory Johns", email = "johnsca@gmail.com" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+]
+dependencies = [
+    "blessings<2.0",
+    "colander<1.9",
+    "ct3>=3.0.0,<4.0",
+    "dict2colander==0.2",
+    "jsonschema<4.18.0",
+    "jujubundlelib<0.6",
+    "keyring<24",
+    "otherstuf<=1.1.0",
+    "path<17",
+    "pathspec<0.11;python_version >= '3.7'",
+    "pathspec<=0.3.4;python_version < '3.7'",
+    "pip>=1.5.4",
+    "pyyaml>=5.0,!=5.4.0,!=5.4.1,!=6.0,<7.0",
+    "requests>=2.0.0,<3.0.0",
+    "requirements-parser<0.6",
+    "ruamel.yaml<0.16.0;python_version < '3.7'",
+    "ruamel.yaml<0.18;python_version >= '3.7'",
+    "secretstorage<3.4",
+    "vergit>=1.0.0,<2.0.0",
+    "virtualenv>=1.11.4,<21",
+]
+license = { text = "GPL v3" }
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/juju/charm-tools"
+
+[project.scripts]
+charm-build = "charmtools.build.builder:main"
+charm-create = "charmtools.create:main"
+charm-help = "charmtools.cli:usage"
+charm-layers = "charmtools.build.builder:inspect"
+charm-proof = "charmtools.proof:main"
+charm-pull-source = "charmtools.pullsource:main"
+charm-version = "charmtools.version:main"
+
+[project.entry-points."charmtools.templates"]
+ansible = "charmtools.templates.ansible:AnsibleCharmTemplate"
+bash = "charmtools.templates.bash:BashCharmTemplate"
+chef = "charmtools.templates.chef:ChefCharmTemplate"
+powershell = "charmtools.templates.powershell:PowerShellCharmTemplate"
+python = "charmtools.templates.python_services:PythonServicesCharmTemplate"
+python-basic = "charmtools.templates.python:PythonCharmTemplate"
+reactive-bash = "charmtools.templates.reactive_bash:ReactiveBashCharmTemplate"
+reactive-python = "charmtools.templates.reactive_python:ReactivePythonCharmTemplate"
+
+[tool.setuptools.packages.find]
+exclude = ["*tests*"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
