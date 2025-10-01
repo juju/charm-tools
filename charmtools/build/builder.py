@@ -1183,6 +1183,12 @@ def main(args=None):
                         help='Same as --binary-wheels but build all the '
                              'wheels from source code, even if a binary '
                              'distribution is available on PyPi.')
+    parser.add_argument('--ignore-requires-python', action='store_true',
+                        default=False,
+                        help='This flag instructs pip to bypass the '
+                        'Requires-Python metadata specified by the package, '
+                        'which typically indicates the Python versions it '
+                        'officially supports.')
     parser.add_argument('charm', nargs="?", default=".", type=path,
                         help='Source directory for charm layer to build '
                              '(default: .)')
@@ -1203,6 +1209,7 @@ def main(args=None):
     WheelhouseTactic.per_layer = build.wheelhouse_per_layer
     WheelhouseTactic.binary_build = build.binary_wheels
     WheelhouseTactic.binary_build_from_source = build.binary_wheels_from_source
+    WheelhouseTactic.ignore_requires_python = build.ignore_requires_python
 
     configLogging(build)
 
