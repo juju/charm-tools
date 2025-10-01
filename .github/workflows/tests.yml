@@ -154,7 +154,8 @@ jobs:
     - name: Upload built charms
       uses: actions/upload-artifact@v4
       with:
-        name: Built charms ${{ matrix.runs-on }}
+        name: Built charms
+        overwrite: true
         path: |
           minimal_ubuntu-18.04-amd64.charm
           minimal_ubuntu-20.04-amd64.charm
