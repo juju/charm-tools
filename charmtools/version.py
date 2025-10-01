@@ -5,7 +5,15 @@ import os
 import sys
 import json
 import argparse
-from pkg_resources import resource_string, resource_exists
+
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='vergit')
+
+try:
+    from importlib.resources import files
+except ImportError:
+    # Python 3.8 compatiblity
+    from importlib_resources import files
 
 from charmtools.cli import parser_defaults
 from charmtools import utils
@@ -39,11 +47,16 @@ def cached_charm_tools_version():
         with open(ctv) as f:
             res_string = f.read().strip()
         return _add_snap_rev(json.loads(res_string))
-    if resource_exists(__name__, 'VERSION'):
-        res_string = resource_string(__name__, 'VERSION')
-        if sys.version_info >= (3, 0):
-            res_string = res_string.decode('UTF-8')
-        return _add_snap_rev(json.loads(res_string))
+
+    try:
+        resource = files(__name__).joinpath('VERSION')
+        return resource.is_file()
+        if resource.is_file():
+            res_string = resource.read_bytes().decode('UTF-8')
+            return _add_snap_rev(json.loads(res_string))
+    except (TypeError, FileNotFoundError, ModuleNotFoundError):
+        pass
+
     if os.environ.get('SNAPCRAFT_PROJECT_VERSION', 'git') != 'git':
         version_parts = os.environ['SNAPCRAFT_PROJECT_VERSION'].split('+')
         git = ''

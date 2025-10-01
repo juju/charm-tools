@@ -62,6 +62,7 @@ setup(
         'dict2colander==0.2',
         'vergit>=1.0.0,<2.0.0',
         'requirements-parser<0.6',
+        'importlib-resources',
     ],
     include_package_data=True,
     maintainer='Cory Johns',
