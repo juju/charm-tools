@@ -146,14 +146,14 @@ jobs:
     #   uses: lhotari/action-upterm@v1
     - name: Upload charmcraft execution logs
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: charmcraft execution logs
+        name: charmcraft execution logs ${{ matrix.runs-on }}
         path: ~/snap/charmcraft/common/cache/charmcraft/log/*.log
     - name: Upload built charms
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: Built charms
+        name: Built charms ${{ matrix.runs-on }}
         path: |
           minimal_ubuntu-18.04-amd64.charm
           minimal_ubuntu-20.04-amd64.charm
