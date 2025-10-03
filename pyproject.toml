@@ -3,6 +3,7 @@ name = "charm-tools"
 description = "Tools for building and maintaining Juju charms"
 readme = "README.rst"
 maintainers = [{ name = "Cory Johns", email = "johnsca@gmail.com" }]
+requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
