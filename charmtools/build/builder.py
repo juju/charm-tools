@@ -1208,6 +1208,12 @@ def main(args=None):
                         help='Upgrade core dependencies in virtualenv used to '
                         'build/download wheels: pip setuptools to the latest '
                         'version in PyPI.')
+    parser.add_argument('--ignore-requires-python', action='store_true',
+                        default=False,
+                        help='This flag instructs pip to bypass the '
+                        'Requires-Python metadata specified by the package, '
+                        'which typically indicates the Python versions it '
+                        'officially supports.')
     parser.add_argument('charm', nargs="?", default=".", type=path,
                         help='Source directory for charm layer to build '
                              '(default: .)')
@@ -1230,6 +1236,7 @@ def main(args=None):
     WheelhouseTactic.binary_build_from_source = build.binary_wheels_from_source
     WheelhouseTactic.use_python_from_snap = build.use_python_from_snap
     WheelhouseTactic.upgrade_deps = build.upgrade_buildvenv_core_deps
+    WheelhouseTactic.ignore_requires_python = build.ignore_requires_python
 
     configLogging(build)
 

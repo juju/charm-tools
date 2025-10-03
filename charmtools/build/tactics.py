@@ -1048,6 +1048,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
     binary_build_from_source = False
     use_python_from_snap = False
     upgrade_deps = False
+    ignore_requires_python = False
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
@@ -1125,15 +1126,21 @@ class WheelhouseTactic(ExactMatch, Tactic):
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
             _no_binary_opts = ('--no-binary', ':all:')
+            _ignore_requires_python = ('--ignore-requires-python', )
             try:
                 if self.binary_build_from_source or self.binary_build:
                     self._pip('wheel',
                               *_no_binary_opts
                               if self.binary_build_from_source else tuple(),
+                              *_ignore_requires_python
+                              if self.ignore_requires_python else tuple(),
                               '-w', temp_dir, *reqs)
                 else:
-                    self._pip(
-                        'download', *_no_binary_opts, '-d', temp_dir, *reqs)
+                    self._pip('download',
+                              *_no_binary_opts,
+                              *_ignore_requires_python
+                              if self.ignore_requires_python else tuple(),
+                              '-d', temp_dir, *reqs)
             except BuildError:
                 log.info('Build failed. If you are building on Focal and have '
                          'Jinja2 or MarkupSafe as part of your dependencies, '
