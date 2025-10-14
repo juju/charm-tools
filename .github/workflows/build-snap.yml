@@ -18,10 +18,131 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: snapcore/action-build@v1
-      id: snapcraft
+      id: snap-build
       with:
         snapcraft-channel: "7.x"
     - uses: actions/upload-artifact@v4
       with:
-        name: charm.snap
-        path: ${{ steps.snapcraft.outputs.snap }}
+        name: charm-snap
+        path: ${{ steps.snap-build.outputs.snap }}
+
+  integration:
+    strategy:
+      matrix:
+        charmcraft_channel:
+          - "2.x/stable"
+          - "3.x/stable"
+    name: Integration test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Init LXD
+      run: |
+        set -euxo pipefail
+        sudo lxd init --auto
+        # This is a throw-away CI environment, do not do this at home
+        sudo chmod 666 /var/snap/lxd/common/lxd/unix.socket
+        # Fixup iptables forwarding issues from LXD containers with a flush and
+        # re-create of rules.
+        sudo iptables -F FORWARD
+        sudo iptables -P FORWARD ACCEPT
+    - name: Checkout layer-basic
+      uses: actions/checkout@v2
+      with:
+        repository: juju-solutions/layer-basic
+
+    - name: Download built charm snap
+      uses: actions/download-artifact@v4
+      with:
+        name: charm-snap
+        path: tests/charm-minimal/charm-snap
+
+    - name: Build reactive charm with charmcraft-2.x
+      if: ${{ matrix.charmcraft_channel == '2.x/stable' }}
+      run: |
+        set -euxo pipefail
+        sudo snap install --classic --channel ${{ matrix.charmcraft_channel }} charmcraft
+        cat << EOF | tee tests/charm-minimal/charmcraft.yaml
+        type: charm
+        parts:
+          charm-tools:
+            plugin: nil
+            override-build: |
+              ls -lR \$CRAFT_PROJECT_DIR/
+              snap install --dangerous --classic /root/project/charm-snap/charm_unknown_amd64.snap
+              rm -rf \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap
+          charm:
+            after: [charm-tools]
+            source: .
+            plugin: reactive
+            reactive-charm-build-arguments:
+              - -v
+              - --binary-wheels-from-source
+              - --ignore-requires-python
+            build-packages:
+              - python3-dev
+              - libpq-dev
+        bases:
+          - name: ubuntu
+            channel: "18.04"
+            architectures: [amd64]
+          - name: ubuntu
+            channel: "20.04"
+            architectures: [amd64]
+          - name: ubuntu
+            channel: "22.04"
+            architectures: [amd64]
+        EOF
+        charmcraft pack -p tests/charm-minimal -v
+    - name: Build reactive charm with charmcraft-3.x
+      if: ${{ matrix.charmcraft_channel == '3.x/stable' }}
+      run: |
+        set -euxo pipefail
+        sudo snap install --classic --channel ${{ matrix.charmcraft_channel }} charmcraft
+        cat << EOF | tee tests/charm-minimal/charmcraft.yaml
+        type: charm
+        parts:
+          charm-tools:
+            plugin: nil
+            override-build: |
+              ls -lR \$CRAFT_PROJECT_DIR/
+              snap install --dangerous --classic /root/project/charm-snap/charm_unknown_amd64.snap
+              rm -rf \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap
+          charm:
+            after: [charm-tools]
+            source: .
+            plugin: reactive
+            reactive-charm-build-arguments:
+              - -v
+              - --binary-wheels-from-source
+              - --upgrade-buildvenv-core-deps
+              - --ignore-requires-python
+            build-packages:
+              - python3-dev
+              - libpq-dev
+        base: ubuntu@24.04
+        platforms:
+          amd64:
+        EOF
+        charmcraft pack -p tests/charm-minimal -v
+        mv minimal_amd64.charm minimal_ubuntu-24.04-amd64.charm
+    ## action to interactively debug CI failures.
+    # - name: Setup upterm session
+    #   if: failure()
+    #   uses: lhotari/action-upterm@v1
+    - name: Upload charmcraft execution logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: charmcraft execution logs ${{ matrix.runs-on }}
+        path: ~/snap/charmcraft/common/cache/charmcraft/log/*.log
+    - name: Upload built charms
+      uses: actions/upload-artifact@v4
+      with:
+        name: Built charms
+        overwrite: true
+        path: |
+          minimal_ubuntu-18.04-amd64.charm
+          minimal_ubuntu-20.04-amd64.charm
+          minimal_ubuntu-22.04-amd64.charm
+          minimal_ubuntu-24.04-amd64.charm
