@@ -43,6 +43,8 @@ def _add_snap_rev(version_info):
 
 
 def cached_charm_tools_version():
+    # type: () -> dict[str, str]
+    """Return the charm-tools version information."""
     ctv = os.path.join(os.environ.get('SNAP', ''), 'charm-tools-version')
     if os.path.exists(ctv):
         with open(ctv) as f:
@@ -52,7 +54,6 @@ def cached_charm_tools_version():
     if USE_IMPORTLIB:
         try:
             resource = files(__name__).joinpath('VERSION')
-            return resource.is_file()
             if resource.is_file():
                 res_string = resource.read_bytes().decode('UTF-8')
                 return _add_snap_rev(json.loads(res_string))
