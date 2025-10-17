@@ -217,7 +217,7 @@ if __name__ == '__main__':
         checkout = clone_helpers(tmpd, config['branch'])
         sync_helpers(config['include'], checkout, config['destination'],
                      options=sync_options)
-    except Exception, e:
+    except Exception as e:
         logging.error("Could not sync: %s" % e)
         raise e
     finally:
