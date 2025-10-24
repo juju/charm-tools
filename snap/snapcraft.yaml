@@ -48,7 +48,11 @@ parts:
       - git-core
       - libssl-dev
       - libffi-dev
+      - libpython3.6
+      - libpython3.6-minimal
+      - libpython3.6-stdlib
       - libpython3-dev
+      - libpython3.6-dev
     override-build: |
       snapcraftctl build
       pip3 install https://github.com/openstack-charmers/charm-templates-openstack/archive/master.zip#egg=charm_templates_openstack
