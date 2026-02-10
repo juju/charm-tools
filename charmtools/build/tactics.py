@@ -1237,10 +1237,17 @@ class WheelhouseTactic(ExactMatch, Tactic):
 
     def _run_in_venv(self, *args):
         assert self._venv is not None
+        env = self._get_env()
+        # Constrain setuptools<82 in pip's build isolation environments
+        # to preserve pkg_resources module needed by packages like pbr.
+        constraints_file = self._venv / 'build-constraints.txt'
+        if constraints_file.exists():
+            env['PIP_CONSTRAINT'] = str(constraints_file)
+            env['PIP_BUILD_CONSTRAINT'] = str(constraints_file)
         # have to use bash to activate the venv properly first
         res = utils.Process(('bash', '-c', ' '.join(
             ('.', self._venv / 'bin' / 'activate', ';') + args
-        )), env=self._get_env())()
+        )), env=env)()
         if res.exit_code != 0:
             raise BuildError(res.output)
         return res
@@ -1258,6 +1265,10 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 ('virtualenv', '--python', 'python3', self._venv),
                 env=self._get_env()
             ).exit_on_error()()
+            # Create constraints file to pin setuptools<82 in pip's build
+            # isolation environments, preserving the pkg_resources module.
+            constraints_file = self._venv / 'build-constraints.txt'
+            constraints_file.write_text('setuptools<82\n')
         if self.upgrade_deps:
             utils.upgrade_venv_core_packages(self._venv, env=self._get_env())
         elif utils.get_python_version(self._venv,

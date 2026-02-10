@@ -77,7 +77,7 @@ parts:
       #   ERROR: setuptools==59.6.0 is used in combination with setuptools_scm>=8.x
       #   Your build configuration is incomplete and previously worked by accident!
       #   setuptools_scm requires setuptools>=61
-      pip install --upgrade setuptools
+      pip install --upgrade 'setuptools<82'
       pip install \
           --no-binary :all: \
           --prefix $CRAFT_PART_INSTALL/usr \
