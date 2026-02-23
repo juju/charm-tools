@@ -95,13 +95,19 @@ parts:
       mkdir -p $CRAFT_PART_INSTALL/bin/wrappers
       cp helpers/snap-wrappers/charm $CRAFT_PART_INSTALL/bin/wrappers/
 
-      PYTHONHOME=$CRAFT_PART_INSTALL \
-          PYTHONPATH=$CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages \
-          $CRAFT_PART_INSTALL/usr/local/bin/vergit --format=json > $CRAFT_PART_INSTALL/charm-tools-version
-      version=$(PYTHONHOME=$CRAFT_PART_INSTALL \
-                PYTHONPATH=$CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload:$CRAFT_PART_INSTALL/usr/local/lib/python3.10/dist-packages \
-                $CRAFT_PART_INSTALL/usr/local/bin/vergit)
-      craftctl set version=$version
+      # Generate version info from git tags (replaces vergit)
+      desc=$(git describe --tags --always | sed 's/^v//')
+      python3 -c "
+      import json, sys
+      desc = sys.argv[1]
+      parts = desc.split('-', 2)
+      if len(parts) >= 3:
+          info = {'version': parts[0], 'git': '+' + parts[1] + '-' + parts[2], 'gitn': int(parts[1])}
+      else:
+          info = {'version': desc}
+      print(json.dumps(info))
+      " "$desc" > $CRAFT_PART_INSTALL/charm-tools-version
+      craftctl set version=$desc
     override-stage: |
       find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
       find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python3$/#\!\/usr\/bin\/env python3/'
