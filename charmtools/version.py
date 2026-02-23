@@ -85,7 +85,7 @@ def cached_charm_tools_version():
             'git': '+{}'.format(git),
             'gitn': gitn,
         })
-    return {'version': 'unavailable'}
+    return {'version': 'unavailable', 'git': '', 'gitn': 0}
 
 
 def main():

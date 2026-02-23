@@ -104,7 +104,7 @@ parts:
       if len(parts) >= 3:
           info = {'version': parts[0], 'git': '+' + parts[1] + '-' + parts[2], 'gitn': int(parts[1])}
       else:
-          info = {'version': desc}
+          info = {'version': desc, 'git': '', 'gitn': 0}
       print(json.dumps(info))
       " "$desc" > $CRAFT_PART_INSTALL/charm-tools-version
       craftctl set version=$desc
