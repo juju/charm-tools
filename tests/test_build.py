@@ -495,8 +495,8 @@ class TestBuild(unittest.TestCase):
                                             mock.Mock(directory=path('wh')),
                                             mock.Mock(url='charm'),
                                             mock.Mock())
-        # package name gets normalized properly when checking _layer_refs
-        wh._layer_refs['setuptools-scm'] = 'layer:foo'
+        # package name gets normalized properly when checking layer_refs
+        wh.layer_refs['setuptools-scm'] = 'layer:foo'
         wh.tracked = {path('wh/setuptools_scm-1.17.0.tar.gz')}
         self.assertEqual(wh.sign(), {
             'wheelhouse.txt': ('charm',
@@ -518,7 +518,7 @@ class TestBuild(unittest.TestCase):
             wh.read()
         path().text.return_value = 'https://example.com/my-package#egg=foo'
         wh.read()
-        self.assertIn('foo', wh._layer_refs.keys())
+        self.assertIn('foo', wh.layer_refs.keys())
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',
