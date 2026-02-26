@@ -4,33 +4,38 @@
 # GNU General Public License version 3 (see the file LICENSE).
 
 import os
+import re
 import subprocess
-import sys
-import json
 from setuptools import setup, find_packages
 
 
 curdir = os.path.dirname(__file__)
 version_cache = os.path.join(curdir, 'charmtools', 'VERSION')
 try:
-    version_raw = subprocess.check_output(['vergit', '--format=json']).strip()
-    if sys.version_info >= (3, 0):
-        version_raw = version_raw.decode('UTF-8')
-    version = json.loads(version_raw)['version']
+    version = subprocess.check_output(
+        ['git', 'describe', '--tags', '--always'],
+        cwd=curdir, stderr=subprocess.DEVNULL
+    ).decode('UTF-8').strip().lstrip('v')
 except Exception:
+    version = 'unknown'
+# Convert git describe to PEP 440: e.g. '3.0.8-12-gea043cd' -> '3.0.8.post12+gea043cd'
+m = re.match(r'^(\d+\.\d+\.\d+)-(\d+)-g(.+)$', version)
+if m:
+    version = '{}.post{}+g{}'.format(m.group(1), m.group(2), m.group(3))
+elif not re.match(r'^\d+\.\d+', version):
+    # Bare commit hash or non-semver string — treat as unknown
     version = 'unknown'
 if version == 'unknown':
     # during install; use cached VERSION
     try:
         with open(version_cache, 'r') as fh:
-            version_raw = fh.read()
-        version = json.loads(version_raw)['version']
+            version = fh.read().strip()
     except Exception:
         version = None
 else:
     # during build; update cached VERSION
     with open(version_cache, 'w') as fh:
-        fh.write(version_raw)
+        fh.write(version)
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fh:
     readme = fh.read()
@@ -60,7 +65,6 @@ setup(
         'keyring<24',
         'secretstorage<3.4',
         'dict2colander==0.2',
-        'vergit>=1.0.0,<2.0.0',
         'requirements-parser<0.6',
     ],
     include_package_data=True,

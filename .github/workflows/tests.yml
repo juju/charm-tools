@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Add fake tag to make vergit happy
+    - name: Add fake tag for git describe
       run: git tag v0.0.0
     - uses: snapcore/action-build@v1
       id: snap-build

@@ -6,9 +6,6 @@ import sys
 import json
 import argparse
 
-import warnings
-warnings.filterwarnings('ignore', category=UserWarning, module='vergit')
-
 USE_IMPORTLIB = False
 try:
     from importlib.resources import files
@@ -18,7 +15,19 @@ except ImportError:
 
 from charmtools.cli import parser_defaults
 from charmtools import utils
-from vergit import format_version
+
+
+def format_version(version_info, ver_format):
+    if ver_format == 'json':
+        return json.dumps(version_info)
+    pre_release = version_info.get('pre_release') or version_info.get('gitn')
+    if ver_format == 'long' or (ver_format == 'default' and pre_release):
+        return '{version}{snap}{git}'.format(
+            version=version_info['version'],
+            snap=version_info.get('snap', ''),
+            git=version_info.get('git', ''))
+    else:
+        return version_info['version']
 
 
 def get_args(args=None):
@@ -76,7 +85,7 @@ def cached_charm_tools_version():
             'git': '+{}'.format(git),
             'gitn': gitn,
         })
-    return {'version': 'unavailable'}
+    return {'version': 'unavailable', 'git': '', 'gitn': 0}
 
 
 def main():
