@@ -3,6 +3,7 @@
 # Copyright 2012 Canonical Ltd.  This software is licensed under the
 # GNU General Public License version 3 (see the file LICENSE).
 
+import json
 import os
 import re
 import subprocess
@@ -18,8 +19,10 @@ try:
     ).decode('UTF-8').strip().lstrip('v')
 except Exception:
     version = 'unknown'
+
+parts = version.split('-', 2)
 # Convert git describe to PEP 440: e.g. '3.0.8-12-gea043cd' -> '3.0.8.post12+gea043cd'
-m = re.match(r'^(\d+\.\d+\.\d+)-(\d+)-g(.+)$', version)
+m = re.match(r'^(\d+\.\d+\.\d+)-.*(\d+)-g(.+)$', version)
 if m:
     version = '{}.post{}+g{}'.format(m.group(1), m.group(2), m.group(3))
 elif not re.match(r'^\d+\.\d+', version):
@@ -34,8 +37,13 @@ if version == 'unknown':
         version = None
 else:
     # during build; update cached VERSION
+    if len(parts) >= 3:
+        info = {'version': version, 'git': '+' + parts[1] + '-' + parts[2], 'gitn': parts[1]}
+    else:
+        info = {'version': version, 'git': '', 'gitn': 0}
+
     with open(version_cache, 'w') as fh:
-        fh.write(version)
+        fh.write(json.dumps(info))
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fh:
     readme = fh.read()
