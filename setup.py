@@ -66,6 +66,7 @@ setup(
         'secretstorage<3.4',
         'dict2colander==0.2',
         'requirements-parser<0.6',
+        'setuptools<82.0',
     ],
     include_package_data=True,
     maintainer='Cory Johns',
