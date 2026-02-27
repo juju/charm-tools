@@ -3,10 +3,17 @@ import os
 import json
 import unittest
 import logging
-import pkg_resources
 import zipfile
 from path import Path as path, TempDir
 
+try:
+    from pkg_resources import resource_filename
+except ImportError:
+    import importlib.resources
+
+    def resource_filename(package, resource):
+        """Return the filename for the given resource"""
+        return str(importlib.resources.files(package).joinpath(resource))
 
 from charmtools import build
 from charmtools.build.errors import BuildError
@@ -17,7 +24,7 @@ import responses
 
 class TestBuild(unittest.TestCase):
     def setUp(self):
-        self.dirname = path(pkg_resources.resource_filename(__name__, ""))
+        self.dirname = path(resource_filename(__name__, ""))
         self.build_dir = TempDir()
         os.environ["CHARM_HIDE_METRICS"] = 'true'
         os.environ["CHARM_LAYERS_DIR"] = self.dirname / "layers"
@@ -453,9 +460,12 @@ class TestBuild(unittest.TestCase):
         bu.wheelhouse_overrides = self.dirname / 'wh-over.txt'
 
         def _store_wheelhouses(args, **kwargs):
-            filename = args[-1].split()[-1]
-            if filename.endswith('.txt'):
-                Process._wheelhouses.append(path(filename).lines(retain=False))
+            """Store the wheelhouse files that the Process is called with"""
+            filenames = args[-1].split()
+            for filename in filenames:
+                if filename.endswith('wheelhouse.txt'):
+                    Process._wheelhouses.append(
+                        path(filename).lines(retain=False))
             return mock.Mock(return_value=mock.Mock(exit_code=0))
         Process._wheelhouses = []
         Process.side_effect = _store_wheelhouses
@@ -498,10 +508,14 @@ class TestBuild(unittest.TestCase):
         # package name gets normalized properly when checking layer_refs
         wh.layer_refs['setuptools-scm'] = 'layer:foo'
         wh.tracked = {path('wh/setuptools_scm-1.17.0.tar.gz')}
+        logging.debug("wh.signs: %s", wh.sign())
         self.assertEqual(wh.sign(), {
             'wheelhouse.txt': ('charm',
                                'dynamic',
                                'signature'),
+            'wheelhouse-constraints.txt': ('charm',
+                                           'dynamic',
+                                           'signature'),
             'setuptools_scm-1.17.0.tar.gz': ('layer:foo',
                                              'dynamic',
                                              'signature'),

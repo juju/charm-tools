@@ -20,13 +20,31 @@ import os
 import socket
 import textwrap
 
-import pkg_resources
+try:
+    import importlib.metadata
+
+    def iter_entry_points(group):
+        """Imitate the API of pkg_resources.entry_points()."""
+        try:
+            eps = importlib.metadata.entry_points()
+        except TypeError:
+            return importlib.metadata.entry_points(group=group)
+
+        if hasattr(eps, 'select'):
+            return eps.select(group=group)
+
+        try:
+            return eps.get(group, [])
+        except:
+            return []
+except ImportError:
+    from pkg_resources import iter_entry_points
 
 log = logging.getLogger(__name__)
 
 
 def get_installed_templates():
-    for ep in pkg_resources.iter_entry_points('charmtools.templates'):
+    for ep in iter_entry_points('charmtools.templates'):
         yield ep.name
 
 
