@@ -1,6 +1,7 @@
 #!usr/bin/env python2
 import os
 import json
+import tempfile
 import unittest
 import logging
 import zipfile
@@ -15,6 +16,7 @@ except ImportError:
         """Return the filename for the given resource"""
         return str(importlib.resources.files(package).joinpath(resource))
 
+from contextlib import contextmanager
 from charmtools import build
 from charmtools.build.errors import BuildError
 from ruamel import yaml
@@ -533,6 +535,91 @@ class TestBuild(unittest.TestCase):
         path().text.return_value = 'https://example.com/my-package#egg=foo'
         wh.read()
         self.assertIn('foo', wh.layer_refs.keys())
+
+    @mock.patch("charmtools.build.tactics.utils.Process")
+    def test_wheelhouse_constraints(self, Process):
+        # Test combining constraints across layers
+        prev_td = path(tempfile.mkdtemp())
+        (prev_td / 'wheelhouse-constraints.txt').write_text('setuptools_scm<=1.17.0\n')
+        existing = build.tactics.WheelhouseTactic(
+            prev_td / 'wheelhouse.txt',
+            mock.Mock(directory=prev_td),
+            mock.Mock(url='layers/prev'),
+            mock.Mock())
+
+        curr_td = path(tempfile.mkdtemp())
+        (curr_td / 'wheelhouse-constraints.txt').write_text('setuptools_scm>=3.0,<=3.4.1\n')
+        current = build.tactics.WheelhouseTactic(
+            curr_td / 'wheelhouse.txt',
+            mock.Mock(directory=curr_td),
+            mock.Mock(url='layers/curr'),
+            mock.Mock())
+
+        combined = current.combine(existing)
+
+        self.assertIn('setuptools_scm', combined.constraints)
+
+        # Check if the two constraints are in the combined.cons_lines
+        logging.debug("combined.cons_lines: %s", combined.cons_lines)
+        self.assertEqual(combined.cons_lines, [
+            '# layers/prev',
+            '# setuptools_scm<=1.17.0  # overridden by layers/curr',
+            '',
+            '# layers/curr',
+            'setuptools_scm>=3.0,<=3.4.1',
+            ''
+        ])
+
+        # Empty constraints should still produce wheelhouse-constraints.txt
+        wh = build.tactics.WheelhouseTactic(
+            path('wheelhouse.txt'),
+            mock.Mock(directory=self.build_dir),
+            mock.Mock(url='charm'),
+            mock.Mock())
+        wh.cons_lines = []
+
+        td = path(tempfile.mkdtemp())
+
+        @contextmanager
+        def fake_tempdir(chdir=False):
+            try:
+                yield td
+            finally:
+                pass
+
+        with mock.patch.object(build.tactics.utils, 'tempdir', fake_tempdir):
+            with mock.patch.object(build.tactics.WheelhouseTactic, '_add'):
+                wh._process_combined(self.build_dir)
+                self.assertTrue((self.build_dir / wh.CONS_FILENAME).exists())
+
+        # Test that the wheelhouse-constraints.txt sets the env variables
+        (self.build_dir / wh.CONS_FILENAME).write_text('setuptools<82\n')
+
+        # Create temporary venv
+        venv_dir = path(tempfile.mkdtemp())
+        wh._venv = venv_dir
+
+        # capture env passed to Process
+        captured = {}
+
+        def _side(*a, **kw):
+            captured['env'] = kw.get('env')
+            return lambda: mock.Mock(exit_code=0, output='')
+
+        Process.side_effect = _side
+
+        # Calling _add will set PIP_CONSTRAINT / PIP_BUILD_CONSTRAINT in env
+        wh._add(self.build_dir / 'wheelhouse', '-r',
+                str(self.build_dir / wh.CONS_FILENAME),
+                constraints=(self.build_dir / wh.CONS_FILENAME))
+
+        self.assertIn('PIP_CONSTRAINT', captured['env'])
+        self.assertIn('PIP_BUILD_CONSTRAINT', captured['env'])
+
+        self.assertEqual(captured['env']['PIP_CONSTRAINT'],
+                         str(self.build_dir / wh.CONS_FILENAME))
+        self.assertEqual(captured['env']['PIP_BUILD_CONSTRAINT'],
+                         str(self.build_dir / wh.CONS_FILENAME))
 
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',
