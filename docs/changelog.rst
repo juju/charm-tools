@@ -1,6 +1,105 @@
 Changelog
 =========
 
+Current release
+^^^^^^^^^^^^
+
+* Add ability to specify constraints for `WheelhouseTactic` (#693)
+* Fix `charm-tools` version (#692)
+* Pin `setuptools` < 82 and drop archived `vergit` dependency (#689)
+* Enforce `cached_charm_tools_version()` to return a dict (#688)
+* Add --ignore-requires-python (#686)
+* `snap`: Add `rust` to `build-packages` (#682)
+* Pin `path` < 17 (#675)
+* Add Python 3.12 support (#672)
+* Upgrade `setuptools` (#667)
+
+charm-tools 2.8.8
+^^^^^^^^^^^^^^^^^
+Thursday October 26 2023
+
+* PR: #669 Pin ruamel.yaml < 0.18 due to #668
+
+charm-tools 2.8.7
+^^^^^^^^^^^^^^^^^
+Tuesday August 22 2023
+
+* 325b4d5 [2023-08-22] Fix issues with tox targets lint & docs (#665) [GitHub]
+* c213bda [2023-08-08] setup: Update charm-tools pin set [Felipe Reyes]
+
+charm-tools 3.0.7
+^^^^^^^^^^^^^^^^^
+Tuesday August 22 2023
+
+* b7128ec [2023-08-22] Fix issues with tox targets lint & docs (#664) [GitHub]
+* 8ec888b [2023-08-09] setup: Update pin PyYAML [Felipe Reyes]
+* 5f51a7f [2023-07-20] setup: Update charm-tools pin set [Corey Bryant]
+
+charm-tools 2.8.6
+^^^^^^^^^^^^^^^^^
+Wednesday March 29 2023
+
+* (backport) pin pip<23.1 and setuptools<67 #654
+
+charm-tools 2.8.5
+^^^^^^^^^^^^^^^^^
+Wednesday March 29 2023
+
+* Fixes for reproducible charms (bugs #606, #605, #603) #607
+* snap: Replace bhttp part with stage-snap #621
+* Add option to build charm with binary wheels #620
+* Change series lint from warn to info message #618
+* Add warning message if series is in metadata.yaml #616
+
+charm-tools 3.0.6
+^^^^^^^^^^^^^^^^^
+Wednesday March 29 2023
+
+* Pin pin<23.1 and setuptools < 67 to allow PEP-440 non compliance #653
+
+charm-tools 3.0.5
+^^^^^^^^^^^^^^^^^
+Wednesday March 29 2023
+
+* Add option to upgrade core deps in build virtualenv #650
+* Fix some pip requirements lines #651
+
+charm-tools 3.0.4
+^^^^^^^^^^^^^^^^^
+Sunday October 9 2022
+
+* Fix issues with charm-tools 3.x snap on bionic
+* Deprecate `charm create` command
+
+charm-tools 3.0.3
+^^^^^^^^^^^^^^^^^
+Friday October 7 2022
+
+* Clear environment variables when running apt (#641)
+* Fix typo
+
+charm-tools 3.0.2
+^^^^^^^^^^^^^^^^^
+Thursday September 29 2022
+
+* Add workaround for missing build packages (#639)
+
+  * The bare minimum of build packages may be missing following
+    commit 2482f0f and commit 725d2cb.
+  * While the resolution may belong in charmcraft, we need a
+    workaround.
+  * Fixes #638
+
+charm-tools 3.0.1
+^^^^^^^^^^^^^^^^^
+Thursday September 29 2022
+
+* Fix version output to be compatbile with sibling projects (#637)
+
+  * Due to how some other projects parse our version string the current
+    format may break people.
+  * Fixes #636
+
 charm-tools 3.0.0
 ^^^^^^^^^^^^^^^^^
 Monday September 26 2022

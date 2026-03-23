@@ -6,16 +6,19 @@ depth-first recursive fashion.  The individual files of each layer are merged,
 and then Python modules are brought in according to ``wheelhouse.txt`` files
 that may exist in each layer.
 
+Build constraints can be specified using ``wheelhouse-constraints.txt`` file in
+each layer, allowing specific versions or version ranges to be specified for
+dependencies.  The ``wheelhouse-constraints.txt`` file will also be merged
+during build process,  with the top layer's constraints taking precedence over
+the lower layers.
+
 Layers (and Interfaces) are typically Git repositories, and by default the
 default branch (usually called ``master``) of the repository is fetched and
 used.
 
-Also, although the top level Python modules can be pinned in the
-``wheelhouse.txt`` files, any dependent modules are fetched as their latest
-versions.  This makes re-building a charm with the same layers and modules
-tricky, which may be required for stable charms.  It is possible, by populating
-layer and interface directories directly, and by pinning every Python module in
-a ``wheelhouse.txt`` override file that is passed using the
+It is also possible to constrain dependency versions, by populating layer and
+interface directories directly, and by pinning every Python module in a
+``wheelhouse.txt`` override file that is passed using the
 ``--wheelhouse-overrides`` option to the ``charm build`` command.
 
 An alternative strategy is to use a new feature of the ``charm build`` command
@@ -48,7 +51,9 @@ versions of the modules as determined in the various ``wheelhouse.txt`` files.
 
 Python module versions are also recorded.  If a VCS repository is used for the
 Python module, then any branch specified is also recorded, along with the
-commit.
+commit.  The build constraint ``wheelhouse-constraints.txt`` file is also
+recorded and its constraint lines are applied when resolving indirect
+dependencies.
 
 At the end of the build, the lock file is written with all of the layer and
 Python module information.
