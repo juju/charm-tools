@@ -32,7 +32,12 @@ if version == 'unknown':
     # during install; use cached VERSION
     try:
         with open(version_cache, 'r') as fh:
-            version = fh.read().strip()
+            version_file = fh.read().strip()
+            try:
+                info = json.loads(version_file)
+                version = info.get('version', version_file)
+            except Exception:
+                version = version_file
     except Exception:
         version = None
 else:
