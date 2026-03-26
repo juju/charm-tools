@@ -1215,10 +1215,10 @@ class WheelhouseTactic(ExactMatch, Tactic):
             # put in a temp dir first to ensure we track all of the files
             _no_binary_opts = ('--no-binary', ':all:')
             _ignore_requires_python = ('--ignore-requires-python', )
+            env = self._get_env()
             try:
                 if self.binary_build_from_source or self.binary_build:
                     # Handle constraints
-                    env = self._get_env()
                     if constraints:
                         env['PIP_CONSTRAINT'] = constraints
                         env['PIP_BUILD_CONSTRAINT'] = constraints
