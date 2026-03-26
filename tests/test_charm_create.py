@@ -23,7 +23,15 @@ from mock import patch
 from os.path import join
 from unittest import TestCase
 
-import pkg_resources
+try:
+    from pkg_resources import resource_filename
+except ImportError:
+    import importlib.resources
+
+    def resource_filename(package, resource):
+        """Return the filename for the given resource"""
+        return str(importlib.resources.files(package).joinpath(resource))
+
 import yaml
 
 from charmtools.create import (
@@ -73,7 +81,7 @@ class BashCreateTest(TestCase):
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
-        expected_files = list(flatten(pkg_resources.resource_filename(
+        expected_files = list(flatten(resource_filename(
             'charmtools', 'templates/bash/files')))
         metadata = yaml.safe_load(open(join(outputdir, 'metadata.yaml'), 'r'))
 
@@ -98,7 +106,7 @@ class BashCreateTest(TestCase):
 
         outputdir = join(self.tempdir, args.charmname)
         actual_files = list(flatten(outputdir))
-        expected_files = list(flatten(pkg_resources.resource_filename(
+        expected_files = list(flatten(resource_filename(
             'charmtools', 'templates/bash/files')))
         metadata = yaml.safe_load(open(join(outputdir, 'metadata.yaml'), 'r'))
 

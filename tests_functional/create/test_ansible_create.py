@@ -24,7 +24,15 @@ from mock import patch
 from os.path import join
 from unittest import TestCase
 
-import pkg_resources
+try:
+    from pkg_resources import resource_filename
+except ImportError:
+    import importlib.resources
+
+    def resource_filename(package, resource):
+        """Return the filename for the given resource"""
+        return str(importlib.resources.files(package).joinpath(resource))
+
 import yaml
 
 from charmtools.create import (
@@ -48,7 +56,7 @@ class AnsibleCreateTest(TestCase):
         shutil.rmtree(self.tempdir)
 
     def _expected_files(self):
-        static_files = list(flatten(pkg_resources.resource_filename(
+        static_files = list(flatten(resource_filename(
             'charmtools', 'templates/ansible/files')))
         dynamic_files = [
             'hooks/config-changed',

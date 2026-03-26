@@ -3,6 +3,7 @@ import errno
 import json
 import logging
 import os
+import re
 import tarfile
 import tempfile
 import zipfile
@@ -11,7 +12,7 @@ import jsonschema
 
 import requirements
 from path import Path as path
-from pkg_resources import safe_name
+
 from ruamel import yaml
 from charmtools import utils
 from charmtools import fetchers
@@ -23,6 +24,11 @@ log = logging.getLogger(__name__)
 if not hasattr(yaml, 'danger_load'):
     # follow convention for pyyaml 4.1
     yaml.danger_load = yaml.load
+
+
+def safe_name(name):
+    """One-to-one equivalent to pkg_resources.safe_name"""
+    return re.sub('[^A-Za-z0-9.]+', '-', name)
 
 
 class Tactic(object):
@@ -49,7 +55,7 @@ class Tactic(object):
                 name = candidate.__name__
                 if name not in Tactic._warnings:
                     Tactic._warnings[name] = True
-                    log.warn(
+                    log.warning(
                         'Deprecated method signature for trigger in %s', name)
                 args = [entity.relpath(layer.directory)]
             else:
@@ -60,8 +66,8 @@ class Tactic(object):
                 if existing_tactic is not None:
                     tactic = tactic.combine(existing_tactic)
                 return tactic
-        raise BuildError('Unable to process file: {} '
-                         '(no tactics matched)'.format(entity))
+        raise BuildError(f'Unable to process file: {entity} '
+                         '(no tactics matched)')
 
     def __init__(self, entity, target, layer, next_config):
         self._entity = entity
@@ -286,6 +292,7 @@ class CopyTactic(Tactic):
 
     This is the final fallback tactic if nothing else matches.
     """
+
     def __call__(self):
         if self.entity.isdir():
             log.debug('Creating %s', self.target_file)
@@ -321,6 +328,7 @@ class InterfaceCopy(Tactic):
     against files.  Instead, it is manually called for each relation endpoint
     that has a corresponding interface layer.
     """
+
     def __init__(self, interface, relation_name, role, target, config):
         self.interface = interface
         self.relation_name = relation_name
@@ -960,6 +968,7 @@ class InstallerTactic(Tactic):
     This is used in Kubernetes type charms due to the lack of a proper install
     or bootstrap phase.
     """
+
     def __str__(self):
         return "Installing software to {}".format(self.relpath)
 
@@ -1039,9 +1048,12 @@ class WheelhouseTactic(ExactMatch, Tactic):
     """
     Tactic to process the ``wheelhouse.txt`` file and build a source-only
     wheelhouse of Python packages in the charm's ``wheelhouse/`` directory.
+
+    Considers the build constraints provided in the ``wheelhouse-constraints.txt`` file if present.
     """
     kind = "dynamic"
     FILENAME = 'wheelhouse.txt'
+    CONS_FILENAME = 'wheelhouse-constraints.txt'
     removed = []  # has to be class level to affect all tactics during signing
     per_layer = False
     binary_build = False
@@ -1049,40 +1061,64 @@ class WheelhouseTactic(ExactMatch, Tactic):
     use_python_from_snap = False
     upgrade_deps = False
     ignore_requires_python = False
+    _default_cons = [
+        "setuptools<82",
+    ]
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
         self.tracked = []
         self.previous = []
+
         self.lines = None
+        self.cons_lines = None
+
         self._venv = None
         self.purge_wheels = False
-        self._layer_refs = {}
+
+        # Dictionary to store original layer references for each packages
+        self.layer_refs = {}
+        self.cons_layer_refs = {}
+
         self.modules = {}
+        self.constraints = {}
         self.lock_info = []
 
     def __str__(self):
         directory = self.target.directory / 'wheelhouse'
-        return "Building wheelhouse in {}".format(directory)
+        return f'Building wheelhouse in {directory}'
 
     def _get_env(self):
         """Get environment for executing commands outside snap context.
 
         :returns: Dictionary with environment variables
-        :rtype: Dict[str,str]
+        :rtype: dict[str, str]
         """
         if self.use_python_from_snap:
             return os.environ.copy()
         return utils.host_env()
 
     def combine(self, existing):
-        ""  # suppress inherited doc
+        """Combine the current layer's  WheelhouseTactic with the previous
+        WheelhouseTactic from the lower layers.
+
+        :param existing:  WheelhouseTactic from the lower layers to combine with
+        :type existing: WheelhouseTactic
+        :returns: Combined WheelhouseTactic
+        :rtype: WheelhouseTactic
+        """
+        # Store the lower layers' combined WheelhouseTactic instances
         self.previous = existing.previous + [existing]
+
+        # Combine the package and constraint references
         existing.read()
-        self._layer_refs.update(existing._layer_refs)
+        self.layer_refs.update(existing.layer_refs)
+        self.cons_layer_refs.update(existing.cons_layer_refs)
         self.read()
+
+        # Update packages from the current layer
         new_pkgs = set()
-        for line in self.lines:
+        for line in self.lines or []:
             try:
                 req = next(requirements.parse(line))
                 new_pkgs.add(safe_name(req.name))
@@ -1090,7 +1126,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
             except (StopIteration, ValueError):
                 pass  # ignore comments, blank lines, etc
         existing_lines = []
-        for line in existing.lines:
+        for line in existing.lines or []:
             try:
                 req = next(requirements.parse(line))
                 # new explicit reqs will override existing ones
@@ -1098,49 +1134,110 @@ class WheelhouseTactic(ExactMatch, Tactic):
                     existing_lines.append(line)
                     self.modules[req.name] = req
                 else:
-                    existing_lines.append('# {}  # overridden by {}'
-                                          .format(line, self.layer.url))
+                    existing_lines.append(
+                        f'# {line}  # overridden by {self.layer.url}')
             except (StopIteration, ValueError):
                 existing_lines.append(line)  # ignore comments, blank lines, &c
-        self.lines = existing_lines + self.lines
+        self.lines = existing_lines + (self.lines or [])
+
+        # Update constraints from the current layer
+        new_cons = set()
+        for line in self.cons_lines or []:
+            try:
+                req = next(requirements.parse(line))
+                new_cons.add(safe_name(req.name))
+                self.constraints[req.name] = req
+            except (StopIteration, ValueError):
+                pass  # ignore comments, blank lines, etc
+        existing_cons_lines = []
+        for line in existing.cons_lines or []:
+            try:
+                req = next(requirements.parse(line))
+                # New constraints will override existing ones
+                if safe_name(req.name) not in new_cons:
+                    existing_cons_lines.append(line)
+                    self.constraints[req.name] = req
+                else:
+                    existing_cons_lines.append(
+                        f'# {line}  # overridden by {self.layer.url}')
+            except (StopIteration, ValueError):
+                # ignore comments, blank lines, &c
+                existing_cons_lines.append(line)
+        self.cons_lines = existing_cons_lines + (self.cons_lines or [])
+
         return self
 
     def read(self):
+        """Read the package requirements from the current ``wheelhouse.txt``
+        and the constraints from the current ``wheelhouse-constraints.txt``
+        files, while tracking the layer that introduced each package.
+        """
+        # Read the wheelhouse.txt file
         if self.lines is None:
             src = path(self.entity)
             if src.exists():
                 for req in requirements.parse(src.text()):
                     if req.name is None:
                         raise BuildError(
-                            'Unable to determine package name for "{}"; '
-                            'did you forget "#egg=..."?'
-                            .format(req.line.strip()))
-                    self._layer_refs[safe_name(req.name)] = self.layer.url
+                            'Unable to determine package name for '
+                            f'"{req.line.strip()}"; did you forget "#egg=..."?'
+                        )
+                    self.layer_refs[safe_name(req.name)] = self.layer.url
                 self.lines = (['# ' + self.layer.url] +
                               src.lines(retain=False) +
                               [''])
             else:
                 self.lines = []
 
-    def _add(self, wheelhouse, *reqs):
+        # Read the wheelhouse-constraints.txt file
+        if self.cons_lines is None:
+            src = path(self.entity.dirname()) / self.CONS_FILENAME
+            if src.exists():
+                for req in requirements.parse(src.text()):
+                    if req.name is None:
+                        raise BuildError(
+                            'Unable to determine package name for '
+                            f'"{req.line.strip()}"; did you forget "#egg=..."?'
+                        )
+                    self.cons_layer_refs[safe_name(req.name)] = self.layer.url
+                self.cons_lines = (['# ' + self.layer.url] +
+                                   src.lines(retain=False) +
+                                   [''])
+            else:
+                self.cons_lines = []
+
+    def _add(self, wheelhouse, *reqs, constraints=None):
+        """
+        Helper method to add the given requirements to the wheelhouse
+        directory, building wheels from source if necessary.
+        """
         with utils.tempdir(chdir=False) as temp_dir:
             # put in a temp dir first to ensure we track all of the files
             _no_binary_opts = ('--no-binary', ':all:')
             _ignore_requires_python = ('--ignore-requires-python', )
             try:
                 if self.binary_build_from_source or self.binary_build:
+                    # Handle constraints
+                    env = self._get_env()
+                    if constraints:
+                        env['PIP_CONSTRAINT'] = constraints
+                        env['PIP_BUILD_CONSTRAINT'] = constraints
+                    else:
+                        env.pop('PIP_CONSTRAINT', None)
+                        env.pop('PIP_BUILD_CONSTRAINT', None)
+
                     self._pip('wheel',
                               *_no_binary_opts
                               if self.binary_build_from_source else tuple(),
                               *_ignore_requires_python
                               if self.ignore_requires_python else tuple(),
-                              '-w', temp_dir, *reqs)
+                              '-w', temp_dir, *reqs, env=env)
                 else:
                     self._pip('download',
                               *_no_binary_opts,
                               *_ignore_requires_python
                               if self.ignore_requires_python else tuple(),
-                              '-d', temp_dir, *reqs)
+                              '-d', temp_dir, *reqs, env=env)
             except BuildError:
                 log.info('Build failed. If you are building on Focal and have '
                          'Jinja2 or MarkupSafe as part of your dependencies, '
@@ -1149,7 +1246,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 raise
             log.debug('Copying wheels:')
             for wheel in temp_dir.files():
-                log.debug('  ' + wheel.name)
+                log.debug('  %s', wheel.name)
                 dest = wheelhouse / wheel.basename()
                 if dest in self.tracked:
                     return
@@ -1235,25 +1332,23 @@ class WheelhouseTactic(ExactMatch, Tactic):
             revision = fetcher.get_revision(vcs_dir)
             return revision
 
-    def _run_in_venv(self, *args):
+    def _run_in_venv(self, *args, env=None):
         assert self._venv is not None
-        env = self._get_env()
-        # Constrain setuptools<82 in pip's build isolation environments
-        # to preserve pkg_resources module needed by packages like pbr.
-        constraints_file = self._venv / 'build-constraints.txt'
-        if constraints_file.exists():
-            env['PIP_CONSTRAINT'] = str(constraints_file)
-            env['PIP_BUILD_CONSTRAINT'] = str(constraints_file)
+
+        merged_env = self._get_env()
+        if env:
+            merged_env.update(env)
+
         # have to use bash to activate the venv properly first
         res = utils.Process(('bash', '-c', ' '.join(
             ('.', self._venv / 'bin' / 'activate', ';') + args
-        )), env=env)()
+        )), env=merged_env)()
         if res.exit_code != 0:
             raise BuildError(res.output)
         return res
 
-    def _pip(self, *args):
-        return self._run_in_venv('pip3', *args)
+    def _pip(self, *args, env=None):
+        return self._run_in_venv('pip3', *args, env=env)
 
     def __call__(self):
         create_venv = self._venv is None
@@ -1265,10 +1360,6 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 ('virtualenv', '--python', 'python3', self._venv),
                 env=self._get_env()
             ).exit_on_error()()
-            # Create constraints file to pin setuptools<82 in pip's build
-            # isolation environments, preserving the pkg_resources module.
-            constraints_file = self._venv / 'build-constraints.txt'
-            constraints_file.write_text('setuptools<82\n')
         if self.upgrade_deps:
             utils.upgrade_venv_core_packages(self._venv, env=self._get_env())
         elif utils.get_python_version(self._venv,
@@ -1277,10 +1368,9 @@ class WheelhouseTactic(ExactMatch, Tactic):
         else:
             utils.pin_setuptools_for_pep440(self._venv, env=self._get_env())
         log.debug(
-            'Packages in buildvenv:\n{}'
-            .format(
-                utils.get_venv_package_list(self._venv,
-                                            env=self._get_env())))
+            'Packages in buildvenv:\n%s',
+            utils.get_venv_package_list(self._venv,
+                                        env=self._get_env()))
         if self.per_layer:
             self._process_per_layer(wheelhouse)
         else:
@@ -1295,19 +1385,57 @@ class WheelhouseTactic(ExactMatch, Tactic):
         for tactic in self.previous:
             tactic()
         # process this layer
-        log.debug('Processing wheelhouse for {}'.format(self.layer.url))
+        log.debug('Processing wheelhouse for %s', self.layer.url)
+        log.debug('Per-layer wheelhouse is not compatible with constraints')
         self._add(wheelhouse, '-r', self.entity)
 
     def _process_combined(self, wheelhouse):
-        log.debug('Processing wheelhouse:')
         self.read()
-        for line in self.lines:
-            log.debug('  ' + line.strip())
+        log.debug('Processing wheelhouse:')
+        for line in self.lines or []:
+            log.debug('  %s', line.strip())
+
+        # For duplicate constraints of the same package, the constraint from
+        # the last layer takes precedence over the constraints from lower layers
+        log.debug('Processing constraints:')
+        # Add default constraints if not already present
+        if not self.cons_lines:
+            self.cons_lines = self._default_cons
+        else:
+            existing_cons = set()
+            for line in self.cons_lines:
+                try:
+                    req = next(requirements.parse(line))
+                    existing_cons.add(safe_name(req.name))
+                except (StopIteration, ValueError):
+                    pass  # ignore comments, blank lines, etc
+            def_cons_added = []
+            for def_cons in self._default_cons:
+                try:
+                    req = next(requirements.parse(def_cons))
+                    if safe_name(req.name) not in existing_cons:
+                        def_cons_added.append(def_cons)
+                except (StopIteration, ValueError):
+                    pass  # ignore comments, blank lines, etc
+            if def_cons_added:
+                self.cons_lines.append('# Default constraints')
+                self.cons_lines.extend(def_cons_added)
+                self.cons_lines.append('')
+        for line in self.cons_lines or []:
+            log.debug('  %s', line.strip())
+
         with utils.tempdir(chdir=False) as temp_dir:
             wh_file = temp_dir / 'wheelhouse.txt'
-            wh_file.write_lines(self.lines)
-            self._add(wheelhouse, '-r', wh_file)
+            wh_file.write_lines(self.lines or [])
+
+            wh_cons_file = temp_dir / self.CONS_FILENAME
+            wh_cons_file.write_lines(self.cons_lines or [])
+
+            self._add(
+                wheelhouse, '-r', wh_file,
+                constraints=wh_cons_file)
             wh_file.move(self.target.directory / 'wheelhouse.txt')
+            wh_cons_file.move(self.target.directory / self.CONS_FILENAME)
 
     def sign(self):
         ""  # suppress inherited doc
@@ -1321,12 +1449,17 @@ class WheelhouseTactic(ExactMatch, Tactic):
                 "dynamic",
                 utils.sign(self.target.directory / 'wheelhouse.txt'),
             )
+            sigs[self.CONS_FILENAME] = (
+                self.layer.url,
+                "dynamic",
+                utils.sign(self.target.directory / self.CONS_FILENAME),
+            )
         for d in self.tracked:
             if d in self.removed:
                 continue
             relpath = d.relpath(self.target.directory)
             pkg_name = safe_name(d.basename().split('-')[0])
-            layer_url = self._layer_refs.get(pkg_name, '__pip__')
+            layer_url = self.layer_refs.get(pkg_name, '__pip__')
             sigs[relpath] = (
                 layer_url, "dynamic", utils.sign(d))
         return sigs
@@ -1337,6 +1470,7 @@ class CopyrightTactic(Tactic):
     Tactic to combine the copyright info from all layers into a final
     machine-readable format.
     """
+
     def __init__(self, *args, **kwargs):
         super(CopyrightTactic, self).__init__(*args, **kwargs)
         self.previous = []

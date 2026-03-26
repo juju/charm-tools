@@ -3,7 +3,15 @@
 import sys
 import mock
 import unittest
-from pkg_resources import resource_filename
+
+try:
+    from pkg_resources import resource_filename
+except ImportError:
+    import importlib.resources
+
+    def resource_filename(package, resource):
+        """Return the filename for the given resource"""
+        return str(importlib.resources.files(package).joinpath(resource))
 
 # allow importing actions from the hooks directory
 sys.path.append(resource_filename(__name__, '../hooks'))
