@@ -1191,7 +1191,7 @@ class WheelhouseTactic(ExactMatch, Tactic):
 
         # Read the wheelhouse-constraints.txt file
         if self.cons_lines is None:
-            src = path(self.entity.dirname()) / self.CONS_FILENAME
+            src = path(self.entity).dirname() / self.CONS_FILENAME
             if src.exists():
                 for req in requirements.parse(src.text()):
                     if req.name is None:
