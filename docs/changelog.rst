@@ -6,6 +6,7 @@ Current release
 
 * Add Python 3.14 / Ubuntu 26.04 CI coverage for reactive charm builds
 * Add `legacy-cgi` dependency for Python 3.13+ template support
+* Fix snap build with modern `virtualenv` by allowing its pure-Python wheel
 * Relax the `virtualenv` dependency for newer Python compatibility
 * Install additional generic build tooling in the charmcraft workaround
 * Add ability to specify constraints for `WheelhouseTactic` (#693)
