@@ -78,14 +78,15 @@ parts:
       #   Your build configuration is incomplete and previously worked by accident!
       #   setuptools_scm requires setuptools>=61
       pip install --upgrade 'setuptools<82'
-      # Most dependencies are built from source for the snap, but
-      # virtualenv 20.26+ uses hatchling. Building that sdist inside the
-      # staged core22 environment can import the staged python3-pathspec,
-      # which is too old for hatchling. virtualenv is pure Python, so use its
-      # wheel while keeping source builds for the rest of the dependency set.
+      # Most dependencies are built from source for the snap, but modern
+      # virtualenv and its pure-Python dependencies use hatchling. Building
+      # those sdists inside the staged core22 environment can import the
+      # staged python3-pathspec, which is too old for hatchling. Use wheels for
+      # that pure-Python dependency set while keeping source builds for the
+      # rest of the dependency set.
       pip install \
           --no-binary :all: \
-          --only-binary virtualenv \
+          --only-binary virtualenv,distlib,filelock,platformdirs,python-discovery \
           --prefix $CRAFT_PART_INSTALL/usr \
           .
 
