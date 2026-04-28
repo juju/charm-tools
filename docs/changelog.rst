@@ -4,6 +4,9 @@ Changelog
 Current release
 ^^^^^^^^^^^^
 
+* Add Python 3.14 / Ubuntu 26.04 CI coverage for reactive charm builds
+* Relax the `virtualenv` dependency for newer Python compatibility
+* Install additional generic build tooling in the charmcraft workaround
 * Add ability to specify constraints for `WheelhouseTactic` (#693)
 * Fix `charm-tools` version (#692)
 * Pin `setuptools` < 82 and drop archived `vergit` dependency (#689)

@@ -163,6 +163,14 @@ class Builder(object):
     DEFAULT_SERIES = 'trusty'
     METRICS_URL = 'https://www.google-analytics.com/collect'
     METRICS_ID = 'UA-96529618-2'
+    CHARMCRAFT_BUILD_PACKAGES = (
+        'git',
+        'virtualenv',
+        'python3-venv',
+        'python3-pip',
+        'python3-setuptools',
+        'python3-wheel',
+    )
 
     def __init__(self):
         self.config = BuildConfig()
@@ -778,13 +786,19 @@ class Builder(object):
         The charmcraft reactive plugin ought to provide the bare minimum
         of build package dependencies, however until it does let's help
         here under the right circumstances.
+
+        Keep this list conservative and limited to generic tooling needed by
+        ``charm build`` itself. Charm-specific native dependencies still belong
+        in the charm's ``build-packages``.
         """
         if (os.geteuid() == 0
                 and (os.environ.get('CRAFT_PART_NAME', None)
                      or os.environ.get('CHARMCRAFT_PART_NAME', None))):
+            packages = self.CHARMCRAFT_BUILD_PACKAGES
             log.warning('Probably running as root in charmcraft, proactively '
-                        'installing the `git` and `virtualenv` packages.')
-            subprocess.run(('apt', '-y', 'install', 'git', 'virtualenv'),
+                        'installing the minimum charm build packages: %s.',
+                        ', '.join(packages))
+            subprocess.run(('apt', '-y', 'install') + packages,
                            check=True, env=utils.host_env())
 
     def generate(self):

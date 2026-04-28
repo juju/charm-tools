@@ -72,7 +72,7 @@ setup(
         'path<17',
         'pip>=1.5.4',
         'jujubundlelib<0.6',
-        'virtualenv>=1.11.4,<21',
+        'virtualenv>=20.26',
         'colander<1.9',
         'jsonschema<4.18.0',
         'keyring<24',
