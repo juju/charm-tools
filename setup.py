@@ -61,6 +61,7 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
         'cheetah3>=3.0.0,<4.0',
+        'legacy-cgi;python_version >= "3.13"',
         'pyyaml>=5.0,!=5.4.0,!=5.4.1,!=6.0,<7.0',
         'requests>=2.0.0,<3.0.0',
         'blessings<2.0',
@@ -72,7 +73,7 @@ setup(
         'path<17',
         'pip>=1.5.4',
         'jujubundlelib<0.6',
-        'virtualenv>=1.11.4,<21',
+        'virtualenv>=20.26',
         'colander<1.9',
         'jsonschema<4.18.0',
         'keyring<24',

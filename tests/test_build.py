@@ -57,6 +57,21 @@ class TestBuild(unittest.TestCase):
         builder = build.Builder()
         self.assertTrue(builder.hide_metrics)
 
+    @mock.patch('charmtools.build.builder.subprocess.run')
+    @mock.patch('charmtools.build.builder.os.geteuid', return_value=0)
+    def test_workaround_charmcraft_installs_minimum_build_packages(
+            self, _geteuid, run):
+        builder = build.Builder()
+        with mock.patch.dict(os.environ, {'CRAFT_PART_NAME': 'charm'}):
+            builder.workaround_charmcraft_maybe_ensure_build_packages()
+
+        args, kwargs = run.call_args
+        self.assertEqual(
+            args[0],
+            ('apt', '-y', 'install') + builder.CHARMCRAFT_BUILD_PACKAGES)
+        self.assertTrue(kwargs['check'])
+        self.assertIn('env', kwargs)
+
     def test_invalid_layer(self):
         # Test that invalid metadata.yaml files get a BuildError exception.
         builder = build.Builder()
