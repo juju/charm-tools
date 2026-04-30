@@ -636,6 +636,46 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(captured['env']['PIP_BUILD_CONSTRAINT'],
                          str(self.build_dir / wh.CONS_FILENAME))
 
+    def test_wheelhouse_python314_cython_override(self):
+        wh = build.tactics.WheelhouseTactic(
+            path('wheelhouse.txt'),
+            mock.Mock(directory=self.build_dir),
+            mock.Mock(url='charm'),
+            mock.Mock())
+        wh.lines = [
+            '# layer:basic',
+            'Cython<3.0.0',
+            'PyYAML<7.0.0;python_version >= "3.7"',
+            '',
+        ]
+        wh.cons_lines = []
+        td = path(tempfile.mkdtemp())
+
+        @contextmanager
+        def fake_tempdir(chdir=False):
+            try:
+                yield td
+            finally:
+                pass
+
+        with mock.patch.object(build.tactics.sys, 'version_info', (3, 10, 0)):
+            with mock.patch.object(build.tactics.utils, 'get_python_version', return_value=(3, 14, 0)):
+                with mock.patch.object(build.tactics.utils, 'tempdir', fake_tempdir):
+                    with mock.patch.object(build.tactics.WheelhouseTactic, '_add'):
+                        wh._venv = path('/tmp/fake-venv')
+                        wh._process_combined(self.build_dir)
+
+        wheelhouse_txt = (self.build_dir / 'wheelhouse.txt').text()
+        self.assertIn(
+            '# Cython<3.0.0  # overridden by charm-tools for Python 3.14',
+            wheelhouse_txt)
+        self.assertIn(
+            "Cython>=3.1,<4;python_version >= '3.14'",
+            wheelhouse_txt)
+        self.assertIn(
+            'PyYAML<7.0.0;python_version >= "3.7"',
+            wheelhouse_txt)
+
     @mock.patch.object(build.tactics, 'log')
     @mock.patch.object(build.tactics.YAMLTactic, 'read',
                        lambda s: setattr(s, '_read', True))

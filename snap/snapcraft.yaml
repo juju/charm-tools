@@ -6,7 +6,7 @@ description: |
 license: GPL-3.0
 confinement: classic
 grade: stable
-base: core22
+base: core24
 apps:
   charm:
     command: bin/wrappers/charm
@@ -23,35 +23,35 @@ environment:
   LD_LIBRARY_PATH: ""
   PATH: $SNAP/usr/local/bin:$PATH
   PYTHONHOME: $SNAP
-  PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.10/site-packages:$SNAP/usr/lib/python3.10:$SNAP/usr/lib/python3.10/lib-dynload:$SNAP/usr/local/lib/python3.10/dist-packages
+  PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.12/site-packages:$SNAP/usr/lib/python3.12:$SNAP/usr/lib/python3.12/lib-dynload:$SNAP/usr/local/lib/python3.12/dist-packages
 parts:
   charm-tools:
     source: .
-    # the core22 python plugin does not work for classic snaps.
+    # the core24 python plugin does not work for classic snaps.
     # a side effect of this is that we do patchelf manually as a separate part.
     plugin: nil
     build-packages:
       - libffi-dev
-      - libpython3.10-dev
+      - libpython3.12-dev
       - python3-pip
       - rustc
       - cargo
       - pkg-config
     # Note that we cannot use any -dev type packages here, as that would pull
     # in the libc6 package.  The libc6 package contains absolute symlinks
-    # pointing at /, which is not allowed in a core22 classic snap.
+    # pointing at /, which is not allowed in a core24 classic snap.
     stage-packages:
       - libbrotli1
       - git-core
-      - libpython3.10
-      - libpython3.10-minimal
-      - libpython3.10-stdlib
+      - libpython3.12t64
+      - libpython3.12-minimal
+      - libpython3.12-stdlib
       - python3-minimal
-      - python3.10-minimal
+      - python3.12-minimal
       - python3-cryptography
       - python3-pip
       - python3-setuptools
-      - python3-distutils
+      - python3-six
       - python3-importlib-resources
       - python3-pkg-resources
       - python3-virtualenv
@@ -63,30 +63,28 @@ parts:
       - python3-pathspec
       - python3-path
       - python3-jsonschema
-      - python3-keyring
       - python3-secretstorage
       - python3-translationstring
       - python3-iso8601
       - python3-parse
     build-environment:
       - MAKEFLAGS: -j$(nproc)
-      - CFLAGS: -I/usr/include/python3.10
+      - CFLAGS: -I/usr/include/python3.12
     override-build: |
       # Upgrading setuptools helps to fix:
       #
       #   ERROR: setuptools==59.6.0 is used in combination with setuptools_scm>=8.x
       #   Your build configuration is incomplete and previously worked by accident!
       #   setuptools_scm requires setuptools>=61
-      pip install --upgrade 'setuptools<82'
-      # Most dependencies are built from source for the snap, but modern
-      # virtualenv and its pure-Python dependencies use hatchling. Building
-      # those sdists inside the staged core22 environment can import the
-      # staged python3-pathspec, which is too old for hatchling. Use wheels for
-      # that pure-Python dependency set while keeping source builds for the
-      # rest of the dependency set.
+      pip install --break-system-packages --upgrade --no-binary :all: 'setuptools<82'
+
+      # Keep source builds for all dependencies so the snap can be built on
+      # every supported architecture, including architectures that may not have
+      # wheels. core24 provides a new enough python3-pathspec for modern build
+      # backends such as hatchling, so no binary-only workaround is needed.
       pip install \
+          --break-system-packages \
           --no-binary :all: \
-          --only-binary virtualenv,distlib,filelock,platformdirs,python-discovery \
           --prefix $CRAFT_PART_INSTALL/usr \
           .
 
@@ -94,10 +92,11 @@ parts:
       # pass `--no-deps`, otherwise it will overwrite the charm-tools we just
       # installed above!
       pip install \
+          --break-system-packages \
           --no-deps \
           --prefix $CRAFT_PART_INSTALL/usr \
           https://github.com/openstack-charmers/charm-templates-openstack/archive/master.zip#egg=charm_templates_openstack
-      sed -i "$CRAFT_PART_INSTALL/usr/lib/python3.10/site.py" -e 's/^ENABLE_USER_SITE = None$/ENABLE_USER_SITE = False/'
+      sed -i "$CRAFT_PART_INSTALL/usr/lib/python3.12/site.py" -e 's/^ENABLE_USER_SITE = None$/ENABLE_USER_SITE = False/'
 
       mkdir -p $CRAFT_PART_INSTALL/bin/wrappers
       cp helpers/snap-wrappers/charm $CRAFT_PART_INSTALL/bin/wrappers/
@@ -146,11 +145,11 @@ parts:
       # libraries from the core or shipped snap.  We accomplish this by
       # patching RPATH or interpreter into dynamically linked binaries.
       #
-      # /snap/core22/current/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
-      # /snap/core22/current/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
-      # /snap/core22/current/lib/powerpc64le-linux-gnu/ld64.so.2
-      # /snap/core22/current/lib/s390x-linux-gnu/ld64.so.1
-      interp_prefix=/snap/core22/current/lib/$CRAFT_ARCH_TRIPLET
+      # /snap/core24/current/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      # /snap/core24/current/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
+      # /snap/core24/current/lib/powerpc64le-linux-gnu/ld64.so.2
+      # /snap/core24/current/lib/s390x-linux-gnu/ld64.so.1
+      interp_prefix=/snap/core24/current/lib/$CRAFT_ARCH_TRIPLET
       ld_arch=$(echo $CRAFT_TARGET_ARCH | sed -e 's,amd64,x86-64,' -e 's,arm64,aarch64,')
       for interp in "ld-linux-${ld_arch}.so.?" "ld64.so.?" "/dev/null"; do
           if [ -e ${interp_prefix}/${interp} ]; then
@@ -166,7 +165,7 @@ parts:
         $(find . -exec file {} \; | awk -F\: '/ELF.*dynamic/{print$1}'); do
           patchelf \
               --force-rpath \
-              --set-rpath /snap/core22/current/usr/lib/$CRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/lib:/snap/$CRAFT_PROJECT_NAME/current/lib/$SNAPCRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/usr/lib:/snap/$CRAFT_PROJECT_NAME/current/usr/lib/$SNAPCRAFT_ARCH_TRIPLET \
+              --set-rpath /snap/core24/current/usr/lib/$CRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/lib:/snap/$CRAFT_PROJECT_NAME/current/lib/$CRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/usr/lib:/snap/$CRAFT_PROJECT_NAME/current/usr/lib/$CRAFT_ARCH_TRIPLET \
               $binary
 
           patchelf --set-interpreter $interp_prefix/$interp $binary || true

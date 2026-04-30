@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import sys
 import tarfile
 import tempfile
 import zipfile
@@ -1064,6 +1065,13 @@ class WheelhouseTactic(ExactMatch, Tactic):
     _default_cons = [
         "setuptools<82",
     ]
+    _python314_requirement_overrides = [
+        (
+            'Cython',
+            "Cython>=3.1,<4;python_version >= '3.14'",
+            'Cython 0.29.x does not build on Python 3.14',
+        ),
+    ]
 
     def __init__(self, *args, **kwargs):
         super(WheelhouseTactic, self).__init__(*args, **kwargs)
@@ -1217,15 +1225,17 @@ class WheelhouseTactic(ExactMatch, Tactic):
             _ignore_requires_python = ('--ignore-requires-python', )
             env = self._get_env()
             try:
-                if self.binary_build_from_source or self.binary_build:
-                    # Handle constraints
-                    if constraints:
-                        env['PIP_CONSTRAINT'] = constraints
-                        env['PIP_BUILD_CONSTRAINT'] = constraints
-                    else:
-                        env.pop('PIP_CONSTRAINT', None)
-                        env.pop('PIP_BUILD_CONSTRAINT', None)
+                # Apply constraints to both dependency resolution and PEP 517
+                # build environments. This is needed for source downloads too,
+                # because pip may need to build sdists to inspect metadata.
+                if constraints:
+                    env['PIP_CONSTRAINT'] = str(constraints)
+                    env['PIP_BUILD_CONSTRAINT'] = str(constraints)
+                else:
+                    env.pop('PIP_CONSTRAINT', None)
+                    env.pop('PIP_BUILD_CONSTRAINT', None)
 
+                if self.binary_build_from_source or self.binary_build:
                     self._pip('wheel',
                               *_no_binary_opts
                               if self.binary_build_from_source else tuple(),
@@ -1389,8 +1399,50 @@ class WheelhouseTactic(ExactMatch, Tactic):
         log.debug('Per-layer wheelhouse is not compatible with constraints')
         self._add(wheelhouse, '-r', self.entity)
 
+    def _apply_python_requirement_overrides(self, python_version=None):
+        """Apply requirement overrides needed by the target build Python version."""
+        python_version = python_version or sys.version_info
+        if python_version < (3, 14):
+            return
+
+        override_names = {
+            safe_name(name)
+            for name, _line, _reason in self._python314_requirement_overrides
+        }
+        updated_lines = []
+        overridden = set()
+        for line in self.lines or []:
+            try:
+                req = next(requirements.parse(line))
+                req_name = safe_name(req.name)
+            except (StopIteration, ValueError):
+                updated_lines.append(line)
+                continue
+
+            if req_name in override_names:
+                updated_lines.append(
+                    f'# {line}  # overridden by charm-tools for Python 3.14'
+                )
+                overridden.add(req_name)
+            else:
+                updated_lines.append(line)
+
+        if overridden:
+            updated_lines.append('# Default Python 3.14 wheelhouse overrides')
+            for name, line, reason in self._python314_requirement_overrides:
+                if safe_name(name) in overridden:
+                    updated_lines.append(f'# {reason}')
+                    updated_lines.append(line)
+            updated_lines.append('')
+            self.lines = updated_lines
+
     def _process_combined(self, wheelhouse):
         self.read()
+        if self._venv:
+            python_version = utils.get_python_version(self._venv, env=self._get_env())
+        else:
+            python_version = sys.version_info
+        self._apply_python_requirement_overrides(python_version)
         log.debug('Processing wheelhouse:')
         for line in self.lines or []:
             log.debug('  %s', line.strip())
