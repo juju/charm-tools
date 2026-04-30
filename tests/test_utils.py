@@ -1,9 +1,9 @@
 from __future__ import print_function
 
-import unittest
 from unittest import TestCase
 from charmtools import utils
 from six import StringIO
+import mock
 
 
 class TestUtils(TestCase):
@@ -45,7 +45,7 @@ class TestUtils(TestCase):
         self.assertIn("@when('db.ready'", output)
         self.assertIn("bar", output)
 
-    @unittest.mock.patch("os.environ")
+    @mock.patch("os.environ")
     def test_host_env(self, mock_environ):
         mock_environ.copy.return_value = {
             'PREFIX': 'fake-prefix',
@@ -61,14 +61,14 @@ class TestUtils(TestCase):
             {'SOME_OTHER_KEY': 'fake-some-other-key', 'PATH': '/usr/bin:/bin'},
             utils.host_env())
 
-    @unittest.mock.patch.object(utils, "Process")
+    @mock.patch.object(utils, "Process")
     def test_upgrade_venv_core_packages(self, mock_Process):
         utils.upgrade_venv_core_packages('/some/dir', env={'some': 'envvar'})
         mock_Process.assert_called_once_with(
             ('/some/dir/bin/pip', 'install', '-U', 'pip', 'setuptools'),
             env={'some': 'envvar'})
 
-    @unittest.mock.patch.object(utils, "Process")
+    @mock.patch.object(utils, "Process")
     def test_pin_setuptools_for_pep440(self, mock_Process):
         utils.pin_setuptools_for_pep440('/some/dir', env={'some': 'envvar'})
         mock_Process.assert_called_once_with(
@@ -76,8 +76,8 @@ class TestUtils(TestCase):
              'setuptools<67'),
             env={'some': 'envvar'})
 
-    @unittest.mock.patch("sys.exit")
-    @unittest.mock.patch.object(utils, "Process")
+    @mock.patch("sys.exit")
+    @mock.patch.object(utils, "Process")
     def test_get_venv_package_list(self, mock_Process, mock_sys_exit):
         mock_Process().return_value = utils.ProcessResult('fakecmd', 0, '', '')
         utils.get_venv_package_list('/some/dir', env={'some': 'envvar'})
@@ -89,11 +89,20 @@ class TestUtils(TestCase):
         utils.get_venv_package_list('/some/dir', env={'some': 'envvar'})
         mock_sys_exit.assert_called_once_with(1)
 
-    @unittest.mock.patch.object(utils, "Process")
-    def test_get_oython_version(self, process_klass):
+    @mock.patch.object(utils, "Process")
+    def test_get_python_version(self, process_klass):
         process_klass().return_value = utils.ProcessResult(
             ['python3', '--version'], 0, b'Python 3.12.4', b'')
         self.assertEqual(
             utils.get_python_version('/some/dir', env={'some': 'envvar'}),
             (3, 12, 4)
+        )
+
+    @mock.patch.object(utils, "Process")
+    def test_get_python_version_314(self, process_klass):
+        process_klass().return_value = utils.ProcessResult(
+            ['python3', '--version'], 0, b'Python 3.14.0', b'')
+        self.assertEqual(
+            utils.get_python_version('/some/dir', env={'some': 'envvar'}),
+            (3, 14, 0)
         )

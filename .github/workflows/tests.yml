@@ -3,7 +3,8 @@ name: Test Suite
 on:
   pull_request:
     branches: [ master ]
-
+  workflow_dispatch:
+  
 jobs:
   unit:
     name: Unit tests
@@ -14,11 +15,12 @@ jobs:
           - '3.8'   # focal
           - '3.10'  # jammy
           - '3.12'  # noble
+          - '3.14'  # resolute
     steps:
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Tox
@@ -31,7 +33,7 @@ jobs:
     needs: unit
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Add fake tag for git describe
       run: git tag v0.0.0
     - uses: snapcore/action-build@v1
@@ -44,9 +46,13 @@ jobs:
   integration:
     strategy:
       matrix:
-        charmcraft_channel:
-          - "2.x/stable"
-          - "3.x/beta"
+        include:
+          - charmcraft_channel: "2.x/stable"
+            charmcraft_label: "2.x-stable"
+          - charmcraft_channel: "3.x/stable"
+            charmcraft_label: "3.x-stable"
+          - charmcraft_channel: "latest/candidate"
+            charmcraft_label: "latest-candidate"
     name: Integration test
     needs: build
     runs-on: ubuntu-latest
@@ -62,7 +68,7 @@ jobs:
         sudo iptables -F FORWARD
         sudo iptables -P FORWARD ACCEPT
     - name: Checkout layer-basic
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: juju-solutions/layer-basic
 
@@ -109,8 +115,8 @@ jobs:
             architectures: [amd64]
         EOF
         charmcraft pack -p tests/charm-minimal -v
-    - name: Build reactive charm with charmcraft-3.x
-      if: ${{ matrix.charmcraft_channel == '3.x/beta' }}
+    - name: Build reactive charm with charmcraft-3.x on ubuntu@24.04
+      if: ${{ matrix.charmcraft_channel == '3.x/stable' }}
       run: |
         set -euxo pipefail
         sudo snap install --classic --channel ${{ matrix.charmcraft_channel }} charmcraft
@@ -141,6 +147,38 @@ jobs:
         EOF
         charmcraft pack -p tests/charm-minimal -v
         mv minimal_amd64.charm minimal_ubuntu-24.04-amd64.charm
+    - name: Build reactive charm with charmcraft latest/candidate on ubuntu@26.04
+      if: ${{ matrix.charmcraft_channel == 'latest/candidate' }}
+      run: |
+        set -euxo pipefail
+        sudo snap install --classic --channel ${{ matrix.charmcraft_channel }} charmcraft
+        cat << EOF | tee tests/charm-minimal/charmcraft.yaml
+        type: charm
+        parts:
+          charm-tools:
+            plugin: nil
+            override-build: |
+              ls -lR \$CRAFT_PROJECT_DIR/
+              snap install --dangerous --classic /root/project/charm-snap/charm_0.0.0_amd64.snap
+              rm -rf \$CRAFT_PROJECT_DIR/parts/charm/src/charm-snap
+          charm:
+            after: [charm-tools]
+            source: .
+            plugin: reactive
+            reactive-charm-build-arguments:
+              - -v
+              - --binary-wheels-from-source
+              - --upgrade-buildvenv-core-deps
+              - --ignore-requires-python
+            build-packages:
+              - python3-dev
+              - libpq-dev
+        base: ubuntu@26.04
+        platforms:
+          amd64:
+        EOF
+        charmcraft pack -p tests/charm-minimal -v
+        mv minimal_amd64.charm minimal_ubuntu-26.04-amd64.charm
     ## action to interactively debug CI failures.
     # - name: Setup upterm session
     #   if: failure()
@@ -149,15 +187,16 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: charmcraft execution logs ${{ matrix.runs-on }}
+        name: charmcraft execution logs ${{ matrix.charmcraft_label }}
         path: ~/snap/charmcraft/common/cache/charmcraft/log/*.log
     - name: Upload built charms
       uses: actions/upload-artifact@v4
       with:
-        name: Built charms
+        name: Built charms ${{ matrix.charmcraft_label }}
         overwrite: true
         path: |
           minimal_ubuntu-18.04-amd64.charm
           minimal_ubuntu-20.04-amd64.charm
           minimal_ubuntu-22.04-amd64.charm
           minimal_ubuntu-24.04-amd64.charm
+          minimal_ubuntu-26.04-amd64.charm
